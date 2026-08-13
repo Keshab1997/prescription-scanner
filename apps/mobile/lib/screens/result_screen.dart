@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:prescription_scanner/services/prescription_repository.dart';
+import 'package:prescription_scanner/models/extracted_prescription.dart';
+import 'package:prescription_scanner/services/result_store.dart';
 import 'package:prescription_scanner/theme.dart';
 
 class ResultScreen extends ConsumerWidget {
@@ -33,18 +34,14 @@ class ResultScreen extends ConsumerWidget {
     );
     if (confirmed != true || !context.mounted) return;
 
-    final repository = ref.read(prescriptionRepositoryProvider);
-    if (repository == null) return;
     try {
-      await repository.deletePrescription(prescriptionId);
-      ref.invalidate(prescriptionHistoryProvider);
-      ref.invalidate(recentPrescriptionsProvider);
+      ResultStore.instance.delete(prescriptionId);
       if (context.mounted) context.go('/history');
-    } on RepositoryException catch (error) {
+    } catch (_) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(error.message)));
+      ).showSnackBar(const SnackBar(content: Text('Could not delete this item.')));
     }
   }
 
@@ -124,26 +121,12 @@ class ResultScreen extends ConsumerWidget {
     );
 
     if (submitted == true) {
-      final repository = ref.read(prescriptionRepositoryProvider);
-      try {
-        await repository?.submitFeedback(
-          prescriptionId: prescriptionId,
-          category: category,
-          details: details.text,
+      // Local-only build: feedback is acknowledged but not persisted to a
+      // backend. Wire this to your own endpoint if you add one later.
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Thank you. Your report was noted.')),
         );
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Thank you. Your report was submitted.'),
-            ),
-          );
-        }
-      } catch (_) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('The report could not be submitted.')),
-          );
-        }
       }
     }
     details.dispose();
@@ -155,16 +138,12 @@ class ResultScreen extends ConsumerWidget {
       return const _ResultError(message: 'Prescription ID is missing.');
     }
 
-    final asyncDetails = ref.watch(prescriptionDetailProvider(prescriptionId));
-    return asyncDetails.when(
-      loading: () =>
-          const Scaffold(body: Center(child: CircularProgressIndicator())),
-      error: (_, _) => _ResultError(
-        message: 'The result could not be loaded.',
-        onRetry: () =>
-            ref.invalidate(prescriptionDetailProvider(prescriptionId)),
-      ),
-      data: (details) => Scaffold(
+    final details = ResultStore.instance.get(prescriptionId);
+    if (details == null) {
+      return const _ResultError(message: 'The result could not be found.');
+    }
+
+    return Scaffold(
         appBar: AppBar(
           title: const Text('Extraction result'),
           actions: [
@@ -189,8 +168,7 @@ class ResultScreen extends ConsumerWidget {
         ),
         body: RefreshIndicator(
           onRefresh: () async {
-            ref.invalidate(prescriptionDetailProvider(prescriptionId));
-            await ref.read(prescriptionDetailProvider(prescriptionId).future);
+            // Results are local; nothing to refresh.
           },
           child: ListView(
             padding: const EdgeInsets.fromLTRB(20, 4, 20, 30),
@@ -262,14 +240,13 @@ class ResultScreen extends ConsumerWidget {
             ],
           ),
         ),
-      ),
-    );
+      );
   }
 }
 
 class _QualityHeader extends StatelessWidget {
   const _QualityHeader({required this.details});
-  final PrescriptionDetail details;
+  final ExtractedPrescription details;
 
   @override
   Widget build(BuildContext context) {
@@ -331,7 +308,7 @@ class _QualityHeader extends StatelessWidget {
 
 class _MedicineCard extends StatelessWidget {
   const _MedicineCard({required this.medicine});
-  final MedicineItem medicine;
+  final Medicine medicine;
 
   @override
   Widget build(BuildContext context) {
@@ -545,7 +522,7 @@ class _WarningsCard extends StatelessWidget {
 
 class _OtherVisibleDetails extends StatelessWidget {
   const _OtherVisibleDetails({required this.details});
-  final PrescriptionDetail details;
+  final ExtractedPrescription details;
 
   @override
   Widget build(BuildContext context) => Card(
@@ -600,9 +577,8 @@ class _EmptyResult extends StatelessWidget {
 }
 
 class _ResultError extends StatelessWidget {
-  const _ResultError({required this.message, this.onRetry});
+  const _ResultError({required this.message});
   final String message;
-  final VoidCallback? onRetry;
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -620,10 +596,6 @@ class _ResultError extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             Text(message, textAlign: TextAlign.center),
-            if (onRetry != null) ...[
-              const SizedBox(height: 16),
-              FilledButton(onPressed: onRetry, child: const Text('Try again')),
-            ],
           ],
         ),
       ),

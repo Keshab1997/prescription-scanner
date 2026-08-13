@@ -5,10 +5,24 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:prescription_scanner/services/prescription_processing_service.dart';
-import 'package:prescription_scanner/services/prescription_repository.dart';
+import 'package:uuid/uuid.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'package:prescription_scanner/services/gemini_vision_service.dart';
 import 'package:prescription_scanner/services/prescription_upload_service.dart';
+import 'package:prescription_scanner/services/result_store.dart';
 import 'package:prescription_scanner/theme.dart';
+
+const String _consentBox = 'rx_consent';
+
+Future<bool> _hasLocalAiConsent() async {
+  final box = await Hive.openBox(_consentBox);
+  return box.get('ai_consent_v1', defaultValue: false) as bool;
+}
+
+Future<void> _recordLocalAiConsent() async {
+  final box = await Hive.openBox(_consentBox);
+  await box.put('ai_consent_v1', true);
+}
 
 class UploadScreen extends ConsumerStatefulWidget {
   const UploadScreen({super.key});
@@ -86,6 +100,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
 
   Future<void> upload() async {
     final service = ref.read(prescriptionUploadServiceProvider);
+    final vision = GeminiVisionService();
     final selected = draft;
     if (service == null || selected == null) return;
 
@@ -94,7 +109,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
       error = null;
     });
     try {
-      final hasConsent = await service.hasCurrentAiConsent();
+      final hasConsent = await _hasLocalAiConsent();
       if (!hasConsent) {
         if (!mounted) return;
         final accepted = await showDialog<bool>(
@@ -104,7 +119,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
             icon: const Icon(Icons.shield_outlined, color: AppColors.teal),
             title: const Text('AI processing consent'),
             content: const Text(
-              'Your cropped prescription image will be sent securely to Google Gemini to transcribe visible medicine details. The app will not ask Gemini to diagnose or recommend treatment. The original server image is deleted after a successful result.',
+              'Your cropped prescription image will be sent securely to Google Gemini to transcribe visible medicine details. The app will not ask Gemini to diagnose or recommend treatment. The original image is processed on device and never stored on a server.',
             ),
             actions: [
               TextButton(
@@ -118,23 +133,32 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
             ],
           ),
         );
-        if (accepted != true) return;
-        await service.recordAiConsent();
+        if (accepted != true) {
+          if (mounted) setState(() => uploading = false);
+          return;
+        }
+        await _recordLocalAiConsent();
       }
 
-      final uploaded = await service.reserveAndUpload(selected);
+      // Supabase-free path: send the local image straight to Gemini.
+      final localId = const Uuid().v4();
+      final result =
+          await vision.processImage(selected.path, localId: localId);
+      ResultStore.instance.save(result);
+
+      // Clean up the local draft file now that it has been processed.
       await service.deleteLocalDraft(selected);
       draft = null;
       if (!mounted) return;
       context.push(
-        '/processing?prescriptionId=${Uri.encodeComponent(uploaded.prescriptionId)}',
+        '/processing?prescriptionId=${Uri.encodeComponent(result.id)}',
       );
-    } on ScanUploadException catch (exception) {
+    } on VisionException catch (exception) {
       if (mounted) setState(() => error = exception.message);
     } catch (_) {
       if (mounted) {
         setState(
-          () => error = 'The secure upload could not be started. Please retry.',
+          () => error = 'The scan could not be completed. Please retry.',
         );
       }
     } finally {
@@ -493,27 +517,35 @@ class _ProcessingScreenState extends ConsumerState<ProcessingScreen>
       );
       return;
     }
-    final service = ref.read(prescriptionProcessingServiceProvider);
-    if (service == null) {
-      setState(() => error = 'Supabase configuration is missing.');
-      return;
-    }
 
     setState(() {
       running = true;
       error = null;
     });
     try {
-      final outcome = await service.process(widget.prescriptionId);
-      ref.invalidate(quotaProvider);
-      ref.invalidate(recentPrescriptionsProvider);
-      ref.invalidate(prescriptionHistoryProvider);
+      // Vision already ran on the upload screen; the result is stored locally.
+      // Wait briefly so the spinner is visible, then load it back.
+      await Future<void>.delayed(const Duration(milliseconds: 900));
+      final result = ResultStore.instance.get(widget.prescriptionId);
+      if (result == null) {
+        if (mounted) {
+          setState(
+            () => error =
+                'The result could not be found. Please scan again.',
+          );
+        }
+        return;
+      }
       if (!mounted) return;
       context.go(
-        '/result?prescriptionId=${Uri.encodeComponent(outcome.prescriptionId)}',
+        '/result?prescriptionId=${Uri.encodeComponent(result.id)}',
       );
-    } on ProcessingException catch (exception) {
-      if (mounted) setState(() => error = exception.message);
+    } catch (_) {
+      if (mounted) {
+        setState(
+          () => error = 'The result could not be loaded. Please retry.',
+        );
+      }
     } finally {
       if (mounted) setState(() => running = false);
     }

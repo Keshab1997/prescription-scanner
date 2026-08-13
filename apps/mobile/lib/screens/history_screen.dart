@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:prescription_scanner/services/prescription_repository.dart';
+import 'package:prescription_scanner/models/extracted_prescription.dart';
+import 'package:prescription_scanner/services/result_store.dart';
 import 'package:prescription_scanner/theme.dart';
 
 class HistoryScreen extends ConsumerStatefulWidget {
@@ -24,14 +25,13 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final history = ref.watch(prescriptionHistoryProvider);
+    final items = ResultStore.instance.getAll();
     return Scaffold(
       body: SafeArea(
         bottom: false,
         child: RefreshIndicator(
           onRefresh: () async {
-            ref.invalidate(prescriptionHistoryProvider);
-            await ref.read(prescriptionHistoryProvider.future);
+            // Local store is synchronous; just allow the gesture.
           },
           child: ListView(
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 110),
@@ -75,17 +75,8 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                 ),
               ),
               const SizedBox(height: 18),
-              history.when(
-                loading: () => const Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(40),
-                    child: CircularProgressIndicator(),
-                  ),
-                ),
-                error: (_, _) => _HistoryError(
-                  onRetry: () => ref.invalidate(prescriptionHistoryProvider),
-                ),
-                data: (items) {
+              Builder(
+                builder: (context) {
                   final visible = items.where(matches).toList();
                   if (visible.isEmpty) return const _EmptyHistory();
                   return Column(
@@ -141,27 +132,21 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
 
   void setFilter(String value) => setState(() => filter = value);
 
-  bool matches(PrescriptionSummary item) {
-    final normalizedFilter = item.isProcessing ? 'processing' : item.status;
+  bool matches(ExtractedPrescription item) {
+    final status = item.isPrescription ? 'completed' : 'failed';
+    final normalizedFilter = item.needsManualReview ? 'needs_review' : status;
     if (filter != 'all' && normalizedFilter != filter) return false;
     final query = search.text.trim().toLowerCase();
     if (query.isEmpty) return true;
     final searchable = [
       DateFormat('d MMM yyyy h:mm a').format(item.createdAt),
-      item.status,
-      item.errorCode ?? '',
+      status,
     ].join(' ').toLowerCase();
     return searchable.contains(query);
   }
 
-  void openItem(PrescriptionSummary item) {
-    if (item.isProcessing || item.isFailed) {
-      context.push(
-        '/processing?prescriptionId=${Uri.encodeComponent(item.id)}',
-      );
-    } else {
-      context.push('/result?prescriptionId=${Uri.encodeComponent(item.id)}');
-    }
+  void openItem(ExtractedPrescription item) {
+    context.push('/result?prescriptionId=${Uri.encodeComponent(item.id)}');
   }
 }
 
@@ -190,23 +175,20 @@ class _FilterChip extends StatelessWidget {
 
 class _HistoryItem extends StatelessWidget {
   const _HistoryItem({required this.item, required this.onTap});
-  final PrescriptionSummary item;
+  final ExtractedPrescription item;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final label = item.isFailed
+    final failed = !item.isPrescription;
+    final label = failed
         ? 'Failed'
-        : item.isProcessing
-        ? 'Processing'
-        : item.needsReview
+        : item.needsManualReview
         ? 'Review'
         : 'Clear';
-    final color = item.isFailed
+    final color = failed
         ? AppColors.danger
-        : item.isProcessing
-        ? AppColors.indigo
-        : item.needsReview
+        : item.needsManualReview
         ? const Color(0xFFA56100)
         : AppColors.success;
     return Card(
@@ -258,11 +240,9 @@ class _HistoryItem extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      item.isFailed
-                          ? 'Tap to retry'
-                          : item.isProcessing
-                          ? 'AI processing in progress'
-                          : '${item.medicineCount} medicines extracted',
+                      !item.isPrescription
+                          ? 'Not recognized as a prescription'
+                          : '${item.medicines.length} medicines extracted',
                       style: const TextStyle(
                         color: AppColors.muted,
                         fontSize: 12,
@@ -319,19 +299,6 @@ class _EmptyHistory extends StatelessWidget {
           ),
         ],
       ),
-    ),
-  );
-}
-
-class _HistoryError extends StatelessWidget {
-  const _HistoryError({required this.onRetry});
-  final VoidCallback onRetry;
-  @override
-  Widget build(BuildContext context) => Card(
-    child: ListTile(
-      leading: const Icon(Icons.error_outline, color: AppColors.danger),
-      title: const Text('History could not be loaded.'),
-      trailing: IconButton(onPressed: onRetry, icon: const Icon(Icons.refresh)),
     ),
   );
 }

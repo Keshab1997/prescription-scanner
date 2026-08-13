@@ -1,0 +1,162 @@
+/// Local, Supabase-free representation of an extracted prescription.
+///
+/// Field names intentionally mirror the previous Supabase-backed
+/// `PrescriptionDetail` / `MedicineItem` so the existing result-screen UI
+/// widgets can be reused with minimal changes.
+class ExtractedPrescription {
+  const ExtractedPrescription({
+    required this.id,
+    required this.overallConfidence,
+    required this.needsManualReview,
+    required this.isPrescription,
+    required this.medicines,
+    required this.warnings,
+    required this.tests,
+    required this.followUp,
+    required this.createdAt,
+    this.imageDeleted = false,
+    this.model,
+  });
+
+  factory ExtractedPrescription.fromJson(Map<String, dynamic> json) {
+    final medicines = (json['medicines'] as List?)
+            ?.whereType<Map>()
+            .map((row) => Medicine.fromJson(Map<String, dynamic>.from(row)))
+            .toList() ??
+        <Medicine>[];
+    return ExtractedPrescription(
+      id: json['id']?.toString() ?? '',
+      overallConfidence:
+          (json['overall_confidence'] is num ? json['overall_confidence'] : 0)
+              .toDouble(),
+      needsManualReview: json['needs_manual_review'] == true,
+      isPrescription: json['is_prescription'] != false,
+      medicines: medicines,
+      warnings: _stringList(json['warnings']),
+      tests: _stringList(json['tests']),
+      followUp: _nullable(json['follow_up']?.toString()),
+      createdAt: DateTime.tryParse(json['created_at']?.toString() ?? '') ??
+          DateTime.now(),
+      imageDeleted: json['image_deleted'] == true,
+      model: _nullable(json['model']?.toString()),
+    );
+  }
+
+  final String id;
+  final double overallConfidence;
+  final bool needsManualReview;
+  final bool isPrescription;
+  final List<Medicine> medicines;
+  final List<String> warnings;
+  final List<String> tests;
+  final String? followUp;
+  final DateTime createdAt;
+  final bool imageDeleted;
+  final String? model;
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'overall_confidence': overallConfidence,
+        'needs_manual_review': needsManualReview,
+        'is_prescription': isPrescription,
+        'medicines': medicines.map((m) => m.toJson()).toList(),
+        'warnings': warnings,
+        'tests': tests,
+        'follow_up': followUp,
+        'created_at': createdAt.toIso8601String(),
+        'image_deleted': imageDeleted,
+        'model': model,
+      };
+
+  ExtractedPrescription copyWith({
+    String? id,
+    double? overallConfidence,
+    bool? needsManualReview,
+    bool? isPrescription,
+    List<Medicine>? medicines,
+    List<String>? warnings,
+    List<String>? tests,
+    String? followUp,
+    bool? imageDeleted,
+    String? model,
+  }) =>
+      ExtractedPrescription(
+        id: id ?? this.id,
+        overallConfidence: overallConfidence ?? this.overallConfidence,
+        needsManualReview: needsManualReview ?? this.needsManualReview,
+        isPrescription: isPrescription ?? this.isPrescription,
+        medicines: medicines ?? this.medicines,
+        warnings: warnings ?? this.warnings,
+        tests: tests ?? this.tests,
+        followUp: followUp ?? this.followUp,
+        createdAt: createdAt,
+        imageDeleted: imageDeleted ?? this.imageDeleted,
+        model: model ?? this.model,
+      );
+}
+
+class Medicine {
+  const Medicine({
+    required this.name,
+    this.normalizedName,
+    this.strength,
+    this.dosage,
+    this.frequency,
+    this.route,
+    this.duration,
+    this.instructions,
+    required this.confidence,
+    required this.needsReview,
+    this.position = 0,
+  });
+
+  factory Medicine.fromJson(Map<String, dynamic> json) => Medicine(
+        name: json['name']?.toString() ?? 'Unclear medicine',
+        normalizedName: _nullable(json['normalized_name']?.toString()),
+        strength: _nullable(json['strength']?.toString()),
+        dosage: _nullable(json['dosage']?.toString()),
+        frequency: _nullable(json['frequency']?.toString()),
+        route: _nullable(json['route']?.toString()),
+        duration: _nullable(json['duration']?.toString()),
+        instructions: _nullable(json['instructions']?.toString()),
+        confidence:
+            (json['confidence'] is num ? json['confidence'] : 0).toDouble(),
+        needsReview: json['needs_review'] == true,
+        position: json['position'] is int ? json['position'] as int : 0,
+      );
+
+  final String name;
+  final String? normalizedName;
+  final String? strength;
+  final String? dosage;
+  final String? frequency;
+  final String? route;
+  final String? duration;
+  final String? instructions;
+  final double confidence;
+  final bool needsReview;
+  final int position;
+
+  Map<String, dynamic> toJson() => {
+        'name': name,
+        'normalized_name': normalizedName,
+        'strength': strength,
+        'dosage': dosage,
+        'frequency': frequency,
+        'route': route,
+        'duration': duration,
+        'instructions': instructions,
+        'confidence': confidence,
+        'needs_review': needsReview,
+        'position': position,
+      };
+}
+
+List<String> _stringList(Object? value) => value is List
+    ? value.map((e) => e.toString().trim()).where((e) => e.isNotEmpty).toList()
+    : const <String>[];
+
+String? _nullable(String? value) {
+  final cleaned = value?.trim();
+  return cleaned == null || cleaned.isEmpty ? null : cleaned;
+}
