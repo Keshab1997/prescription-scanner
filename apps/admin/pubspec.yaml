@@ -10,7 +10,15 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  supabase_flutter: ^2.17.1
+  firebase_core: ^3.6.0
+  firebase_auth: ^5.3.0
+  cloud_firestore: ^5.4.0
+  hive_flutter: ^1.1.0
+  # Reused from mobile app: Firestore-backed admin API key pool (Gemini keys).
+  admin_api_key_manager:
+    git:
+      url: https://github.com/Keshab1997/admin_api_key_manager
+      ref: master
 
 dev_dependencies:
   flutter_test:
