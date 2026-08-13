@@ -38,9 +38,9 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'REPLACE_WITH_YOUR_WEB_API_KEY',
-    appId: 'REPLACE_WITH_YOUR_WEB_APP_ID',
-    messagingSenderId: 'REPLACE_WITH_YOUR_SENDER_ID',
+    apiKey: 'AIzaSyC4evztyQ4frzTXvK64VjzQm0vZe779b5s',
+    appId: '1:780785545429:web:b80e9b349267bedb4eb25c',
+    messagingSenderId: '780785545429',
     projectId: 'prescription-scanner-admin',
     authDomain: 'prescription-scanner-admin.firebaseapp.com',
     storageBucket: 'prescription-scanner-admin.firebasestorage.app',
