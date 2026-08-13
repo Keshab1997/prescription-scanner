@@ -42,9 +42,9 @@ class ResultScreen extends ConsumerWidget {
       if (context.mounted) context.go('/history');
     } on RepositoryException catch (error) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.message)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.message)));
     }
   }
 
@@ -81,13 +81,26 @@ class ResultScreen extends ConsumerWidget {
                 initialValue: category,
                 decoration: const InputDecoration(labelText: 'Issue type'),
                 items: const [
-                  DropdownMenuItem(value: 'incorrect_name', child: Text('Medicine name is incorrect')),
-                  DropdownMenuItem(value: 'incorrect_details', child: Text('Dose or instruction is incorrect')),
-                  DropdownMenuItem(value: 'missing_medicine', child: Text('A medicine is missing')),
-                  DropdownMenuItem(value: 'not_prescription', child: Text('This was not a prescription')),
+                  DropdownMenuItem(
+                    value: 'incorrect_name',
+                    child: Text('Medicine name is incorrect'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'incorrect_details',
+                    child: Text('Dose or instruction is incorrect'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'missing_medicine',
+                    child: Text('A medicine is missing'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'not_prescription',
+                    child: Text('This was not a prescription'),
+                  ),
                   DropdownMenuItem(value: 'other', child: Text('Other issue')),
                 ],
-                onChanged: (value) => setModalState(() => category = value ?? category),
+                onChanged: (value) =>
+                    setModalState(() => category = value ?? category),
               ),
               const SizedBox(height: 12),
               TextField(
@@ -120,7 +133,9 @@ class ResultScreen extends ConsumerWidget {
         );
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Thank you. Your report was submitted.')),
+            const SnackBar(
+              content: Text('Thank you. Your report was submitted.'),
+            ),
           );
         }
       } catch (_) {
@@ -142,12 +157,12 @@ class ResultScreen extends ConsumerWidget {
 
     final asyncDetails = ref.watch(prescriptionDetailProvider(prescriptionId));
     return asyncDetails.when(
-      loading: () => const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      ),
-      error: (_, __) => _ResultError(
+      loading: () =>
+          const Scaffold(body: Center(child: CircularProgressIndicator())),
+      error: (_, _) => _ResultError(
         message: 'The result could not be loaded.',
-        onRetry: () => ref.invalidate(prescriptionDetailProvider(prescriptionId)),
+        onRetry: () =>
+            ref.invalidate(prescriptionDetailProvider(prescriptionId)),
       ),
       data: (details) => Scaffold(
         appBar: AppBar(
@@ -196,13 +211,15 @@ class ResultScreen extends ConsumerWidget {
                 const _EmptyResult(
                   icon: Icons.image_not_supported_outlined,
                   title: 'Not recognized as a prescription',
-                  message: 'No medicine details were created. Try a clearer prescription image.',
+                  message:
+                      'No medicine details were created. Try a clearer prescription image.',
                 )
               else if (details.medicines.isEmpty)
                 const _EmptyResult(
                   icon: Icons.visibility_off_outlined,
                   title: 'No medicines could be read',
-                  message: 'The app did not guess unclear handwriting. Try a brighter, closer image.',
+                  message:
+                      'The app did not guess unclear handwriting. Try a brighter, closer image.',
                 )
               else ...[
                 Text(
@@ -236,7 +253,11 @@ class ResultScreen extends ConsumerWidget {
               const Text(
                 'Prescription Scanner does not diagnose, treat, cure or prevent any medical condition. Always consult a qualified healthcare professional.',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: AppColors.muted, fontSize: 11, height: 1.45),
+                style: TextStyle(
+                  color: AppColors.muted,
+                  fontSize: 11,
+                  height: 1.45,
+                ),
               ),
             ],
           ),
@@ -256,8 +277,8 @@ class _QualityHeader extends StatelessWidget {
     final label = !details.isPrescription
         ? 'Not recognized'
         : details.needsManualReview
-            ? 'Needs review'
-            : 'Clear result';
+        ? 'Needs review'
+        : 'Clear result';
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
@@ -290,7 +311,9 @@ class _QualityHeader extends StatelessWidget {
                 CircularProgressIndicator(
                   value: details.overallConfidence,
                   strokeWidth: 6,
-                  color: details.needsManualReview ? AppColors.amber : AppColors.teal,
+                  color: details.needsManualReview
+                      ? AppColors.amber
+                      : AppColors.teal,
                   backgroundColor: Colors.white70,
                 ),
                 Text(
@@ -332,13 +355,17 @@ class _MedicineCard extends StatelessWidget {
           height: 38,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: medicine.needsReview ? AppColors.amberSoft : AppColors.tealSoft,
+            color: medicine.needsReview
+                ? AppColors.amberSoft
+                : AppColors.tealSoft,
             borderRadius: BorderRadius.circular(11),
           ),
           child: Text(
             medicine.position.toString().padLeft(2, '0'),
             style: TextStyle(
-              color: medicine.needsReview ? const Color(0xFFA56100) : AppColors.teal,
+              color: medicine.needsReview
+                  ? const Color(0xFFA56100)
+                  : AppColors.teal,
               fontWeight: FontWeight.w900,
             ),
           ),
@@ -348,14 +375,22 @@ class _MedicineCard extends StatelessWidget {
           style: const TextStyle(fontWeight: FontWeight.w900),
         ),
         subtitle: Text(
-          [medicine.strength, medicine.frequency].whereType<String>().join(' · ').isEmpty
+          [
+                medicine.strength,
+                medicine.frequency,
+              ].whereType<String>().join(' · ').isEmpty
               ? 'Tap to view visible details'
-              : [medicine.strength, medicine.frequency].whereType<String>().join(' · '),
+              : [
+                  medicine.strength,
+                  medicine.frequency,
+                ].whereType<String>().join(' · '),
         ),
         trailing: Text(
           '$confidence%',
           style: TextStyle(
-            color: medicine.needsReview ? const Color(0xFFA56100) : AppColors.success,
+            color: medicine.needsReview
+                ? const Color(0xFFA56100)
+                : AppColors.success,
             fontWeight: FontWeight.w900,
           ),
         ),
@@ -382,7 +417,10 @@ class _MedicineCard extends StatelessWidget {
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             children: details
-                .map((item) => _Datum(label: item.$1, value: item.$2 ?? 'Not visible'))
+                .map(
+                  (item) =>
+                      _Datum(label: item.$1, value: item.$2 ?? 'Not visible'),
+                )
                 .toList(),
           ),
         ],
@@ -407,7 +445,10 @@ class _Datum extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: const TextStyle(color: AppColors.muted, fontSize: 10)),
+          Text(
+            label,
+            style: const TextStyle(color: AppColors.muted, fontSize: 10),
+          ),
           const SizedBox(height: 3),
           Text(
             value,
@@ -425,50 +466,50 @@ class _MedicalWarning extends StatelessWidget {
   const _MedicalWarning();
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.all(13),
-        decoration: BoxDecoration(
-          color: AppColors.amberSoft,
-          borderRadius: BorderRadius.circular(15),
-          border: Border.all(color: const Color(0xFFF2D9A2)),
+    padding: const EdgeInsets.all(13),
+    decoration: BoxDecoration(
+      color: AppColors.amberSoft,
+      borderRadius: BorderRadius.circular(15),
+      border: Border.all(color: const Color(0xFFF2D9A2)),
+    ),
+    child: const Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(Icons.warning_amber_rounded, color: AppColors.amber),
+        SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            'Verify before use. This is an AI transcription, not medical advice.',
+            style: TextStyle(color: Color(0xFF805511), height: 1.4),
+          ),
         ),
-        child: const Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(Icons.warning_amber_rounded, color: AppColors.amber),
-            SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                'Verify before use. This is an AI transcription, not medical advice.',
-                style: TextStyle(color: Color(0xFF805511), height: 1.4),
-              ),
-            ),
-          ],
-        ),
-      );
+      ],
+    ),
+  );
 }
 
 class _PrivacyNotice extends StatelessWidget {
   const _PrivacyNotice();
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: AppColors.tealSoft,
-          borderRadius: BorderRadius.circular(13),
+    padding: const EdgeInsets.all(12),
+    decoration: BoxDecoration(
+      color: AppColors.tealSoft,
+      borderRadius: BorderRadius.circular(13),
+    ),
+    child: const Row(
+      children: [
+        Icon(Icons.delete_sweep_outlined, color: AppColors.teal),
+        SizedBox(width: 9),
+        Expanded(
+          child: Text(
+            'The original server image has been deleted. Only this structured result remains.',
+            style: TextStyle(color: AppColors.teal, fontSize: 12),
+          ),
         ),
-        child: const Row(
-          children: [
-            Icon(Icons.delete_sweep_outlined, color: AppColors.teal),
-            SizedBox(width: 9),
-            Expanded(
-              child: Text(
-                'The original server image has been deleted. Only this structured result remains.',
-                style: TextStyle(color: AppColors.teal, fontSize: 12),
-              ),
-            ),
-          ],
-        ),
-      );
+      ],
+    ),
+  );
 }
 
 class _WarningsCard extends StatelessWidget {
@@ -477,23 +518,29 @@ class _WarningsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Card(
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('AI review notes', style: TextStyle(fontWeight: FontWeight.w900)),
-              const SizedBox(height: 8),
-              ...warnings.map(
-                (warning) => Padding(
-                  padding: const EdgeInsets.only(bottom: 5),
-                  child: Text('• $warning', style: const TextStyle(color: AppColors.muted)),
-                ),
-              ),
-            ],
+    child: Padding(
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'AI review notes',
+            style: TextStyle(fontWeight: FontWeight.w900),
           ),
-        ),
-      );
+          const SizedBox(height: 8),
+          ...warnings.map(
+            (warning) => Padding(
+              padding: const EdgeInsets.only(bottom: 5),
+              child: Text(
+                '• $warning',
+                style: const TextStyle(color: AppColors.muted),
+              ),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
 }
 
 class _OtherVisibleDetails extends StatelessWidget {
@@ -502,47 +549,54 @@ class _OtherVisibleDetails extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Card(
-        child: Padding(
-          padding: const EdgeInsets.all(15),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('Other visible details', style: TextStyle(fontWeight: FontWeight.w900)),
-              if (details.tests.isNotEmpty) ...[
-                const SizedBox(height: 10),
-                Text('Tests: ${details.tests.join(', ')}'),
-              ],
-              if (details.followUp != null) ...[
-                const SizedBox(height: 8),
-                Text('Follow-up: ${details.followUp}'),
-              ],
-            ],
+    child: Padding(
+      padding: const EdgeInsets.all(15),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Other visible details',
+            style: TextStyle(fontWeight: FontWeight.w900),
           ),
-        ),
-      );
+          if (details.tests.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Text('Tests: ${details.tests.join(', ')}'),
+          ],
+          if (details.followUp != null) ...[
+            const SizedBox(height: 8),
+            Text('Follow-up: ${details.followUp}'),
+          ],
+        ],
+      ),
+    ),
+  );
 }
 
 class _EmptyResult extends StatelessWidget {
-  const _EmptyResult({required this.icon, required this.title, required this.message});
+  const _EmptyResult({
+    required this.icon,
+    required this.title,
+    required this.message,
+  });
   final IconData icon;
   final String title;
   final String message;
 
   @override
   Widget build(BuildContext context) => Card(
-        child: Padding(
-          padding: const EdgeInsets.all(22),
-          child: Column(
-            children: [
-              Icon(icon, color: AppColors.muted, size: 42),
-              const SizedBox(height: 10),
-              Text(title, style: const TextStyle(fontWeight: FontWeight.w900)),
-              const SizedBox(height: 5),
-              Text(message, textAlign: TextAlign.center),
-            ],
-          ),
-        ),
-      );
+    child: Padding(
+      padding: const EdgeInsets.all(22),
+      child: Column(
+        children: [
+          Icon(icon, color: AppColors.muted, size: 42),
+          const SizedBox(height: 10),
+          Text(title, style: const TextStyle(fontWeight: FontWeight.w900)),
+          const SizedBox(height: 5),
+          Text(message, textAlign: TextAlign.center),
+        ],
+      ),
+    ),
+  );
 }
 
 class _ResultError extends StatelessWidget {
@@ -552,23 +606,27 @@ class _ResultError extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('Extraction result')),
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.error_outline_rounded, color: AppColors.danger, size: 48),
-                const SizedBox(height: 12),
-                Text(message, textAlign: TextAlign.center),
-                if (onRetry != null) ...[
-                  const SizedBox(height: 16),
-                  FilledButton(onPressed: onRetry, child: const Text('Try again')),
-                ],
-              ],
+    appBar: AppBar(title: const Text('Extraction result')),
+    body: Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.error_outline_rounded,
+              color: AppColors.danger,
+              size: 48,
             ),
-          ),
+            const SizedBox(height: 12),
+            Text(message, textAlign: TextAlign.center),
+            if (onRetry != null) ...[
+              const SizedBox(height: 16),
+              FilledButton(onPressed: onRetry, child: const Text('Try again')),
+            ],
+          ],
         ),
-      );
+      ),
+    ),
+  );
 }

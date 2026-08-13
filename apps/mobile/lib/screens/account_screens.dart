@@ -42,7 +42,9 @@ class ProfileScreen extends ConsumerWidget {
     } catch (_) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not submit the request. Try again.')),
+        const SnackBar(
+          content: Text('Could not submit the request. Try again.'),
+        ),
       );
     }
   }
@@ -52,9 +54,10 @@ class ProfileScreen extends ConsumerWidget {
     final service = ref.watch(authServiceProvider);
     final user = service?.currentUser;
     final displayName =
-        user?.userMetadata?['display_name']?.toString().trim().isNotEmpty == true
-            ? user!.userMetadata!['display_name'].toString()
-            : 'Prescription Scanner User';
+        user?.userMetadata?['display_name']?.toString().trim().isNotEmpty ==
+            true
+        ? user!.userMetadata!['display_name'].toString()
+        : 'Prescription Scanner User';
     final email = user?.email ?? 'Not signed in';
     final initials = displayName
         .split(RegExp(r'\s+'))
@@ -108,7 +111,10 @@ class ProfileScreen extends ConsumerWidget {
                       Text(
                         '$email · Free plan',
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(color: Colors.white70, fontSize: 12),
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 12,
+                        ),
                       ),
                     ],
                   ),

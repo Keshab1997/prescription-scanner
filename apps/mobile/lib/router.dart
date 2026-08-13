@@ -14,7 +14,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     refreshListenable: authNotifier,
     redirect: (context, state) {
       final path = state.uri.path;
-      final isAuthRoute = path == '/login' ||
+      final isAuthRoute =
+          path == '/login' ||
           path == '/register' ||
           path == '/forgot-password' ||
           path == '/reset-password';
@@ -31,34 +32,34 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final signedIn = session != null && !session.isExpired;
       if (!signedIn && !isAuthRoute) return '/login';
       if (signedIn &&
-          (path == '/login' || path == '/register' || path == '/forgot-password')) {
+          (path == '/login' ||
+              path == '/register' ||
+              path == '/forgot-password')) {
         return '/home';
       }
       return null;
     },
     routes: [
-      GoRoute(path: '/login', builder: (_, __) => const LoginScreen()),
-      GoRoute(path: '/register', builder: (_, __) => const RegisterScreen()),
+      GoRoute(path: '/login', builder: (_, _) => const LoginScreen()),
+      GoRoute(path: '/register', builder: (_, _) => const RegisterScreen()),
       GoRoute(
         path: '/forgot-password',
-        builder: (_, __) => const ForgotPasswordScreen(),
+        builder: (_, _) => const ForgotPasswordScreen(),
       ),
       GoRoute(
         path: '/reset-password',
-        builder: (_, __) => const ResetPasswordScreen(),
+        builder: (_, _) => const ResetPasswordScreen(),
       ),
       ShellRoute(
-        builder: (_, state, child) => AppShell(
-          currentPath: state.uri.path,
-          child: child,
-        ),
+        builder: (_, state, child) =>
+            AppShell(currentPath: state.uri.path, child: child),
         routes: [
-          GoRoute(path: '/home', builder: (_, __) => const HomeScreen()),
-          GoRoute(path: '/history', builder: (_, __) => const HistoryScreen()),
-          GoRoute(path: '/profile', builder: (_, __) => const ProfileScreen()),
+          GoRoute(path: '/home', builder: (_, _) => const HomeScreen()),
+          GoRoute(path: '/history', builder: (_, _) => const HistoryScreen()),
+          GoRoute(path: '/profile', builder: (_, _) => const ProfileScreen()),
         ],
       ),
-      GoRoute(path: '/upload', builder: (_, __) => const UploadScreen()),
+      GoRoute(path: '/upload', builder: (_, _) => const UploadScreen()),
       GoRoute(
         path: '/processing',
         builder: (_, state) => ProcessingScreen(

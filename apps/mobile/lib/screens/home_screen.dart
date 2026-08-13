@@ -13,7 +13,8 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(authServiceProvider)?.currentUser;
     final displayName = user?.userMetadata?['display_name']?.toString().trim();
-    final nameParts = displayName
+    final nameParts =
+        displayName
             ?.split(RegExp(r'\s+'))
             .where((part) => part.isNotEmpty)
             .toList() ??
@@ -44,7 +45,9 @@ class HomeScreen extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          firstName == null ? 'Good to see you' : 'Good to see you, $firstName',
+                          firstName == null
+                              ? 'Good to see you'
+                              : 'Good to see you, $firstName',
                           style: const TextStyle(color: AppColors.muted),
                         ),
                         Text(
@@ -81,7 +84,7 @@ class HomeScreen extends ConsumerWidget {
               const SizedBox(height: 10),
               quota.when(
                 loading: () => const _LoadingCard(height: 78),
-                error: (_, __) => _InlineError(
+                error: (_, _) => _InlineError(
                   message: 'Could not load scan limits.',
                   onRetry: () => ref.invalidate(quotaProvider),
                 ),
@@ -104,7 +107,7 @@ class HomeScreen extends ConsumerWidget {
                     _LoadingCard(height: 78),
                   ],
                 ),
-                error: (_, __) => _InlineError(
+                error: (_, _) => _InlineError(
                   message: 'Could not load recent prescriptions.',
                   onRetry: () => ref.invalidate(recentPrescriptionsProvider),
                 ),
@@ -152,7 +155,9 @@ class HomeScreen extends ConsumerWidget {
 
   void _openPrescription(BuildContext context, PrescriptionSummary item) {
     if (item.isProcessing || item.isFailed) {
-      context.push('/processing?prescriptionId=${Uri.encodeComponent(item.id)}');
+      context.push(
+        '/processing?prescriptionId=${Uri.encodeComponent(item.id)}',
+      );
     } else {
       context.push('/result?prescriptionId=${Uri.encodeComponent(item.id)}');
     }
@@ -175,76 +180,76 @@ class _ScanHero extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.all(22),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [AppColors.teal, AppColors.indigo],
+    padding: const EdgeInsets.all(22),
+    decoration: BoxDecoration(
+      gradient: const LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [AppColors.teal, AppColors.indigo],
+      ),
+      borderRadius: BorderRadius.circular(24),
+      boxShadow: const [
+        BoxShadow(
+          color: Color(0x334F46E5),
+          blurRadius: 30,
+          offset: Offset(0, 16),
+        ),
+      ],
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: .14),
+            borderRadius: BorderRadius.circular(30),
+            border: Border.all(color: Colors.white24),
           ),
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x334F46E5),
-              blurRadius: 30,
-              offset: Offset(0, 16),
-            ),
-          ],
+          child: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.auto_awesome, color: Colors.white, size: 15),
+              SizedBox(width: 6),
+              Text(
+                'Gemini-powered transcription',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: .14),
-                borderRadius: BorderRadius.circular(30),
-                border: Border.all(color: Colors.white24),
-              ),
-              child: const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.auto_awesome, color: Colors.white, size: 15),
-                  SizedBox(width: 6),
-                  Text(
-                    'Gemini-powered transcription',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
-            const Text(
-              'Turn a prescription\ninto a clear list.',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 25,
-                height: 1.1,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-            const SizedBox(height: 10),
-            const Text(
-              'Only visible details are transcribed. Anything unclear is marked for review.',
-              style: TextStyle(color: Colors.white70, height: 1.45),
-            ),
-            const SizedBox(height: 20),
-            FilledButton.icon(
-              onPressed: onTap,
-              style: FilledButton.styleFrom(
-                backgroundColor: Colors.white,
-                foregroundColor: AppColors.teal,
-              ),
-              icon: const Icon(Icons.document_scanner_outlined),
-              label: const Text('Scan prescription'),
-            ),
-          ],
+        const SizedBox(height: 20),
+        const Text(
+          'Turn a prescription\ninto a clear list.',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 25,
+            height: 1.1,
+            fontWeight: FontWeight.w900,
+          ),
         ),
-      );
+        const SizedBox(height: 10),
+        const Text(
+          'Only visible details are transcribed. Anything unclear is marked for review.',
+          style: TextStyle(color: Colors.white70, height: 1.45),
+        ),
+        const SizedBox(height: 20),
+        FilledButton.icon(
+          onPressed: onTap,
+          style: FilledButton.styleFrom(
+            backgroundColor: Colors.white,
+            foregroundColor: AppColors.teal,
+          ),
+          icon: const Icon(Icons.document_scanner_outlined),
+          label: const Text('Scan prescription'),
+        ),
+      ],
+    ),
+  );
 }
 
 class _QuotaCard extends StatelessWidget {
@@ -289,12 +294,19 @@ class _QuotaCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    unavailable ? 'AI temporarily unavailable' : '${quota.remaining} scans remaining',
+                    unavailable
+                        ? 'AI temporarily unavailable'
+                        : '${quota.remaining} scans remaining',
                     style: const TextStyle(fontWeight: FontWeight.w800),
                   ),
                   Text(
-                    unavailable ? 'Please try again later' : '${quota.used} used today · resets daily',
-                    style: const TextStyle(color: AppColors.muted, fontSize: 12),
+                    unavailable
+                        ? 'Please try again later'
+                        : '${quota.used} used today · resets daily',
+                    style: const TextStyle(
+                      color: AppColors.muted,
+                      fontSize: 12,
+                    ),
                   ),
                 ],
               ),
@@ -302,7 +314,11 @@ class _QuotaCard extends StatelessWidget {
             if (!unavailable)
               TextButton.icon(
                 onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Rewarded ads arrive in the monetization phase.')),
+                  const SnackBar(
+                    content: Text(
+                      'Rewarded ads arrive in the monetization phase.',
+                    ),
+                  ),
                 ),
                 icon: const Icon(Icons.play_circle_outline, size: 18),
                 label: const Text('+1'),
@@ -324,17 +340,17 @@ class _RecentPrescription extends StatelessWidget {
     final status = item.isFailed
         ? 'Failed'
         : item.isProcessing
-            ? 'Processing'
-            : item.needsReview
-                ? 'Review'
-                : 'Clear';
+        ? 'Processing'
+        : item.needsReview
+        ? 'Review'
+        : 'Clear';
     final statusColor = item.isFailed
         ? AppColors.danger
         : item.isProcessing
-            ? AppColors.indigo
-            : item.needsReview
-                ? const Color(0xFFA56100)
-                : AppColors.success;
+        ? AppColors.indigo
+        : item.needsReview
+        ? const Color(0xFFA56100)
+        : AppColors.success;
     return Card(
       child: InkWell(
         onTap: onTap,
@@ -352,7 +368,10 @@ class _RecentPrescription extends StatelessWidget {
                   ),
                   borderRadius: BorderRadius.circular(13),
                 ),
-                child: const Icon(Icons.description_outlined, color: AppColors.teal),
+                child: const Icon(
+                  Icons.description_outlined,
+                  color: AppColors.teal,
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -367,7 +386,10 @@ class _RecentPrescription extends StatelessWidget {
                       item.isFailed
                           ? 'Tap to retry processing'
                           : '${item.medicineCount} medicines extracted',
-                      style: const TextStyle(color: AppColors.muted, fontSize: 12),
+                      style: const TextStyle(
+                        color: AppColors.muted,
+                        fontSize: 12,
+                      ),
                     ),
                   ],
                 ),
@@ -402,20 +424,20 @@ class _SectionTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Row(
-        children: [
-          Expanded(
-            child: Text(
-              title,
-              style: const TextStyle(
-                color: AppColors.ink,
-                fontSize: 16,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
+    children: [
+      Expanded(
+        child: Text(
+          title,
+          style: const TextStyle(
+            color: AppColors.ink,
+            fontSize: 16,
+            fontWeight: FontWeight.w800,
           ),
-          if (action != null) action!,
-        ],
-      );
+        ),
+      ),
+      ?action,
+    ],
+  );
 }
 
 class _LoadingCard extends StatelessWidget {
@@ -424,13 +446,13 @@ class _LoadingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        height: height,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: AppColors.line),
-        ),
-      );
+    height: height,
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(18),
+      border: Border.all(color: AppColors.line),
+    ),
+  );
 }
 
 class _InlineError extends StatelessWidget {
@@ -440,12 +462,12 @@ class _InlineError extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Card(
-        child: ListTile(
-          leading: const Icon(Icons.error_outline, color: AppColors.danger),
-          title: Text(message),
-          trailing: IconButton(onPressed: onRetry, icon: const Icon(Icons.refresh)),
-        ),
-      );
+    child: ListTile(
+      leading: const Icon(Icons.error_outline, color: AppColors.danger),
+      title: Text(message),
+      trailing: IconButton(onPressed: onRetry, icon: const Icon(Icons.refresh)),
+    ),
+  );
 }
 
 class _EmptyRecent extends StatelessWidget {
@@ -453,22 +475,29 @@ class _EmptyRecent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Card(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            children: [
-              const Icon(Icons.description_outlined, color: AppColors.muted, size: 36),
-              const SizedBox(height: 8),
-              const Text('No prescriptions yet', style: TextStyle(fontWeight: FontWeight.w900)),
-              const SizedBox(height: 4),
-              const Text('Your structured results will appear here.'),
-              const SizedBox(height: 10),
-              TextButton(
-                onPressed: () => context.push('/upload'),
-                child: const Text('Scan the first prescription'),
-              ),
-            ],
+    child: Padding(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        children: [
+          const Icon(
+            Icons.description_outlined,
+            color: AppColors.muted,
+            size: 36,
           ),
-        ),
-      );
+          const SizedBox(height: 8),
+          const Text(
+            'No prescriptions yet',
+            style: TextStyle(fontWeight: FontWeight.w900),
+          ),
+          const SizedBox(height: 4),
+          const Text('Your structured results will appear here.'),
+          const SizedBox(height: 10),
+          TextButton(
+            onPressed: () => context.push('/upload'),
+            child: const Text('Scan the first prescription'),
+          ),
+        ],
+      ),
+    ),
+  );
 }

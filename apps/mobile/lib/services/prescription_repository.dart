@@ -9,29 +9,46 @@ final prescriptionRepositoryProvider = Provider<PrescriptionRepository?>((ref) {
 
 final quotaProvider = FutureProvider<ScanQuota>((ref) async {
   final repository = ref.watch(prescriptionRepositoryProvider);
-  if (repository == null) throw const RepositoryException('Supabase is not configured.');
+  if (repository == null) {
+    throw const RepositoryException('Supabase is not configured.');
+  }
   return repository.loadQuota();
 });
 
-final recentPrescriptionsProvider = FutureProvider<List<PrescriptionSummary>>((ref) async {
+final recentPrescriptionsProvider = FutureProvider<List<PrescriptionSummary>>((
+  ref,
+) async {
   final repository = ref.watch(prescriptionRepositoryProvider);
-  if (repository == null) throw const RepositoryException('Supabase is not configured.');
+  if (repository == null) {
+    throw const RepositoryException('Supabase is not configured.');
+  }
   return repository.loadRecent(limit: 3);
 });
 
-final prescriptionHistoryProvider = FutureProvider<List<PrescriptionSummary>>((ref) async {
+final prescriptionHistoryProvider = FutureProvider<List<PrescriptionSummary>>((
+  ref,
+) async {
   final repository = ref.watch(prescriptionRepositoryProvider);
-  if (repository == null) throw const RepositoryException('Supabase is not configured.');
+  if (repository == null) {
+    throw const RepositoryException('Supabase is not configured.');
+  }
   return repository.loadRecent(limit: 60);
 });
 
 final prescriptionDetailProvider =
-    FutureProvider.family<PrescriptionDetail, String>((ref, prescriptionId) async {
-  final repository = ref.watch(prescriptionRepositoryProvider);
-  if (repository == null) throw const RepositoryException('Supabase is not configured.');
-  if (prescriptionId.isEmpty) throw const RepositoryException('Missing prescription ID.');
-  return repository.loadDetail(prescriptionId);
-});
+    FutureProvider.family<PrescriptionDetail, String>((
+      ref,
+      prescriptionId,
+    ) async {
+      final repository = ref.watch(prescriptionRepositoryProvider);
+      if (repository == null) {
+        throw const RepositoryException('Supabase is not configured.');
+      }
+      if (prescriptionId.isEmpty) {
+        throw const RepositoryException('Missing prescription ID.');
+      }
+      return repository.loadDetail(prescriptionId);
+    });
 
 class PrescriptionRepository {
   const PrescriptionRepository(this.client);
@@ -63,7 +80,10 @@ class PrescriptionRepository {
           .order('created_at', ascending: false)
           .limit(limit);
       return rows
-          .map((row) => PrescriptionSummary.fromJson(Map<String, dynamic>.from(row)))
+          .map(
+            (row) =>
+                PrescriptionSummary.fromJson(Map<String, dynamic>.from(row)),
+          )
           .toList();
     } catch (_) {
       throw const RepositoryException('Could not load prescription history.');
@@ -87,7 +107,9 @@ class PrescriptionRepository {
       );
       return PrescriptionDetail.fromJson(row);
     } catch (_) {
-      throw const RepositoryException('Could not load this prescription result.');
+      throw const RepositoryException(
+        'Could not load this prescription result.',
+      );
     }
   }
 
@@ -115,7 +137,9 @@ class PrescriptionRepository {
     String? details,
   }) async {
     final userId = client.auth.currentUser?.id;
-    if (userId == null) throw const RepositoryException('Please sign in again.');
+    if (userId == null) {
+      throw const RepositoryException('Please sign in again.');
+    }
     try {
       await client.from('prescription_feedback').insert({
         'user_id': userId,
@@ -140,13 +164,13 @@ class ScanQuota {
   });
 
   factory ScanQuota.fromJson(Map<String, dynamic> json) => ScanQuota(
-        dailyLimit: _asInt(json['daily_limit']),
-        used: _asInt(json['used']),
-        rewardedBonus: _asInt(json['rewarded_bonus']),
-        remaining: _asInt(json['remaining']),
-        aiEnabled: json['ai_enabled'] == true,
-        maintenanceMode: json['maintenance_mode'] == true,
-      );
+    dailyLimit: _asInt(json['daily_limit']),
+    used: _asInt(json['used']),
+    rewardedBonus: _asInt(json['rewarded_bonus']),
+    remaining: _asInt(json['remaining']),
+    aiEnabled: json['ai_enabled'] == true,
+    maintenanceMode: json['maintenance_mode'] == true,
+  );
 
   final int dailyLimit;
   final int used;
@@ -192,7 +216,8 @@ class PrescriptionSummary {
   final int medicineCount;
   final bool imageDeleted;
 
-  bool get isProcessing => status == 'uploaded' || status == 'queued' || status == 'processing';
+  bool get isProcessing =>
+      status == 'uploaded' || status == 'queued' || status == 'processing';
   bool get isFailed => status == 'failed';
   bool get needsReview => status == 'needs_review';
 }
@@ -218,19 +243,23 @@ class PrescriptionDetail {
     final nestedMedicines = json['prescription_medicines'];
     final medicines = nestedMedicines is List
         ? nestedMedicines
-            .whereType<Map>()
-            .map((row) => MedicineItem.fromJson(Map<String, dynamic>.from(row)))
-            .toList()
+              .whereType<Map>()
+              .map(
+                (row) => MedicineItem.fromJson(Map<String, dynamic>.from(row)),
+              )
+              .toList()
         : <MedicineItem>[];
     medicines.sort((a, b) => a.position.compareTo(b.position));
     final status = json['status']?.toString() ?? 'completed';
     return PrescriptionDetail(
       id: json['id']?.toString() ?? '',
       status: status,
-      overallConfidence: _asDouble(json['overall_confidence']) ??
+      overallConfidence:
+          _asDouble(json['overall_confidence']) ??
           _asDouble(result['overall_confidence']) ??
           0,
-      needsManualReview: status == 'needs_review' || result['needs_manual_review'] == true,
+      needsManualReview:
+          status == 'needs_review' || result['needs_manual_review'] == true,
       isPrescription: result['is_prescription'] != false,
       imageDeleted: json['image_deleted_at'] != null,
       createdAt: _asDate(json['created_at']),
@@ -273,19 +302,19 @@ class MedicineItem {
   });
 
   factory MedicineItem.fromJson(Map<String, dynamic> json) => MedicineItem(
-        id: json['id']?.toString() ?? '',
-        position: _asInt(json['position']),
-        name: json['raw_name']?.toString() ?? 'Unclear medicine',
-        normalizedName: _nullable(json['normalized_name']?.toString()),
-        strength: _nullable(json['strength']?.toString()),
-        dosage: _nullable(json['dosage']?.toString()),
-        frequency: _nullable(json['frequency']?.toString()),
-        route: _nullable(json['route']?.toString()),
-        duration: _nullable(json['duration']?.toString()),
-        instructions: _nullable(json['instructions']?.toString()),
-        confidence: _asDouble(json['confidence']) ?? 0,
-        needsReview: json['needs_review'] == true,
-      );
+    id: json['id']?.toString() ?? '',
+    position: _asInt(json['position']),
+    name: json['raw_name']?.toString() ?? 'Unclear medicine',
+    normalizedName: _nullable(json['normalized_name']?.toString()),
+    strength: _nullable(json['strength']?.toString()),
+    dosage: _nullable(json['dosage']?.toString()),
+    frequency: _nullable(json['frequency']?.toString()),
+    route: _nullable(json['route']?.toString()),
+    duration: _nullable(json['duration']?.toString()),
+    instructions: _nullable(json['instructions']?.toString()),
+    confidence: _asDouble(json['confidence']) ?? 0,
+    needsReview: json['needs_review'] == true,
+  );
 
   final String id;
   final int position;
@@ -332,5 +361,8 @@ String? _nullable(String? value) {
 }
 
 List<String> _stringList(Object? value) => value is List
-    ? value.map((item) => item.toString().trim()).where((item) => item.isNotEmpty).toList()
+    ? value
+          .map((item) => item.toString().trim())
+          .where((item) => item.isNotEmpty)
+          .toList()
     : const <String>[];

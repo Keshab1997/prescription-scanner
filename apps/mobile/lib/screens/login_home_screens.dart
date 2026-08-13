@@ -156,13 +156,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         child: loading
                             ? const SizedBox.square(
                                 dimension: 22,
-                                child: CircularProgressIndicator(strokeWidth: 2),
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
                               )
                             : const Text('Sign in securely'),
                       ),
                       const SizedBox(height: 12),
                       TextButton(
-                        onPressed: loading ? null : () => context.push('/register'),
+                        onPressed: loading
+                            ? null
+                            : () => context.push('/register'),
                         child: const Text('New here? Create an account'),
                       ),
                       const SizedBox(height: 18),

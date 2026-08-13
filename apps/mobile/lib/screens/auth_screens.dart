@@ -49,7 +49,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       return;
     }
     if (!accepted) {
-      setState(() => error = 'Accept the Privacy Policy and Terms to continue.');
+      setState(
+        () => error = 'Accept the Privacy Policy and Terms to continue.',
+      );
       return;
     }
     if (service == null) {
@@ -386,7 +388,10 @@ class _AuthScaffold extends StatelessWidget {
                 children: [
                   Text(title, style: Theme.of(context).textTheme.headlineSmall),
                   const SizedBox(height: 7),
-                  Text(subtitle, style: const TextStyle(color: AppColors.muted)),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(color: AppColors.muted),
+                  ),
                   const SizedBox(height: 28),
                   child,
                 ],

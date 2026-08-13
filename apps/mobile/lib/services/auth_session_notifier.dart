@@ -21,7 +21,7 @@ class AuthSessionNotifier extends ChangeNotifier {
           }
           notifyListeners();
         },
-        onError: (Object _, StackTrace __) {
+        onError: (Object _, StackTrace _) {
           // Network refresh errors are handled by the next auth retry; do not crash.
           notifyListeners();
         },

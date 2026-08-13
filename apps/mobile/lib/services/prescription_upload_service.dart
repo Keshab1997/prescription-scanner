@@ -13,8 +13,9 @@ import 'package:prescription_scanner/config.dart';
 import 'package:prescription_scanner/theme.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-final prescriptionUploadServiceProvider =
-    Provider<PrescriptionUploadService?>((ref) {
+final prescriptionUploadServiceProvider = Provider<PrescriptionUploadService?>((
+  ref,
+) {
   if (!AppConfig.hasSupabaseConfig) return null;
   return PrescriptionUploadService(Supabase.instance.client);
 });
@@ -44,7 +45,9 @@ class PrescriptionUploadService {
 
   Future<void> recordAiConsent() async {
     final userId = client.auth.currentUser?.id;
-    if (userId == null) throw const ScanUploadException('Sign in again to continue.');
+    if (userId == null) {
+      throw const ScanUploadException('Sign in again to continue.');
+    }
     await client.from('consent_records').insert({
       'user_id': userId,
       'consent_type': 'ai_processing',
@@ -68,7 +71,9 @@ class PrescriptionUploadService {
     final response = await _picker.retrieveLostData();
     if (response.isEmpty) return null;
     if (response.exception != null) {
-      throw ScanValidationException('The interrupted image could not be restored.');
+      throw ScanValidationException(
+        'The interrupted image could not be restored.',
+      );
     }
     final files = response.files;
     if (files == null || files.isEmpty) return null;
@@ -118,7 +123,9 @@ class PrescriptionUploadService {
     }
     if (bytes.length > maxImageBytes) {
       await _safeDelete(compressed.path);
-      throw ScanValidationException('The image is larger than the 10 MB limit.');
+      throw ScanValidationException(
+        'The image is larger than the 10 MB limit.',
+      );
     }
 
     final dimensions = await _readDimensions(bytes);
@@ -165,7 +172,9 @@ class PrescriptionUploadService {
         throw ScanUploadException('The upload reservation was invalid.');
       }
 
-      await client.storage.from('prescriptions').upload(
+      await client.storage
+          .from('prescriptions')
+          .upload(
             storagePath,
             File(draft.path),
             fileOptions: const FileOptions(
@@ -195,7 +204,9 @@ class PrescriptionUploadService {
         throw ScanUploadException(_friendlyDatabaseMessage(error));
       }
       if (error is StorageException) {
-        throw ScanUploadException('Secure upload failed. Check your connection and retry.');
+        throw ScanUploadException(
+          'Secure upload failed. Check your connection and retry.',
+        );
       }
       throw ScanUploadException('The prescription could not be uploaded.');
     }

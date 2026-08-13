@@ -28,7 +28,9 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => recoverInterruptedPick());
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => recoverInterruptedPick(),
+    );
   }
 
   @override
@@ -72,7 +74,10 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
       if (mounted) setState(() => error = exception.message);
     } catch (_) {
       if (mounted) {
-        setState(() => error = 'The image could not be opened. Please try another one.');
+        setState(
+          () =>
+              error = 'The image could not be opened. Please try another one.',
+        );
       }
     } finally {
       if (mounted) setState(() => preparing = false);
@@ -128,7 +133,9 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
       if (mounted) setState(() => error = exception.message);
     } catch (_) {
       if (mounted) {
-        setState(() => error = 'The secure upload could not be started. Please retry.');
+        setState(
+          () => error = 'The secure upload could not be started. Please retry.',
+        );
       }
     } finally {
       if (mounted) setState(() => uploading = false);
@@ -171,7 +178,9 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
             children: [
               Expanded(
                 child: FilledButton.icon(
-                  onPressed: busy ? null : () => selectImage(ImageSource.camera),
+                  onPressed: busy
+                      ? null
+                      : () => selectImage(ImageSource.camera),
                   icon: const Icon(Icons.camera_alt_outlined),
                   label: const Text('Take photo'),
                 ),
@@ -179,7 +188,9 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
               const SizedBox(width: 10),
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: busy ? null : () => selectImage(ImageSource.gallery),
+                  onPressed: busy
+                      ? null
+                      : () => selectImage(ImageSource.gallery),
                   icon: const Icon(Icons.photo_library_outlined),
                   label: const Text('Gallery'),
                 ),
@@ -206,12 +217,18 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.error_outline_rounded, color: AppColors.danger),
+                  const Icon(
+                    Icons.error_outline_rounded,
+                    color: AppColors.danger,
+                  ),
                   const SizedBox(width: 9),
                   Expanded(
                     child: Text(
                       error!,
-                      style: const TextStyle(color: AppColors.danger, fontSize: 12),
+                      style: const TextStyle(
+                        color: AppColors.danger,
+                        fontSize: 12,
+                      ),
                     ),
                   ),
                 ],
@@ -228,7 +245,9 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
                   : const Icon(Icons.cloud_upload_outlined),
-              label: Text(uploading ? 'Uploading securely…' : 'Continue securely'),
+              label: Text(
+                uploading ? 'Uploading securely…' : 'Continue securely',
+              ),
             ),
           ],
           const SizedBox(height: 18),
@@ -323,7 +342,11 @@ class _SelectedScanFrame extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.check_circle_rounded, color: AppColors.success, size: 18),
+            const Icon(
+              Icons.check_circle_rounded,
+              color: AppColors.success,
+              size: 18,
+            ),
             const SizedBox(width: 6),
             Text(
               '${draft.width} × ${draft.height} · ${megabytes.toStringAsFixed(1)} MB',
@@ -465,7 +488,9 @@ class _ProcessingScreenState extends ConsumerState<ProcessingScreen>
   Future<void> startProcessing() async {
     if (running) return;
     if (widget.prescriptionId.isEmpty) {
-      setState(() => error = 'The prescription ID is missing. Upload the image again.');
+      setState(
+        () => error = 'The prescription ID is missing. Upload the image again.',
+      );
       return;
     }
     final service = ref.read(prescriptionProcessingServiceProvider);
@@ -556,7 +581,7 @@ class _ProcessingScreenState extends ConsumerState<ProcessingScreen>
                       const _ProcessingPaper(),
                       AnimatedBuilder(
                         animation: controller,
-                        builder: (_, __) => Positioned(
+                        builder: (_, _) => Positioned(
                           top: 49 + (112 * controller.value),
                           left: 43,
                           right: 43,
@@ -580,7 +605,9 @@ class _ProcessingScreenState extends ConsumerState<ProcessingScreen>
                 ),
               ),
               Text(
-                error == null ? 'Finding visible details…' : 'Processing paused',
+                error == null
+                    ? 'Finding visible details…'
+                    : 'Processing paused',
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.titleLarge,
               ),
@@ -601,15 +628,32 @@ class _ProcessingScreenState extends ConsumerState<ProcessingScreen>
                   padding: const EdgeInsets.all(14),
                   child: Column(
                     children: [
-                      const _Step('Secure upload', 'Private image received', true, true),
-                      const _Step('Quality check', 'Image limits validated', true, true),
+                      const _Step(
+                        'Secure upload',
+                        'Private image received',
+                        true,
+                        true,
+                      ),
+                      const _Step(
+                        'Quality check',
+                        'Image limits validated',
+                        true,
+                        true,
+                      ),
                       _Step(
                         'Gemini extraction',
-                        running ? 'Reading visible medicine details' : 'Waiting to retry',
+                        running
+                            ? 'Reading visible medicine details'
+                            : 'Waiting to retry',
                         running,
                         false,
                       ),
-                      const _Step('Safety validation', 'Schema and confidence checks', false, false),
+                      const _Step(
+                        'Safety validation',
+                        'Schema and confidence checks',
+                        false,
+                        false,
+                      ),
                     ],
                   ),
                 ),
@@ -702,8 +746,8 @@ class _Step extends StatelessWidget {
               color: done
                   ? const Color(0xFFE4F7EC)
                   : active
-                      ? AppColors.teal
-                      : const Color(0xFFE9EEF1),
+                  ? AppColors.teal
+                  : const Color(0xFFE9EEF1),
               shape: BoxShape.circle,
             ),
             child: Icon(
@@ -711,8 +755,8 @@ class _Step extends StatelessWidget {
               color: done
                   ? AppColors.success
                   : active
-                      ? Colors.white
-                      : AppColors.muted,
+                  ? Colors.white
+                  : AppColors.muted,
               size: 17,
             ),
           ),

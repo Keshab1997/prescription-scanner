@@ -4,9 +4,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 final prescriptionProcessingServiceProvider =
     Provider<PrescriptionProcessingService?>((ref) {
-  if (!AppConfig.hasSupabaseConfig) return null;
-  return PrescriptionProcessingService(Supabase.instance.client);
-});
+      if (!AppConfig.hasSupabaseConfig) return null;
+      return PrescriptionProcessingService(Supabase.instance.client);
+    });
 
 class PrescriptionProcessingService {
   const PrescriptionProcessingService(this.client);
