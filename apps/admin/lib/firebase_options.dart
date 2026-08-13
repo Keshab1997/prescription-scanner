@@ -41,32 +41,32 @@ class DefaultFirebaseOptions {
     apiKey: 'REPLACE_WITH_YOUR_WEB_API_KEY',
     appId: 'REPLACE_WITH_YOUR_WEB_APP_ID',
     messagingSenderId: 'REPLACE_WITH_YOUR_SENDER_ID',
-    projectId: 'REPLACE_WITH_YOUR_PROJECT_ID',
-    authDomain: 'REPLACE_WITH_YOUR_PROJECT_ID.firebaseapp.com',
-    storageBucket: 'REPLACE_WITH_YOUR_BUCKET',
+    projectId: 'prescription-scanner-admin',
+    authDomain: 'prescription-scanner-admin.firebaseapp.com',
+    storageBucket: 'prescription-scanner-admin.firebasestorage.app',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'REPLACE_WITH_YOUR_ANDROID_API_KEY',
     appId: 'REPLACE_WITH_YOUR_ANDROID_APP_ID',
     messagingSenderId: 'REPLACE_WITH_YOUR_SENDER_ID',
-    projectId: 'REPLACE_WITH_YOUR_PROJECT_ID',
-    storageBucket: 'REPLACE_WITH_YOUR_BUCKET',
+    projectId: 'prescription-scanner-admin',
+    storageBucket: 'prescription-scanner-admin.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'REPLACE_WITH_YOUR_IOS_API_KEY',
     appId: 'REPLACE_WITH_YOUR_IOS_APP_ID',
     messagingSenderId: 'REPLACE_WITH_YOUR_SENDER_ID',
-    projectId: 'REPLACE_WITH_YOUR_PROJECT_ID',
-    storageBucket: 'REPLACE_WITH_YOUR_BUCKET',
+    projectId: 'prescription-scanner-admin',
+    storageBucket: 'prescription-scanner-admin.firebasestorage.app',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
     apiKey: 'REPLACE_WITH_YOUR_MACOS_API_KEY',
     appId: 'REPLACE_WITH_YOUR_MACOS_APP_ID',
     messagingSenderId: 'REPLACE_WITH_YOUR_SENDER_ID',
-    projectId: 'REPLACE_WITH_YOUR_PROJECT_ID',
-    storageBucket: 'REPLACE_WITH_YOUR_BUCKET',
+    projectId: 'prescription-scanner-admin',
+    storageBucket: 'prescription-scanner-admin.firebasestorage.app',
   );
 }
