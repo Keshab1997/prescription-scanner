@@ -18,17 +18,21 @@ supabase          Migrations and Edge Functions (Phase 3)
 docs              Product and implementation notes
 ```
 
-## Bootstrap Android files
+## Run the Android app
 
-The hosted workspace does not contain Flutter SDK. Generate platform files with the stable SDK installed on the development computer:
+Android platform files are tracked with the final package ID. On a development computer with stable Flutter 3.38.4 or newer:
 
 ```bash
-./scripts/bootstrap_flutter_android.sh
 cd apps/mobile
-flutter run
+flutter pub get
+flutter analyze
+flutter test
+flutter run --dart-define-from-file=.env.local.json
 ```
 
-The script forces the final package ID to `com.rxscanlabs.prescriptionscanner`.
+Use `scripts/bootstrap_flutter_android.sh` only to regenerate missing Android files. It restores package ID `com.rxscanlabs.prescriptionscanner`, permissions, auth callback, AdMob test metadata, and crop activity.
+
+GitHub Actions workflow `.github/workflows/mobile_ci.yml` automatically analyzes, tests, and builds a debug APK on every push to `main`.
 
 ## Current status
 

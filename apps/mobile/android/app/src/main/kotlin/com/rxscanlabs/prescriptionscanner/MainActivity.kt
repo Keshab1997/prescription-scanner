@@ -1,4 +1,4 @@
-package com.example.prescription_scanner
+package com.rxscanlabs.prescriptionscanner
 
 import io.flutter.embedding.android.FlutterActivity
 

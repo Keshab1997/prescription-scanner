@@ -734,7 +734,8 @@ Measure:
 - Result screen structured medicine fields, confidence, review state, warnings, tests/follow-up ও source-image deletion state দেখায়
 - Processing response-এর real prescription UUID validate করে result route-এ পাঠানো হয়
 - Feedback এবং safe completed-history deletion-এর `202608130004_history_feedback.sql` migration deployed
-- Local `flutter analyze/test` এবং synthetic authenticated end-to-end test এখনো pending
+- Android package/manifest/icon source এবং GitHub Actions analyze/test/debug-APK workflow প্রস্তুত; প্রথম CI run pending
+- Repository model tests যোগ হয়েছে; local/CI `flutter analyze/test` এবং synthetic authenticated end-to-end test এখনো pending
 - Successful extraction-এর পরে source image delete হওয়ায় MVP compare mode deferred; result screen original image দেখায় না
 
 ## Medicine card

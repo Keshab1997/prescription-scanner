@@ -29,16 +29,22 @@ Do not continue to feedback/deletion acceptance tests until this migration succe
 The hosted workspace does not include Flutter. On a development computer with stable Flutter 3.38.1 or newer:
 
 ```bash
-./scripts/bootstrap_flutter_android.sh
 cd apps/mobile
 flutter pub get
 dart format --set-exit-if-changed lib test
 flutter analyze
-flutter test
-flutter run \
-  --dart-define=SUPABASE_URL=https://YOUR_PROJECT.supabase.co \
-  --dart-define=SUPABASE_PUBLISHABLE_KEY=YOUR_PUBLISHABLE_KEY \
-  --dart-define=APP_ENV=development
+flutter test test/app_smoke_test.dart
+flutter run --dart-define-from-file=.env.local.json
+```
+
+Create the ignored local `.env.local.json` with only public mobile configuration:
+
+```json
+{
+  "SUPABASE_URL": "https://YOUR_PROJECT.supabase.co",
+  "SUPABASE_PUBLISHABLE_KEY": "YOUR_PUBLISHABLE_KEY",
+  "APP_ENV": "development"
+}
 ```
 
 Use the Supabase publishable key only. Never add the service-role key or Gemini key to Flutter.
