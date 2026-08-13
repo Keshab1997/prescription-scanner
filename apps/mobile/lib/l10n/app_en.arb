@@ -1,0 +1,6 @@
+{
+  "@@locale": "en",
+  "appName": "Prescription Scanner",
+  "scanPrescription": "Scan prescription",
+  "medicalDisclaimer": "This app transcribes visible prescription text. It does not provide medical advice."
+}

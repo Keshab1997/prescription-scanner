@@ -1,0 +1,7 @@
+# Function-level configuration.
+# The current @supabase/server wrapper validates auth: 'user' against JWKS.
+# Disable the legacy-secret-only gateway check for projects using new API keys.
+
+[functions.process-prescription]
+enabled = true
+verify_jwt = false
