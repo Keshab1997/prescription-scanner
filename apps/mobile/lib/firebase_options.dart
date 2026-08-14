@@ -49,9 +49,13 @@ class DefaultFirebaseOptions {
     storageBucket: 'prescription-scanner-admin.firebasestorage.app',
   );
 
+  // NOTE: the apiKey MUST match the `current_key` in android/app/google-services.json.
+  // The GMS plugin auto-initializes the default app from that JSON at process
+  // start; if these options differ, FlutterFire throws `duplicate-app` and the
+  // native splash (logo) never gets removed — the app appears stuck on launch.
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyC4evztyQ4frzTXvK64VjzQm0vZe779b5s',
-    appId: '1:780785545429:web:b80e9b349267bedb4eb25c',
+    apiKey: 'AIzaSyBUp08GG5QRnX58hQTGalTGjiBhWADKtZg',
+    appId: '1:780785545429:android:d6f22e63048722284eb25c',
     messagingSenderId: '780785545429',
     projectId: 'prescription-scanner-admin',
     storageBucket: 'prescription-scanner-admin.firebasestorage.app',

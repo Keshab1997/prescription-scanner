@@ -13,45 +13,94 @@ import 'package:prescription_scanner/services/result_store.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Fail-safe startup: a single failing dependency must not freeze the native
+  // splash (logo). Run each init independently and keep the app booting.
+  final initErrors = <String>[];
+
   // Supabase is used only for authentication (login/account).
   if (AppConfig.hasSupabaseConfig) {
-    await Supabase.initialize(
-      url: AppConfig.supabaseUrl,
-      publishableKey: AppConfig.supabasePublishableKey,
-    );
+    try {
+      await Supabase.initialize(
+        url: AppConfig.supabaseUrl,
+        publishableKey: AppConfig.supabasePublishableKey,
+      );
+    } catch (e, st) {
+      initErrors.add('Supabase: $e');
+      debugPrint('[main] Supabase init failed: $e\n$st');
+    }
   }
 
   // Firebase powers the admin_api_key_manager key pool (Gemini keys only).
   // Prescription data itself is NOT stored in Firebase.
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
-  await Hive.initFlutter();
-  await KeyCache.init();
-  await ResultStore.init();
-
-  // Optional build-time Gemini key fallback (see docs/vision_setup.md).
-  if (AppConfig.geminiApiKey.isNotEmpty) {
-    final cached = KeyCache.getCachedAdminKeys();
-    final alreadySeeded = cached.any((k) => k.provider == 'google');
-    if (!alreadySeeded) {
-      await KeyCache.saveCachedAdminKeys([
-        ...cached,
-        AdminApiKey(
-          id: 'local-fallback',
-          name: 'Local fallback key',
-          key: AppConfig.geminiApiKey,
-          baseUrl: 'https://generativelanguage.googleapis.com',
-          model: 'gemini-2.5-flash',
-          provider: 'google',
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
-        ),
-      ]);
-    }
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+  } catch (e, st) {
+    initErrors.add('Firebase: $e');
+    debugPrint('[main] Firebase init failed: $e\n$st');
   }
 
-  ApiKeyManager.instance.initialize();
+  try {
+    await Hive.initFlutter();
+  } catch (e, st) {
+    initErrors.add('Hive: $e');
+    debugPrint('[main] Hive init failed: $e\n$st');
+  }
+
+  try {
+    await KeyCache.init();
+  } catch (e, st) {
+    initErrors.add('KeyCache: $e');
+    debugPrint('[main] KeyCache init failed: $e\n$st');
+  }
+
+  try {
+    await ResultStore.init();
+  } catch (e, st) {
+    initErrors.add('ResultStore: $e');
+    debugPrint('[main] ResultStore init failed: $e\n$st');
+  }
+
+  // Optional build-time Gemini key fallback (see docs/vision_setup.md).
+  try {
+    if (AppConfig.geminiApiKey.isNotEmpty) {
+      final cached = KeyCache.getCachedAdminKeys();
+      final alreadySeeded = cached.any((k) => k.provider == 'google');
+      if (!alreadySeeded) {
+        await KeyCache.saveCachedAdminKeys([
+          ...cached,
+          AdminApiKey(
+            id: 'local-fallback',
+            name: 'Local fallback key',
+            key: AppConfig.geminiApiKey,
+            baseUrl: 'https://generativelanguage.googleapis.com',
+            model: 'gemini-2.5-flash',
+            provider: 'google',
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+          ),
+        ]);
+      }
+    }
+  } catch (e, st) {
+    initErrors.add('Gemini fallback: $e');
+    debugPrint('[main] Gemini fallback seed failed: $e\n$st');
+  }
+
+  // ApiKeyManager must be initialized even if Firebase/KeyCache logged errors,
+  // so the app keeps booting instead of stalling on the splash.
+  try {
+    ApiKeyManager.instance.initialize();
+  } catch (e, st) {
+    initErrors.add('ApiKeyManager: $e');
+    debugPrint('[main] ApiKeyManager init failed: $e\n$st');
+  }
+
+  if (initErrors.isNotEmpty) {
+    debugPrint('[main] startup completed with ${initErrors.length} non-fatal '
+        'error(s): ${initErrors.join(' | ')}');
+  }
 
   runApp(const ProviderScope(child: PrescriptionScannerApp()));
 }

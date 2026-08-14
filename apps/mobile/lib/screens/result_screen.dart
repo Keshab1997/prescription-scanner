@@ -6,6 +6,60 @@ import 'package:prescription_scanner/models/extracted_prescription.dart';
 import 'package:prescription_scanner/services/result_store.dart';
 import 'package:prescription_scanner/theme.dart';
 
+/// UI language for the patient-friendly summary on the result screen.
+enum ResultLanguage {
+  en('EN', 'English', 'In plain language'),
+  bn('বাং', 'বাংলা', 'সহজ ভাষায়'),
+  hi('हि', 'हिन्दी', 'सरल भाषा में');
+
+  const ResultLanguage(this.code, this.label, this.caption);
+  final String code;
+  final String label;
+  final String caption;
+
+  /// Returns the model-provided summary sentence for [medicine] in this
+  /// language, falling back to English then to the raw name.
+  String pickSummary(Medicine medicine) {
+    final byLang = switch (this) {
+      ResultLanguage.en => medicine.summaryEn,
+      ResultLanguage.bn => medicine.summaryBn,
+      ResultLanguage.hi => medicine.summaryHi,
+    };
+    if (byLang != null && byLang.trim().isNotEmpty) return byLang;
+    if (medicine.summaryEn != null && medicine.summaryEn!.trim().isNotEmpty) {
+      return medicine.summaryEn!;
+    }
+    return medicine.name;
+  }
+
+  /// Returns the "what it is for" text for [medicine] in this language,
+  /// falling back to English then to null.
+  String? pickPurpose(Medicine medicine) {
+    final byLang = switch (this) {
+      ResultLanguage.en => medicine.purposeEn,
+      ResultLanguage.bn => medicine.purposeBn,
+      ResultLanguage.hi => medicine.purposeHi,
+    };
+    if (byLang != null && byLang.trim().isNotEmpty) return byLang;
+    return medicine.purposeEn?.trim().isNotEmpty == true
+        ? medicine.purposeEn
+        : null;
+  }
+}
+
+/// Selected summary language for the result screen.
+final resultLanguageProvider =
+    NotifierProvider<ResultLanguageNotifier, ResultLanguage>(
+  ResultLanguageNotifier.new,
+);
+
+class ResultLanguageNotifier extends Notifier<ResultLanguage> {
+  @override
+  ResultLanguage build() => ResultLanguage.bn;
+
+  void set(ResultLanguage language) => state = language;
+}
+
 class ResultScreen extends ConsumerWidget {
   const ResultScreen({required this.prescriptionId, super.key});
 
@@ -147,6 +201,7 @@ class ResultScreen extends ConsumerWidget {
         appBar: AppBar(
           title: const Text('Extraction result'),
           actions: [
+            _LanguageToggle(language: ref.watch(resultLanguageProvider)),
             PopupMenuButton<String>(
               onSelected: (value) {
                 if (value == 'delete') deleteHistory(context, ref);
@@ -205,10 +260,18 @@ class ResultScreen extends ConsumerWidget {
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
                 const SizedBox(height: 10),
+                _PatientSummary(
+                  details: details,
+                  language: ref.watch(resultLanguageProvider),
+                ),
+                const SizedBox(height: 12),
                 ...details.medicines.map(
                   (medicine) => Padding(
                     padding: const EdgeInsets.only(bottom: 10),
-                    child: _MedicineCard(medicine: medicine),
+                    child: _MedicineCard(
+                      medicine: medicine,
+                      language: ref.watch(resultLanguageProvider),
+                    ),
                   ),
                 ),
               ],
@@ -242,6 +305,171 @@ class ResultScreen extends ConsumerWidget {
         ),
       );
   }
+}
+
+class _LanguageToggle extends StatelessWidget {
+  const _LanguageToggle({required this.language});
+  final ResultLanguage language;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(right: 6),
+      padding: const EdgeInsets.all(3),
+      decoration: BoxDecoration(
+        color: AppColors.canvas,
+        borderRadius: BorderRadius.circular(11),
+      ),
+      child: Row(
+        children: ResultLanguage.values
+            .map((lang) => _LangChip(lang: lang, selected: lang == language))
+            .toList(),
+      ),
+    );
+  }
+}
+
+class _LangChip extends ConsumerWidget {
+  const _LangChip({required this.lang, required this.selected});
+  final ResultLanguage lang;
+  final bool selected;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(9),
+      onTap: () => ref.read(resultLanguageProvider.notifier).set(lang),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: selected ? AppColors.teal : Colors.transparent,
+          borderRadius: BorderRadius.circular(9),
+        ),
+        child: Text(
+          lang.code,
+          style: TextStyle(
+            color: selected ? Colors.white : AppColors.muted,
+            fontWeight: FontWeight.w900,
+            fontSize: 12,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PatientSummary extends StatelessWidget {
+  const _PatientSummary({
+    required this.details,
+    required this.language,
+  });
+  final ExtractedPrescription details;
+  final ResultLanguage language;
+
+  @override
+  Widget build(BuildContext context) {
+    final lines = <Widget>[];
+    for (var i = 0; i < details.medicines.length; i++) {
+      final medicine = details.medicines[i];
+      lines.add(
+        Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '${i + 1}. ',
+                style: const TextStyle(
+                  fontWeight: FontWeight.w900,
+                  color: AppColors.teal,
+                ),
+              ),
+              Expanded(
+                child: Text(
+                  '${medicine.name}: ${language.pickSummary(medicine)}',
+                  style: const TextStyle(height: 1.4, fontSize: 14),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (details.tests.isNotEmpty) {
+      lines.add(
+        Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: Text(
+            '${_extraLabel(language)} ${details.tests.join(', ')}',
+            style: const TextStyle(height: 1.4, fontSize: 14),
+          ),
+        ),
+      );
+    }
+    if (details.followUp != null) {
+      lines.add(
+        Text(
+          '${_followUpLabel(language)} ${details.followUp}',
+          style: const TextStyle(height: 1.4, fontSize: 14),
+        ),
+      );
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.indigoSoft,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFD9E3FF)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.record_voice_over_rounded,
+                  color: AppColors.indigo, size: 18),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  _headerText(language),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w900,
+                    color: AppColors.indigo,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          ...lines,
+        ],
+      ),
+    );
+  }
+
+  String _headerText(ResultLanguage lang) => switch (lang) {
+        ResultLanguage.en =>
+          'In this prescription, the following medicines are written:',
+        ResultLanguage.bn =>
+          'এই প্রেসক্রিপশনে নিচের ওষুধগুলো লেখা হয়েছে:',
+        ResultLanguage.hi =>
+          'इस प्रिस्क्रिप्शन में निम्नलिखित दवाइयाँ लिखी गई हैं:',
+      };
+
+  String _extraLabel(ResultLanguage lang) => switch (lang) {
+        ResultLanguage.en => 'Tests advised:',
+        ResultLanguage.bn => 'পরামর্শ দেওয়া টেস্ট:',
+        ResultLanguage.hi => 'सुझाई गई जाँच:',
+      };
+
+  String _followUpLabel(ResultLanguage lang) => switch (lang) {
+        ResultLanguage.en => 'Follow-up:',
+        ResultLanguage.bn => 'ফলো-আপ:',
+        ResultLanguage.hi => 'फॉलो-अप:',
+      };
 }
 
 class _QualityHeader extends StatelessWidget {
@@ -307,136 +535,331 @@ class _QualityHeader extends StatelessWidget {
 }
 
 class _MedicineCard extends StatelessWidget {
-  const _MedicineCard({required this.medicine});
+  const _MedicineCard({
+    required this.medicine,
+    required this.language,
+  });
   final Medicine medicine;
+  final ResultLanguage language;
 
   @override
   Widget build(BuildContext context) {
     final confidence = (medicine.confidence * 100).round();
-    final details = <(String, String?)>[
-      ('Strength', medicine.strength),
-      ('Dosage', medicine.dosage),
-      ('Frequency', medicine.frequency),
-      ('Route', medicine.route),
-      ('Duration', medicine.duration),
-      ('Instructions', medicine.instructions),
-    ];
+    final friendly = language.pickSummary(medicine);
+
     return Card(
-      child: ExpansionTile(
-        shape: const Border(),
-        collapsedShape: const Border(),
-        tilePadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
-        childrenPadding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
-        leading: Container(
-          width: 38,
-          height: 38,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: medicine.needsReview
-                ? AppColors.amberSoft
-                : AppColors.tealSoft,
-            borderRadius: BorderRadius.circular(11),
-          ),
-          child: Text(
-            medicine.position.toString().padLeft(2, '0'),
-            style: TextStyle(
-              color: medicine.needsReview
-                  ? const Color(0xFFA56100)
-                  : AppColors.teal,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-        ),
-        title: Text(
-          medicine.name,
-          style: const TextStyle(fontWeight: FontWeight.w900),
-        ),
-        subtitle: Text(
-          [
-                medicine.strength,
-                medicine.frequency,
-              ].whereType<String>().join(' · ').isEmpty
-              ? 'Tap to view visible details'
-              : [
-                  medicine.strength,
-                  medicine.frequency,
-                ].whereType<String>().join(' · '),
-        ),
-        trailing: Text(
-          '$confidence%',
-          style: TextStyle(
-            color: medicine.needsReview
-                ? const Color(0xFFA56100)
-                : AppColors.success,
-            fontWeight: FontWeight.w900,
-          ),
-        ),
-        children: [
-          if (medicine.needsReview)
-            Container(
-              width: double.infinity,
-              margin: const EdgeInsets.only(bottom: 10),
-              padding: const EdgeInsets.all(11),
-              decoration: BoxDecoration(
-                color: AppColors.amberSoft,
-                borderRadius: BorderRadius.circular(11),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => _showMedicineDetail(context, medicine, language),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+          child: Row(
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: medicine.needsReview
+                      ? AppColors.amberSoft
+                      : AppColors.tealSoft,
+                  borderRadius: BorderRadius.circular(11),
+                ),
+                child: Text(
+                  medicine.position.toString().padLeft(2, '0'),
+                  style: TextStyle(
+                    color: medicine.needsReview
+                        ? const Color(0xFFA56100)
+                        : AppColors.teal,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
               ),
-              child: const Text(
-                'This item is uncertain. Check the original prescription or ask a qualified pharmacist/doctor.',
-                style: TextStyle(color: Color(0xFF805511), fontSize: 12),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      medicine.name,
+                      style: const TextStyle(fontWeight: FontWeight.w900),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      friendly,
+                      style: const TextStyle(color: AppColors.muted, fontSize: 12),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
               ),
-            ),
-          GridView.count(
-            crossAxisCount: 2,
-            childAspectRatio: 2.15,
-            crossAxisSpacing: 8,
-            mainAxisSpacing: 8,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            children: details
-                .map(
-                  (item) =>
-                      _Datum(label: item.$1, value: item.$2 ?? 'Not visible'),
-                )
-                .toList(),
+              const SizedBox(width: 8),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    '$confidence%',
+                    style: TextStyle(
+                      color: medicine.needsReview
+                          ? const Color(0xFFA56100)
+                          : AppColors.success,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  const Icon(Icons.chevron_right_rounded,
+                      color: AppColors.muted, size: 16),
+                ],
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
 }
 
-class _Datum extends StatelessWidget {
-  const _Datum({required this.label, required this.value});
-  final String label;
-  final String value;
+void _showMedicineDetail(
+  BuildContext context,
+  Medicine m,
+  ResultLanguage lang,
+) {
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (context) => _MedicineDetailSheet(medicine: m, language: lang),
+  );
+}
+
+class _MedicineDetailSheet extends StatelessWidget {
+  const _MedicineDetailSheet({
+    required this.medicine,
+    required this.language,
+  });
+  final Medicine medicine;
+  final ResultLanguage language;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(9),
-      decoration: BoxDecoration(
-        color: AppColors.canvas,
-        borderRadius: BorderRadius.circular(11),
+    final rows = <_DetailRow>[
+      _DetailRow(
+        icon: Icons.medication_rounded,
+        title: 'Medicine',
+        value: medicine.name,
+        hint: 'This is the medicine identified from the prescription image.',
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(color: AppColors.muted, fontSize: 10),
-          ),
-          const SizedBox(height: 3),
-          Text(
-            value,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 11),
-          ),
-        ],
+      if (language.pickPurpose(medicine) != null)
+        _DetailRow(
+          icon: Icons.help_outline_rounded,
+          title: 'What it is for',
+          value: language.pickPurpose(medicine)!,
+          hint: 'Why this medicine is given, based on the prescription.',
+        ),
+      if (medicine.normalizedName != null)
+        _DetailRow(
+          icon: Icons.check_circle_outline_rounded,
+          title: 'Standard name',
+          value: medicine.normalizedName!,
+          hint: 'The commonly used / generic name for this medicine.',
+        ),
+      _DetailRow(
+        icon: Icons.straighten_rounded,
+        title: 'Strength',
+        value: medicine.strength ?? 'Not visible',
+        hint: 'How strong each dose is (for example 500 mg).',
+      ),
+      _DetailRow(
+        icon: Icons.science_rounded,
+        title: 'Dosage',
+        value: medicine.dosage ?? 'Not visible',
+        hint: 'How much to take at a time (for example 1 tablet).',
+      ),
+      _DetailRow(
+        icon: Icons.repeat_rounded,
+        title: 'How often (frequency)',
+        value: medicine.frequency ?? 'Not visible',
+        hint: 'How many times per day to take it (for example twice a day).',
+      ),
+      _DetailRow(
+        icon: Icons.calendar_today_rounded,
+        title: 'For how long (duration)',
+        value: medicine.duration ?? 'Not visible',
+        hint: 'How many days to continue the medicine.',
+      ),
+      _DetailRow(
+        icon: Icons.route_rounded,
+        title: 'Route',
+        value: medicine.route ?? 'Not visible',
+        hint: 'How it enters the body (for example by mouth).',
+      ),
+      if (medicine.instructions != null)
+        _DetailRow(
+          icon: Icons.info_outline_rounded,
+          title: 'Instructions',
+          value: medicine.instructions!,
+          hint: 'Any special note from the prescription.',
+        ),
+    ];
+
+    return DraggableScrollableSheet(
+      initialChildSize: 0.7,
+      maxChildSize: 0.92,
+      minChildSize: 0.5,
+      builder: (context, scroll) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+        ),
+        padding: const EdgeInsets.fromLTRB(20, 10, 20, 22),
+        child: Column(
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(top: 6, bottom: 10),
+              decoration: BoxDecoration(
+                color: AppColors.muted.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    medicine.name,
+                    style: const TextStyle(
+                      fontSize: 19,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(Icons.close_rounded),
+                  color: AppColors.muted,
+                ),
+              ],
+            ),
+            if (medicine.needsReview)
+              Container(
+                margin: const EdgeInsets.only(top: 6, bottom: 8),
+                padding: const EdgeInsets.all(11),
+                decoration: BoxDecoration(
+                  color: AppColors.amberSoft,
+                  borderRadius: BorderRadius.circular(11),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.warning_amber_rounded, color: Color(0xFFA56100)),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'This item is uncertain. Please check the original prescription or ask a pharmacist/doctor.',
+                        style: TextStyle(color: Color(0xFF805511), fontSize: 12),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            const Divider(),
+            Expanded(
+              child: ListView.separated(
+                controller: scroll,
+                itemCount: rows.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 12),
+                itemBuilder: (context, i) => _DetailRowCard(row: rows[i]),
+              ),
+            ),
+            const SizedBox(height: 10),
+            const Text(
+              'AI transcription only — not medical advice. Verify with a doctor or pharmacist.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: AppColors.muted, fontSize: 11),
+            ),
+          ],
+        ),
       ),
     );
   }
+}
+
+class _DetailRow {
+  const _DetailRow({
+    required this.icon,
+    required this.title,
+    required this.value,
+    this.hint,
+  });
+  final IconData icon;
+  final String title;
+  final String value;
+  final String? hint;
+}
+
+class _DetailRowCard extends StatelessWidget {
+  const _DetailRowCard({required this.row});
+  final _DetailRow row;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.all(13),
+        decoration: BoxDecoration(
+          color: AppColors.canvas,
+          borderRadius: BorderRadius.circular(13),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 34,
+              height: 34,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: AppColors.tealSoft,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(row.icon, color: AppColors.teal, size: 18),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    row.title,
+                    style: const TextStyle(
+                      color: AppColors.muted,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    row.value,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w900,
+                      fontSize: 15,
+                    ),
+                  ),
+                  if (row.hint != null) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      row.hint!,
+                      style: const TextStyle(
+                        color: AppColors.muted,
+                        fontSize: 12,
+                        height: 1.35,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
 }
 
 class _MedicalWarning extends StatelessWidget {

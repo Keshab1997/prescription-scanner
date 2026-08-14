@@ -36,6 +36,22 @@ SECURITY AND SCOPE RULES:
 8. If the image is not a prescription, set is_prescription=false, return no medicines, and add a warning.
 9. Return only the JSON object described below.
 
+For every medicine also produce friendly, plain-language text a non-expert
+patient can understand. Keep EACH medicine SEPARATE — do NOT combine them into
+one paragraph and do NOT add your own numbering. Provide exactly these fields,
+written ONLY from what is visibly on the prescription:
+
+  "summary_en": one short sentence for THIS medicine only, saying how many times
+                 per day to take it and for how many days (e.g. "Take 1 tablet
+                 twice a day for 5 days. This is given for pain.").
+  "summary_bn": the same idea in Bengali (Bangla), one sentence, this medicine only.
+  "summary_hi": the same idea in Hindi, one sentence, this medicine only.
+  "purpose_en": what the medicine is for, in a few words (e.g. "for pain").
+  "purpose_bn": the same in Bengali (e.g. "ব্যথার জন্য").
+  "purpose_hi": the same in Hindi.
+If frequency or duration is not visible, say "as directed on the prescription"
+in that language instead of guessing. Keep each value to a single medicine.
+
 Return a JSON object with these fields:
 {
   "is_prescription": boolean,
@@ -50,6 +66,12 @@ Return a JSON object with these fields:
     "route": string or null,
     "duration": string or null,
     "instructions": string or null,
+    "summary_en": string,
+    "summary_bn": string,
+    "summary_hi": string,
+    "purpose_en": string or null,
+    "purpose_bn": string or null,
+    "purpose_hi": string or null,
     "confidence": number between 0 and 1,
     "needs_review": boolean
   },
@@ -70,6 +92,10 @@ Return a JSON object with these fields:
       throw const VisionException('The selected image is empty.');
     }
     final base64Image = base64Encode(bytes);
+
+    // Wait for the key pool to load from Firestore/cache before selecting a key,
+    // so we don't race the async listener and wrongly report "no key".
+    await ApiKeyManager.instance.ensureReady();
 
     VisionException? lastError;
     int attempts = 0;
@@ -136,7 +162,10 @@ Return a JSON object with these fields:
       ],
       'generationConfig': {
         'temperature': 0,
-        'maxOutputTokens': 4096,
+        // Prescriptions with many medicines can exceed 4096 tokens and get cut
+        // off mid-JSON (e.g. ending at "strength"), which is unparseable. Bump
+        // the cap well above typical output so the JSON always completes.
+        'maxOutputTokens': 8192,
         'responseMimeType': 'application/json',
       },
     });
@@ -179,7 +208,19 @@ Return a JSON object with these fields:
     try {
       raw = jsonDecode(text) as Map<String, dynamic>;
     } catch (_) {
-      throw const VisionException('The AI provider returned invalid JSON.',
+      // Surface a snippet so a bad/empty response is debuggable instead of a
+      // generic "invalid JSON".
+      final snippet = text.length > 200 ? '${text.substring(0, 200)}…' : text;
+      throw VisionException(
+        'The AI provider returned invalid JSON. Response: $snippet',
+        statusCode: 502,
+      );
+    }
+
+    // Gemini sometimes returns an error envelope instead of a result.
+    if (raw case {'error': final e}) {
+      final message = e is Map ? (e['message']?.toString() ?? e.toString()) : e.toString();
+      throw VisionException('The AI provider returned an error: $message',
           statusCode: 502);
     }
 
@@ -197,7 +238,58 @@ Return a JSON object with these fields:
         .map((p) => p['text'])
         .whereType<String>()
         .toList();
-    return texts.isNotEmpty ? texts.join('') : null;
+    if (texts.isEmpty) return null;
+
+    final joined = texts.join('').trim();
+    // Gemini sometimes wraps JSON in markdown fences (```json ... ```) or adds
+    // surrounding prose even with responseMimeType=application/json. Strip a
+    // leading/trailing fence and any non-JSON prefix/suffix so parsing is robust.
+    final fenced = _stripCodeFence(joined);
+    return _extractJsonObject(fenced) ?? fenced;
+  }
+
+  /// Removes a ```json / ``` fence if present.
+  String _stripCodeFence(String text) {
+    var t = text.trim();
+    final fenceStart = RegExp(r'^```(?:json|JSON)?\s*');
+    final fenceEnd = RegExp(r'\s*```$');
+    if (t.startsWith('```')) {
+      t = t.replaceFirst(fenceStart, '');
+      if (t.endsWith('```')) t = t.replaceFirst(fenceEnd, '');
+    }
+    return t.trim();
+  }
+
+  /// Extracts the first balanced JSON object `{...}` from [text], tolerating
+  /// leading/trailing prose. Returns null if no object is found.
+  String? _extractJsonObject(String text) {
+    final start = text.indexOf('{');
+    if (start < 0) return null;
+    var depth = 0;
+    var inString = false;
+    var escape = false;
+    for (var i = start; i < text.length; i++) {
+      final ch = text[i];
+      if (inString) {
+        if (escape) {
+          escape = false;
+        } else if (ch == '\\') {
+          escape = true;
+        } else if (ch == '"') {
+          inString = false;
+        }
+        continue;
+      }
+      if (ch == '"') {
+        inString = true;
+      } else if (ch == '{') {
+        depth++;
+      } else if (ch == '}') {
+        depth--;
+        if (depth == 0) return text.substring(start, i + 1);
+      }
+    }
+    return null;
   }
 
   ExtractedPrescription _parseResult(Map<String, dynamic> raw) {

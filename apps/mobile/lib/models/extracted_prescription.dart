@@ -105,6 +105,12 @@ class Medicine {
     this.route,
     this.duration,
     this.instructions,
+    this.summaryEn,
+    this.summaryBn,
+    this.summaryHi,
+    this.purposeEn,
+    this.purposeBn,
+    this.purposeHi,
     required this.confidence,
     required this.needsReview,
     this.position = 0,
@@ -119,6 +125,12 @@ class Medicine {
         route: _nullable(json['route']?.toString()),
         duration: _nullable(json['duration']?.toString()),
         instructions: _nullable(json['instructions']?.toString()),
+        summaryEn: _nullable(json['summary_en']?.toString()),
+        summaryBn: _nullable(json['summary_bn']?.toString()),
+        summaryHi: _nullable(json['summary_hi']?.toString()),
+        purposeEn: _nullable(json['purpose_en']?.toString()),
+        purposeBn: _nullable(json['purpose_bn']?.toString()),
+        purposeHi: _nullable(json['purpose_hi']?.toString()),
         confidence:
             (json['confidence'] is num ? json['confidence'] : 0).toDouble(),
         needsReview: json['needs_review'] == true,
@@ -133,6 +145,12 @@ class Medicine {
   final String? route;
   final String? duration;
   final String? instructions;
+  final String? summaryEn;
+  final String? summaryBn;
+  final String? summaryHi;
+  final String? purposeEn;
+  final String? purposeBn;
+  final String? purposeHi;
   final double confidence;
   final bool needsReview;
   final int position;
@@ -146,6 +164,12 @@ class Medicine {
         'route': route,
         'duration': duration,
         'instructions': instructions,
+        'summary_en': summaryEn,
+        'summary_bn': summaryBn,
+        'summary_hi': summaryHi,
+        'purpose_en': purposeEn,
+        'purpose_bn': purposeBn,
+        'purpose_hi': purposeHi,
         'confidence': confidence,
         'needs_review': needsReview,
         'position': position,
