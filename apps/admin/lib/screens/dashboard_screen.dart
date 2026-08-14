@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/services.dart';
+import 'package:firebase_auth/firebase_auth.dart' as fb;
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:admin_api_key_manager/admin_api_key_manager.dart';
+
+import '../main.dart' show adminApiSecret;
 
 import 'keys_screen.dart';
 import 'usage_screen.dart';
@@ -28,6 +32,47 @@ class _DashboardScreenState extends State<DashboardScreen> {
     ('Settings', Icons.settings_outlined),
   ];
 
+  @override
+  void initState() {
+    super.initState();
+    HardwareKeyboard.instance.addHandler(_handleKey);
+  }
+
+  @override
+  void dispose() {
+    HardwareKeyboard.instance.removeHandler(_handleKey);
+    super.dispose();
+  }
+
+  bool _handleKey(KeyEvent event) {
+    if (event is! KeyDownEvent) return false;
+    // Digits 1–6 jump to the matching sidebar item.
+    final digitKeys = {
+      LogicalKeyboardKey.digit1: 0,
+      LogicalKeyboardKey.numpad1: 0,
+      LogicalKeyboardKey.digit2: 1,
+      LogicalKeyboardKey.numpad2: 1,
+      LogicalKeyboardKey.digit3: 2,
+      LogicalKeyboardKey.numpad3: 2,
+      LogicalKeyboardKey.digit4: 3,
+      LogicalKeyboardKey.numpad4: 3,
+      LogicalKeyboardKey.digit5: 4,
+      LogicalKeyboardKey.numpad5: 4,
+      LogicalKeyboardKey.digit6: 5,
+      LogicalKeyboardKey.numpad6: 5,
+    };
+    final idx = digitKeys[event.logicalKey];
+    if (idx != null && idx < _menu.length) {
+      setState(() => _selected = _menu[idx].$1);
+      return true;
+    }
+    if (event.logicalKey == LogicalKeyboardKey.escape) {
+      setState(() => _selected = 'Dashboard');
+      return true;
+    }
+    return false;
+  }
+
   Widget _body() {
     switch (_selected) {
       case 'AI Configuration':
@@ -47,7 +92,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final user = FirebaseAuth.instance.currentUser;
+    final user = fb.FirebaseAuth.instance.currentUser;
     final isNarrow = MediaQuery.of(context).size.width < 720;
     return Scaffold(
       body: Row(
@@ -84,7 +129,7 @@ class _Sidebar extends StatelessWidget {
     required this.onSelect,
   });
   final String selected;
-  final User? user;
+  final fb.User? user;
   final List<(String, IconData)> menu;
   final ValueChanged<String> onSelect;
 
@@ -101,12 +146,13 @@ class _Sidebar extends StatelessWidget {
               style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
           const Text('Admin Console', style: TextStyle(color: Colors.white60)),
           const SizedBox(height: 32),
-          for (final (label, icon) in menu)
+          for (var i = 0; i < menu.length; i++)
             _MenuItem(
-              label,
-              icon,
-              selected == label,
-              onTap: () => onSelect(label),
+              menu[i].$1,
+              menu[i].$2,
+              selected == menu[i].$1,
+              i,
+              onTap: () => onSelect(menu[i].$1),
             ),
           const Spacer(),
           ListTile(
@@ -114,7 +160,7 @@ class _Sidebar extends StatelessWidget {
             leading: const Icon(Icons.logout, color: Colors.white60),
             title: const Text('Sign out',
                 style: TextStyle(color: Colors.white60)),
-            onTap: () => FirebaseAuth.instance.signOut(),
+            onTap: () => fb.FirebaseAuth.instance.signOut(),
           ),
           if (user?.email != null)
             Padding(
@@ -153,10 +199,12 @@ class _BottomNav extends StatelessWidget {
 }
 
 class _MenuItem extends StatelessWidget {
-  const _MenuItem(this.label, this.icon, this.selected, {this.onTap});
+  const _MenuItem(this.label, this.icon, this.selected, this.index,
+      {this.onTap});
   final String label;
   final IconData icon;
   final bool selected;
+  final int index;
   final VoidCallback? onTap;
 
   @override
@@ -177,6 +225,21 @@ class _MenuItem extends StatelessWidget {
             const SizedBox(width: 10),
             Text(label,
                 style: TextStyle(color: selected ? Colors.white : Colors.white60)),
+            const Spacer(),
+            Container(
+              width: 20,
+              height: 20,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: Colors.white10,
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Text('${index + 1}',
+                  style: const TextStyle(
+                      color: Colors.white54,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600)),
+            ),
           ],
         ),
       ),
@@ -184,8 +247,55 @@ class _MenuItem extends StatelessWidget {
   }
 }
 
-class _Overview extends StatelessWidget {
+class _Overview extends StatefulWidget {
   const _Overview();
+
+  @override
+  State<_Overview> createState() => _OverviewState();
+}
+
+class _OverviewState extends State<_Overview> {
+  int _totalExtractions = 0;
+  int _failedExtractions = 0;
+  bool _statsLoading = true;
+  String? _statsError;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadStats();
+  }
+
+  Future<void> _loadStats() async {
+    if (adminApiSecret.isEmpty) {
+      if (mounted) {
+        setState(() {
+          _statsError = 'ADMIN_API_SECRET not set.';
+          _statsLoading = false;
+        });
+      }
+      return;
+    }
+    try {
+      final res = await Supabase.instance.client
+          .rpc('admin_operation_stats', params: {'p_secret': adminApiSecret});
+      final map = (res as Map).cast<String, dynamic>();
+      if (mounted) {
+        setState(() {
+          _totalExtractions = (map['total_extractions'] as num? ?? 0).toInt();
+          _failedExtractions = (map['failed_extractions'] as num? ?? 0).toInt();
+          _statsLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _statsError = e.toString().replaceFirst('Exception: ', '');
+          _statsLoading = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -202,7 +312,7 @@ class _Overview extends StatelessWidget {
                   Text('Operations overview',
                       style:
                           TextStyle(fontSize: 24, fontWeight: FontWeight.w800)),
-                  Text('Live metrics from the admin_api_keys pool.'),
+                  Text('Live metrics from the key pool and extraction logs.'),
                 ],
               ),
             ),
@@ -236,14 +346,12 @@ class _Overview extends StatelessWidget {
                   icon: Icons.error_outline,
                   message: 'Failed to load keys: ${snap.error}');
             }
-            var total = 0, active = 0, errors = 0, usage = 0;
+            var total = 0, active = 0;
             if (snap.hasData) {
               for (final d in snap.data!.docs) {
                 final m = d.data() as Map<String, dynamic>;
                 total++;
                 if (m['isActive'] == true) active++;
-                errors += (m['errorCount'] as int? ?? 0);
-                usage += (m['usageCount'] as int? ?? 0);
               }
             }
             final cards = [
@@ -251,16 +359,22 @@ class _Overview extends StatelessWidget {
                   icon: Icons.vpn_key_rounded, loading: !snap.hasData),
               _MetricCard('Active keys', '$active',
                   icon: Icons.check_circle_outline, loading: !snap.hasData),
-              _MetricCard('Total AI requests', '$usage',
-                  icon: Icons.call_made_rounded, loading: !snap.hasData),
-              _MetricCard('Error count', '$errors',
-                  icon: Icons.error_outline, loading: !snap.hasData),
+              _MetricCard('Total AI requests', '$_totalExtractions',
+                  icon: Icons.call_made_rounded, loading: _statsLoading),
+              _MetricCard('Error count', '$_failedExtractions',
+                  icon: Icons.error_outline, loading: _statsLoading),
             ];
             return isNarrow
                 ? Column(children: cards)
                 : Row(children: cards);
           },
         ),
+        if (_statsError != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Text('Stats source: $_statsError',
+                style: const TextStyle(color: Colors.redAccent, fontSize: 12)),
+          ),
         const SizedBox(height: 18),
         Expanded(
           child: Card(
