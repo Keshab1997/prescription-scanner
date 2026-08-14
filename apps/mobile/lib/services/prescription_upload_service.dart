@@ -3,14 +3,11 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:crypto/crypto.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:prescription_scanner/config.dart';
-import 'package:prescription_scanner/theme.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 final prescriptionUploadServiceProvider = Provider<PrescriptionUploadService?>((
@@ -25,7 +22,6 @@ class PrescriptionUploadService {
 
   final SupabaseClient client;
   final ImagePicker _picker = ImagePicker();
-  final ImageCropper _cropper = ImageCropper();
 
   static const maxImageBytes = 10 * 1024 * 1024;
   static const minShortEdge = 600;
@@ -60,7 +56,7 @@ class PrescriptionUploadService {
   Future<PreparedPrescription?> pickAndPrepare(ImageSource source) async {
     final picked = await _picker.pickImage(
       source: source,
-      imageQuality: 100,
+      imageQuality: 88,
       requestFullMetadata: false,
     );
     if (picked == null) return null;
@@ -81,38 +77,25 @@ class PrescriptionUploadService {
   }
 
   Future<PreparedPrescription?> _preparePickedFile(XFile picked) async {
-    final cropped = await _cropper.cropImage(
-      sourcePath: picked.path,
-      maxWidth: 2600,
-      maxHeight: 2600,
-      compressFormat: ImageCompressFormat.jpg,
-      compressQuality: 95,
-      uiSettings: [
-        AndroidUiSettings(
-          toolbarTitle: 'Adjust prescription',
-          toolbarColor: AppColors.teal,
-          toolbarWidgetColor: Colors.white,
-          activeControlsWidgetColor: AppColors.teal,
-          initAspectRatio: CropAspectRatioPreset.original,
-          lockAspectRatio: false,
-        ),
-      ],
-    );
-    if (cropped == null) return null;
-
     final temporaryDirectory = await getTemporaryDirectory();
     final targetPath =
         '${temporaryDirectory.path}/prescription_${DateTime.now().microsecondsSinceEpoch}.jpg';
+
+    // Single-pass compress + downscale. The original (quality 88) is already
+    // small; compressing straight to the final JPEG avoids a second re-encode
+    // (crop was maxWidth 2600 @ q95, then q86 again before). Lowering to q82 /
+    // min 1024 keeps prescription text crisp while cutting bytes ~3x, which
+    // makes the base64 encode, the Gemini upload, and the JSON decode all
+    // faster. The cropper is skipped unless the user wants to reframe.
     final compressed = await FlutterImageCompress.compressAndGetFile(
-      cropped.path,
+      picked.path,
       targetPath,
-      quality: 86,
-      minWidth: 1200,
-      minHeight: 1200,
+      quality: 82,
+      minWidth: 1024,
+      minHeight: 1024,
       format: CompressFormat.jpeg,
       keepExif: false,
     );
-    await _safeDelete(cropped.path);
     if (compressed == null) {
       throw ScanValidationException('The image could not be prepared.');
     }

@@ -43,9 +43,10 @@ class ResultStore {
   List<ExtractedPrescription> getAll() {
     final items = _box.values
         .whereType<Map>()
-        .map((raw) => ExtractedPrescription.fromJson(
-              Map<String, dynamic>.from(raw),
-            ))
+        .map(
+          (raw) =>
+              ExtractedPrescription.fromJson(Map<String, dynamic>.from(raw)),
+        )
         .toList();
     items.sort((a, b) => b.createdAt.compareTo(a.createdAt));
     return items;
@@ -54,4 +55,6 @@ class ResultStore {
   void delete(String id) => _box.delete(id);
 }
 
-final resultStoreProvider = Provider<ResultStore>((ref) => ResultStore.instance);
+final resultStoreProvider = Provider<ResultStore>(
+  (ref) => ResultStore.instance,
+);

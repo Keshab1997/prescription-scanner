@@ -14,48 +14,82 @@ class AppShell extends StatelessWidget {
       extendBody: true,
       body: child,
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => context.push('/upload'),
-        backgroundColor: AppColors.teal,
-        foregroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-        child: const Icon(Icons.document_scanner_outlined),
+      floatingActionButton: Container(
+        margin: const EdgeInsets.only(top: 30),
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.teal.withValues(alpha: 0.3),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: FloatingActionButton(
+          onPressed: () => context.push('/upload'),
+          backgroundColor: AppColors.teal,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(30),
+          ),
+          child: const Icon(Icons.document_scanner_rounded, size: 28),
+        ),
       ),
-      bottomNavigationBar: SafeArea(
-        minimum: const EdgeInsets.fromLTRB(12, 0, 12, 10),
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.indigo.withValues(alpha: 0.05),
+              blurRadius: 20,
+              offset: const Offset(0, -4),
+            ),
+          ],
+        ),
         child: BottomAppBar(
-          height: 68,
-          padding: const EdgeInsets.symmetric(horizontal: 10),
           color: Colors.white,
-          elevation: 10,
+          elevation: 0,
           shape: const CircularNotchedRectangle(),
-          notchMargin: 8,
+          notchMargin: 10,
+          height: 65,
+          padding: EdgeInsets.zero,
           child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               _NavItem(
                 label: 'Home',
-                icon: Icons.home_rounded,
+                icon: currentPath == '/home'
+                    ? Icons.home_rounded
+                    : Icons.home_outlined,
                 selected: currentPath == '/home',
                 onTap: () => context.go('/home'),
               ),
               _NavItem(
                 label: 'History',
-                icon: Icons.history_rounded,
+                icon: currentPath == '/history'
+                    ? Icons.history_rounded
+                    : Icons.history_outlined,
                 selected: currentPath == '/history',
                 onTap: () => context.go('/history'),
               ),
-              const SizedBox(width: 58),
+              const SizedBox(width: 48), // Space for the notched FAB
               _NavItem(
                 label: 'Help',
                 icon: Icons.help_outline_rounded,
                 selected: false,
                 onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Help centre is coming next.')),
+                  const SnackBar(
+                    content: Text('Help centre is coming next.'),
+                    behavior: SnackBarBehavior.floating,
+                  ),
                 ),
               ),
               _NavItem(
                 label: 'Profile',
-                icon: Icons.person_rounded,
+                icon: currentPath == '/profile'
+                    ? Icons.person_rounded
+                    : Icons.person_outline_rounded,
                 selected: currentPath == '/profile',
                 onTap: () => context.go('/profile'),
               ),
@@ -82,23 +116,31 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = selected ? AppColors.teal : AppColors.muted;
-    return Expanded(
-      child: InkResponse(
-        onTap: onTap,
+    final color = selected
+        ? AppColors.teal
+        : AppColors.muted.withValues(alpha: 0.6);
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: SizedBox(
+        width: 60,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: color, size: 23),
-            const SizedBox(height: 3),
-            Text(
-              label,
-              style: TextStyle(
-                color: color,
-                fontSize: 10,
-                fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
-              ),
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.only(bottom: 2),
+              child: Icon(icon, color: color, size: selected ? 26 : 24),
             ),
+            if (selected)
+              Container(
+                width: 4,
+                height: 4,
+                decoration: const BoxDecoration(
+                  color: AppColors.teal,
+                  shape: BoxShape.circle,
+                ),
+              ),
           ],
         ),
       ),

@@ -98,8 +98,10 @@ Future<void> main() async {
   }
 
   if (initErrors.isNotEmpty) {
-    debugPrint('[main] startup completed with ${initErrors.length} non-fatal '
-        'error(s): ${initErrors.join(' | ')}');
+    debugPrint(
+      '[main] startup completed with ${initErrors.length} non-fatal '
+      'error(s): ${initErrors.join(' | ')}',
+    );
   }
 
   runApp(const ProviderScope(child: PrescriptionScannerApp()));

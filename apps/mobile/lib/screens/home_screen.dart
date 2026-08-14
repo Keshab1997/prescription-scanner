@@ -212,7 +212,7 @@ class _ScanHero extends StatelessWidget {
               Icon(Icons.auto_awesome, color: Colors.white, size: 15),
               SizedBox(width: 6),
               Text(
-                'Gemini-powered transcription',
+                'KeshabStudios-powered transcription',
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 11,
@@ -261,34 +261,56 @@ class _QuotaCard extends StatelessWidget {
     final total = quota.dailyLimit + quota.rewardedBonus;
     final progress = total == 0 ? 0.0 : quota.remaining / total;
     final unavailable = !quota.aiEnabled || quota.maintenanceMode;
-    return Card(
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: unavailable
+              ? [AppColors.muted, AppColors.muted.withOpacity(0.8)]
+              : [AppColors.teal, AppColors.indigo],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.teal.withOpacity(0.3),
+            blurRadius: 16,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(20),
         child: Row(
           children: [
-            SizedBox(
-              width: 48,
-              height: 48,
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                shape: BoxShape.circle,
+              ),
               child: Stack(
                 alignment: Alignment.center,
                 children: [
                   CircularProgressIndicator(
                     value: progress.clamp(0.0, 1.0).toDouble(),
-                    strokeWidth: 5,
-                    color: unavailable ? AppColors.muted : AppColors.teal,
-                    backgroundColor: AppColors.tealSoft,
+                    strokeWidth: 4,
+                    color: Colors.white,
+                    backgroundColor: Colors.white.withOpacity(0.2),
                   ),
                   Text(
                     unavailable ? '—' : '${quota.remaining}',
                     style: const TextStyle(
-                      color: AppColors.teal,
+                      color: Colors.white,
                       fontWeight: FontWeight.w900,
+                      fontSize: 16,
                     ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(width: 13),
+            const SizedBox(width: 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -297,32 +319,26 @@ class _QuotaCard extends StatelessWidget {
                     unavailable
                         ? 'AI temporarily unavailable'
                         : '${quota.remaining} scans remaining',
-                    style: const TextStyle(fontWeight: FontWeight.w800),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                      fontSize: 18,
+                    ),
                   ),
+                  const SizedBox(height: 2),
                   Text(
                     unavailable
                         ? 'Please try again later'
                         : '${quota.used} used today · resets daily',
-                    style: const TextStyle(
-                      color: AppColors.muted,
-                      fontSize: 12,
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.8),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                 ],
               ),
             ),
-            if (!unavailable)
-              TextButton.icon(
-                onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                      'Rewarded ads arrive in the monetization phase.',
-                    ),
-                  ),
-                ),
-                icon: const Icon(Icons.play_circle_outline, size: 18),
-                label: const Text('+1'),
-              ),
           ],
         ),
       ),
@@ -476,25 +492,45 @@ class _EmptyRecent extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Card(
     child: Padding(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 20),
       child: Column(
         children: [
-          const Icon(
-            Icons.description_outlined,
-            color: AppColors.muted,
-            size: 36,
+          Container(
+            width: 72,
+            height: 72,
+            decoration: BoxDecoration(
+              color: AppColors.tealSoft,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.document_scanner_rounded,
+              color: AppColors.teal,
+              size: 32,
+            ),
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'No prescriptions yet',
+            style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
           ),
           const SizedBox(height: 8),
           const Text(
-            'No prescriptions yet',
-            style: TextStyle(fontWeight: FontWeight.w900),
+            'Your structured results will appear here.',
+            style: TextStyle(color: AppColors.muted, fontSize: 14),
+            textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 4),
-          const Text('Your structured results will appear here.'),
-          const SizedBox(height: 10),
-          TextButton(
+          const SizedBox(height: 20),
+          FilledButton.icon(
             onPressed: () => context.push('/upload'),
-            child: const Text('Scan the first prescription'),
+            icon: const Icon(Icons.add_rounded, size: 20),
+            label: const Text('Scan the first prescription'),
+            style: FilledButton.styleFrom(
+              minimumSize: const Size(0, 48),
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(100),
+              ),
+            ),
           ),
         ],
       ),

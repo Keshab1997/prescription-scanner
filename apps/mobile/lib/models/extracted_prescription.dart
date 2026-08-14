@@ -19,7 +19,8 @@ class ExtractedPrescription {
   });
 
   factory ExtractedPrescription.fromJson(Map<String, dynamic> json) {
-    final medicines = (json['medicines'] as List?)
+    final medicines =
+        (json['medicines'] as List?)
             ?.whereType<Map>()
             .map((row) => Medicine.fromJson(Map<String, dynamic>.from(row)))
             .toList() ??
@@ -35,7 +36,8 @@ class ExtractedPrescription {
       warnings: _stringList(json['warnings']),
       tests: _stringList(json['tests']),
       followUp: _nullable(json['follow_up']?.toString()),
-      createdAt: DateTime.tryParse(json['created_at']?.toString() ?? '') ??
+      createdAt:
+          DateTime.tryParse(json['created_at']?.toString() ?? '') ??
           DateTime.now(),
       imageDeleted: json['image_deleted'] == true,
       model: _nullable(json['model']?.toString()),
@@ -55,18 +57,18 @@ class ExtractedPrescription {
   final String? model;
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'overall_confidence': overallConfidence,
-        'needs_manual_review': needsManualReview,
-        'is_prescription': isPrescription,
-        'medicines': medicines.map((m) => m.toJson()).toList(),
-        'warnings': warnings,
-        'tests': tests,
-        'follow_up': followUp,
-        'created_at': createdAt.toIso8601String(),
-        'image_deleted': imageDeleted,
-        'model': model,
-      };
+    'id': id,
+    'overall_confidence': overallConfidence,
+    'needs_manual_review': needsManualReview,
+    'is_prescription': isPrescription,
+    'medicines': medicines.map((m) => m.toJson()).toList(),
+    'warnings': warnings,
+    'tests': tests,
+    'follow_up': followUp,
+    'created_at': createdAt.toIso8601String(),
+    'image_deleted': imageDeleted,
+    'model': model,
+  };
 
   ExtractedPrescription copyWith({
     String? id,
@@ -79,20 +81,19 @@ class ExtractedPrescription {
     String? followUp,
     bool? imageDeleted,
     String? model,
-  }) =>
-      ExtractedPrescription(
-        id: id ?? this.id,
-        overallConfidence: overallConfidence ?? this.overallConfidence,
-        needsManualReview: needsManualReview ?? this.needsManualReview,
-        isPrescription: isPrescription ?? this.isPrescription,
-        medicines: medicines ?? this.medicines,
-        warnings: warnings ?? this.warnings,
-        tests: tests ?? this.tests,
-        followUp: followUp ?? this.followUp,
-        createdAt: createdAt,
-        imageDeleted: imageDeleted ?? this.imageDeleted,
-        model: model ?? this.model,
-      );
+  }) => ExtractedPrescription(
+    id: id ?? this.id,
+    overallConfidence: overallConfidence ?? this.overallConfidence,
+    needsManualReview: needsManualReview ?? this.needsManualReview,
+    isPrescription: isPrescription ?? this.isPrescription,
+    medicines: medicines ?? this.medicines,
+    warnings: warnings ?? this.warnings,
+    tests: tests ?? this.tests,
+    followUp: followUp ?? this.followUp,
+    createdAt: createdAt,
+    imageDeleted: imageDeleted ?? this.imageDeleted,
+    model: model ?? this.model,
+  );
 }
 
 class Medicine {
@@ -117,25 +118,24 @@ class Medicine {
   });
 
   factory Medicine.fromJson(Map<String, dynamic> json) => Medicine(
-        name: json['name']?.toString() ?? 'Unclear medicine',
-        normalizedName: _nullable(json['normalized_name']?.toString()),
-        strength: _nullable(json['strength']?.toString()),
-        dosage: _nullable(json['dosage']?.toString()),
-        frequency: _nullable(json['frequency']?.toString()),
-        route: _nullable(json['route']?.toString()),
-        duration: _nullable(json['duration']?.toString()),
-        instructions: _nullable(json['instructions']?.toString()),
-        summaryEn: _nullable(json['summary_en']?.toString()),
-        summaryBn: _nullable(json['summary_bn']?.toString()),
-        summaryHi: _nullable(json['summary_hi']?.toString()),
-        purposeEn: _nullable(json['purpose_en']?.toString()),
-        purposeBn: _nullable(json['purpose_bn']?.toString()),
-        purposeHi: _nullable(json['purpose_hi']?.toString()),
-        confidence:
-            (json['confidence'] is num ? json['confidence'] : 0).toDouble(),
-        needsReview: json['needs_review'] == true,
-        position: json['position'] is int ? json['position'] as int : 0,
-      );
+    name: json['name']?.toString() ?? 'Unclear medicine',
+    normalizedName: _nullable(json['normalized_name']?.toString()),
+    strength: _nullable(json['strength']?.toString()),
+    dosage: _nullable(json['dosage']?.toString()),
+    frequency: _nullable(json['frequency']?.toString()),
+    route: _nullable(json['route']?.toString()),
+    duration: _nullable(json['duration']?.toString()),
+    instructions: _nullable(json['instructions']?.toString()),
+    summaryEn: _nullable(json['summary_en']?.toString()),
+    summaryBn: _nullable(json['summary_bn']?.toString()),
+    summaryHi: _nullable(json['summary_hi']?.toString()),
+    purposeEn: _nullable(json['purpose_en']?.toString()),
+    purposeBn: _nullable(json['purpose_bn']?.toString()),
+    purposeHi: _nullable(json['purpose_hi']?.toString()),
+    confidence: (json['confidence'] is num ? json['confidence'] : 0).toDouble(),
+    needsReview: json['needs_review'] == true,
+    position: json['position'] is int ? json['position'] as int : 0,
+  );
 
   final String name;
   final String? normalizedName;
@@ -156,24 +156,24 @@ class Medicine {
   final int position;
 
   Map<String, dynamic> toJson() => {
-        'name': name,
-        'normalized_name': normalizedName,
-        'strength': strength,
-        'dosage': dosage,
-        'frequency': frequency,
-        'route': route,
-        'duration': duration,
-        'instructions': instructions,
-        'summary_en': summaryEn,
-        'summary_bn': summaryBn,
-        'summary_hi': summaryHi,
-        'purpose_en': purposeEn,
-        'purpose_bn': purposeBn,
-        'purpose_hi': purposeHi,
-        'confidence': confidence,
-        'needs_review': needsReview,
-        'position': position,
-      };
+    'name': name,
+    'normalized_name': normalizedName,
+    'strength': strength,
+    'dosage': dosage,
+    'frequency': frequency,
+    'route': route,
+    'duration': duration,
+    'instructions': instructions,
+    'summary_en': summaryEn,
+    'summary_bn': summaryBn,
+    'summary_hi': summaryHi,
+    'purpose_en': purposeEn,
+    'purpose_bn': purposeBn,
+    'purpose_hi': purposeHi,
+    'confidence': confidence,
+    'needs_review': needsReview,
+    'position': position,
+  };
 }
 
 List<String> _stringList(Object? value) => value is List

@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:admin_api_key_manager/admin_api_key_manager.dart';
 
 import 'package:prescription_scanner/models/extracted_prescription.dart';
+import 'package:prescription_scanner/services/prescription_json_repair.dart';
 
 /// Direct, Supabase-free Gemini vision service.
 ///
@@ -85,8 +86,10 @@ Return a JSON object with these fields:
   ///
   /// Tries each available Gemini key in the pool (failover) before giving up.
   /// Throws [VisionException] when no key succeeds.
-  Future<ExtractedPrescription> processImage(String imagePath,
-      {String? localId}) async {
+  Future<ExtractedPrescription> processImage(
+    String imagePath, {
+    String? localId,
+  }) async {
     final bytes = await File(imagePath).readAsBytes();
     if (bytes.isEmpty) {
       throw const VisionException('The selected image is empty.');
@@ -140,25 +143,22 @@ Return a JSON object with these fields:
     final body = jsonEncode({
       'systemInstruction': {
         'parts': [
-          {'text': _systemInstruction}
-        ]
+          {'text': _systemInstruction},
+        ],
       },
       'contents': [
         {
           'role': 'user',
           'parts': [
             {
-              'inlineData': {
-                'mimeType': 'image/jpeg',
-                'data': base64Image,
-              }
+              'inlineData': {'mimeType': 'image/jpeg', 'data': base64Image},
             },
             {
               'text':
-                  'Transcribe this prescription image under the system rules. Return only the required JSON object.'
-            }
-          ]
-        }
+                  'Transcribe this prescription image under the system rules. Return only the required JSON object.',
+            },
+          ],
+        },
       ],
       'generationConfig': {
         'temperature': 0,
@@ -183,11 +183,15 @@ Return a JSON object with these fields:
           )
           .timeout(const Duration(seconds: 60));
     } on TimeoutException {
-      throw const VisionException('The AI provider timed out.',
-          statusCode: 504);
+      throw const VisionException(
+        'The AI provider timed out.',
+        statusCode: 504,
+      );
     } catch (_) {
-      throw const VisionException('Could not reach the AI provider.',
-          statusCode: 0);
+      throw const VisionException(
+        'Could not reach the AI provider.',
+        statusCode: 0,
+      );
     }
 
     if (response.statusCode != 200) {
@@ -198,110 +202,70 @@ Return a JSON object with these fields:
     }
 
     final payload = jsonDecode(response.body) as Map<String, dynamic>;
-    final text = _extractText(payload);
-    if (text == null) {
-      throw const VisionException('The AI provider returned no readable result.',
-          statusCode: 502);
-    }
-
-    late final Map<String, dynamic> raw;
-    try {
-      raw = jsonDecode(text) as Map<String, dynamic>;
-    } catch (_) {
-      // Surface a snippet so a bad/empty response is debuggable instead of a
-      // generic "invalid JSON".
-      final snippet = text.length > 200 ? '${text.substring(0, 200)}…' : text;
-      throw VisionException(
-        'The AI provider returned invalid JSON. Response: $snippet',
+    final candidates = _candidateTexts(payload);
+    if (candidates.isEmpty) {
+      throw const VisionException(
+        'The AI provider returned no readable result.',
         statusCode: 502,
       );
     }
 
-    // Gemini sometimes returns an error envelope instead of a result.
-    if (raw case {'error': final e}) {
-      final message = e is Map ? (e['message']?.toString() ?? e.toString()) : e.toString();
-      throw VisionException('The AI provider returned an error: $message',
-          statusCode: 502);
-    }
-
-    return _parseResult(raw);
-  }
-
-  String? _extractText(Map<String, dynamic> payload) {
-    final candidates = payload['candidates'];
-    if (candidates is! List || candidates.isEmpty) return null;
-    final content = candidates[0]['content'];
-    final parts = content is Map ? content['parts'] : null;
-    if (parts is! List) return null;
-    final texts = parts
-        .whereType<Map>()
-        .map((p) => p['text'])
-        .whereType<String>()
-        .toList();
-    if (texts.isEmpty) return null;
-
-    final joined = texts.join('').trim();
-    // Gemini sometimes wraps JSON in markdown fences (```json ... ```) or adds
-    // surrounding prose even with responseMimeType=application/json. Strip a
-    // leading/trailing fence and any non-JSON prefix/suffix so parsing is robust.
-    final fenced = _stripCodeFence(joined);
-    return _extractJsonObject(fenced) ?? fenced;
-  }
-
-  /// Removes a ```json / ``` fence if present.
-  String _stripCodeFence(String text) {
-    var t = text.trim();
-    final fenceStart = RegExp(r'^```(?:json|JSON)?\s*');
-    final fenceEnd = RegExp(r'\s*```$');
-    if (t.startsWith('```')) {
-      t = t.replaceFirst(fenceStart, '');
-      if (t.endsWith('```')) t = t.replaceFirst(fenceEnd, '');
-    }
-    return t.trim();
-  }
-
-  /// Extracts the first balanced JSON object `{...}` from [text], tolerating
-  /// leading/trailing prose. Returns null if no object is found.
-  String? _extractJsonObject(String text) {
-    final start = text.indexOf('{');
-    if (start < 0) return null;
-    var depth = 0;
-    var inString = false;
-    var escape = false;
-    for (var i = start; i < text.length; i++) {
-      final ch = text[i];
-      if (inString) {
-        if (escape) {
-          escape = false;
-        } else if (ch == '\\') {
-          escape = true;
-        } else if (ch == '"') {
-          inString = false;
+    // Try every candidate: Gemini may return more than one, and a later one
+    // can be the well-formed JSON even if an earlier one is truncated.
+    VisionException? lastError;
+    for (final candidate in candidates) {
+      try {
+        final raw = parsePrescriptionJson(candidate);
+        // Gemini sometimes returns an error envelope instead of a result.
+        if (raw case {'error': final e}) {
+          final message = e is Map
+              ? (e['message']?.toString() ?? e.toString())
+              : e.toString();
+          throw VisionException(
+            'The AI provider returned an error: $message',
+            statusCode: 502,
+          );
         }
-        continue;
-      }
-      if (ch == '"') {
-        inString = true;
-      } else if (ch == '{') {
-        depth++;
-      } else if (ch == '}') {
-        depth--;
-        if (depth == 0) return text.substring(start, i + 1);
+        return _parseResult(raw);
+      } on VisionException catch (e) {
+        lastError = e;
       }
     }
-    return null;
+    throw lastError ??
+        const VisionException('The AI provider returned an unreadable result.');
+  }
+
+  /// Collects the text from every candidate Gemini returns, in order.
+  List<String> _candidateTexts(Map<String, dynamic> payload) {
+    final candidates = payload['candidates'];
+    if (candidates is! List) return const <String>[];
+    final texts = <String>[];
+    for (final c in candidates) {
+      if (c is! Map) continue;
+      final content = c['content'];
+      final parts = content is Map ? content['parts'] : null;
+      if (parts is! List) continue;
+      final partTexts = parts
+          .whereType<Map>()
+          .map((p) => p['text'])
+          .whereType<String>()
+          .toList();
+      if (partTexts.isNotEmpty) texts.add(partTexts.join('').trim());
+    }
+    return texts;
   }
 
   ExtractedPrescription _parseResult(Map<String, dynamic> raw) {
     final medicinesRaw = raw['medicines'];
     final medicines = medicinesRaw is List
         ? medicinesRaw
-            .whereType<Map>()
-            .map((m) => Medicine.fromJson(Map<String, dynamic>.from(m)))
-            .toList()
+              .whereType<Map>()
+              .map((m) => Medicine.fromJson(Map<String, dynamic>.from(m)))
+              .toList()
         : <Medicine>[];
 
-    final needsReview = raw['needs_manual_review'] == true ||
+    final needsReview =
+        raw['needs_manual_review'] == true ||
         raw['is_prescription'] != true ||
         medicines.isEmpty ||
         (raw['overall_confidence'] is num &&
@@ -326,9 +290,9 @@ Return a JSON object with these fields:
 
   List<String> _stringList(Object? value) => value is List
       ? value
-          .map((e) => e.toString().trim())
-          .where((e) => e.isNotEmpty)
-          .toList()
+            .map((e) => e.toString().trim())
+            .where((e) => e.isNotEmpty)
+            .toList()
       : const <String>[];
 
   String? _nullable(String? value) {

@@ -50,8 +50,8 @@ enum ResultLanguage {
 /// Selected summary language for the result screen.
 final resultLanguageProvider =
     NotifierProvider<ResultLanguageNotifier, ResultLanguage>(
-  ResultLanguageNotifier.new,
-);
+      ResultLanguageNotifier.new,
+    );
 
 class ResultLanguageNotifier extends Notifier<ResultLanguage> {
   @override
@@ -93,9 +93,9 @@ class ResultScreen extends ConsumerWidget {
       if (context.mounted) context.go('/history');
     } catch (_) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Could not delete this item.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not delete this item.')),
+      );
     }
   }
 
@@ -198,112 +198,112 @@ class ResultScreen extends ConsumerWidget {
     }
 
     return Scaffold(
-        appBar: AppBar(
-          title: const Text('Extraction result'),
-          actions: [
-            _LanguageToggle(language: ref.watch(resultLanguageProvider)),
-            PopupMenuButton<String>(
-              onSelected: (value) {
-                if (value == 'delete') deleteHistory(context, ref);
-              },
-              itemBuilder: (_) => const [
-                PopupMenuItem(
-                  value: 'delete',
-                  child: Row(
-                    children: [
-                      Icon(Icons.delete_outline, color: AppColors.danger),
-                      SizedBox(width: 9),
-                      Text('Delete history'),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-        body: RefreshIndicator(
-          onRefresh: () async {
-            // Results are local; nothing to refresh.
-          },
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(20, 4, 20, 30),
-            children: [
-              _QualityHeader(details: details),
-              const SizedBox(height: 14),
-              const _MedicalWarning(),
-              if (details.imageDeleted) ...[
-                const SizedBox(height: 10),
-                const _PrivacyNotice(),
-              ],
-              if (details.warnings.isNotEmpty) ...[
-                const SizedBox(height: 16),
-                _WarningsCard(warnings: details.warnings),
-              ],
-              const SizedBox(height: 16),
-              if (!details.isPrescription)
-                const _EmptyResult(
-                  icon: Icons.image_not_supported_outlined,
-                  title: 'Not recognized as a prescription',
-                  message:
-                      'No medicine details were created. Try a clearer prescription image.',
-                )
-              else if (details.medicines.isEmpty)
-                const _EmptyResult(
-                  icon: Icons.visibility_off_outlined,
-                  title: 'No medicines could be read',
-                  message:
-                      'The app did not guess unclear handwriting. Try a brighter, closer image.',
-                )
-              else ...[
-                Text(
-                  '${details.medicines.length} medicine${details.medicines.length == 1 ? '' : 's'} found',
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                const SizedBox(height: 10),
-                _PatientSummary(
-                  details: details,
-                  language: ref.watch(resultLanguageProvider),
-                ),
-                const SizedBox(height: 12),
-                ...details.medicines.map(
-                  (medicine) => Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    child: _MedicineCard(
-                      medicine: medicine,
-                      language: ref.watch(resultLanguageProvider),
-                    ),
-                  ),
-                ),
-              ],
-              if (details.tests.isNotEmpty || details.followUp != null) ...[
-                const SizedBox(height: 8),
-                _OtherVisibleDetails(details: details),
-              ],
-              const SizedBox(height: 18),
-              OutlinedButton.icon(
-                onPressed: () => reportIssue(context, ref),
-                icon: const Icon(Icons.flag_outlined),
-                label: const Text('Report an extraction issue'),
-              ),
-              const SizedBox(height: 10),
-              FilledButton(
-                onPressed: () => context.go('/home'),
-                child: const Text('Done'),
-              ),
-              const SizedBox(height: 18),
-              const Text(
-                'Prescription Scanner does not diagnose, treat, cure or prevent any medical condition. Always consult a qualified healthcare professional.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: AppColors.muted,
-                  fontSize: 11,
-                  height: 1.45,
+      appBar: AppBar(
+        title: const Text('Extraction result'),
+        actions: [
+          _LanguageToggle(language: ref.watch(resultLanguageProvider)),
+          PopupMenuButton<String>(
+            onSelected: (value) {
+              if (value == 'delete') deleteHistory(context, ref);
+            },
+            itemBuilder: (_) => const [
+              PopupMenuItem(
+                value: 'delete',
+                child: Row(
+                  children: [
+                    Icon(Icons.delete_outline, color: AppColors.danger),
+                    SizedBox(width: 9),
+                    Text('Delete history'),
+                  ],
                 ),
               ),
             ],
           ),
+        ],
+      ),
+      body: RefreshIndicator(
+        onRefresh: () async {
+          // Results are local; nothing to refresh.
+        },
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(20, 4, 20, 30),
+          children: [
+            _QualityHeader(details: details),
+            const SizedBox(height: 14),
+            const _MedicalWarning(),
+            if (details.imageDeleted) ...[
+              const SizedBox(height: 10),
+              const _PrivacyNotice(),
+            ],
+            if (details.warnings.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              _WarningsCard(warnings: details.warnings),
+            ],
+            const SizedBox(height: 16),
+            if (!details.isPrescription)
+              const _EmptyResult(
+                icon: Icons.image_not_supported_outlined,
+                title: 'Not recognized as a prescription',
+                message:
+                    'No medicine details were created. Try a clearer prescription image.',
+              )
+            else if (details.medicines.isEmpty)
+              const _EmptyResult(
+                icon: Icons.visibility_off_outlined,
+                title: 'No medicines could be read',
+                message:
+                    'The app did not guess unclear handwriting. Try a brighter, closer image.',
+              )
+            else ...[
+              Text(
+                '${details.medicines.length} medicine${details.medicines.length == 1 ? '' : 's'} found',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const SizedBox(height: 10),
+              _PatientSummary(
+                details: details,
+                language: ref.watch(resultLanguageProvider),
+              ),
+              const SizedBox(height: 12),
+              ...details.medicines.map(
+                (medicine) => Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: _MedicineCard(
+                    medicine: medicine,
+                    language: ref.watch(resultLanguageProvider),
+                  ),
+                ),
+              ),
+            ],
+            if (details.tests.isNotEmpty || details.followUp != null) ...[
+              const SizedBox(height: 8),
+              _OtherVisibleDetails(details: details),
+            ],
+            const SizedBox(height: 18),
+            OutlinedButton.icon(
+              onPressed: () => reportIssue(context, ref),
+              icon: const Icon(Icons.flag_outlined),
+              label: const Text('Report an extraction issue'),
+            ),
+            const SizedBox(height: 10),
+            FilledButton(
+              onPressed: () => context.go('/home'),
+              child: const Text('Done'),
+            ),
+            const SizedBox(height: 18),
+            const Text(
+              'Prescription Scanner does not diagnose, treat, cure or prevent any medical condition. Always consult a qualified healthcare professional.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: AppColors.muted,
+                fontSize: 11,
+                height: 1.45,
+              ),
+            ),
+          ],
         ),
-      );
+      ),
+    );
   }
 }
 
@@ -359,10 +359,7 @@ class _LangChip extends ConsumerWidget {
 }
 
 class _PatientSummary extends StatelessWidget {
-  const _PatientSummary({
-    required this.details,
-    required this.language,
-  });
+  const _PatientSummary({required this.details, required this.language});
   final ExtractedPrescription details;
   final ResultLanguage language;
 
@@ -429,8 +426,11 @@ class _PatientSummary extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.record_voice_over_rounded,
-                  color: AppColors.indigo, size: 18),
+              const Icon(
+                Icons.record_voice_over_rounded,
+                color: AppColors.indigo,
+                size: 18,
+              ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -451,25 +451,24 @@ class _PatientSummary extends StatelessWidget {
   }
 
   String _headerText(ResultLanguage lang) => switch (lang) {
-        ResultLanguage.en =>
-          'In this prescription, the following medicines are written:',
-        ResultLanguage.bn =>
-          'এই প্রেসক্রিপশনে নিচের ওষুধগুলো লেখা হয়েছে:',
-        ResultLanguage.hi =>
-          'इस प्रिस्क्रिप्शन में निम्नलिखित दवाइयाँ लिखी गई हैं:',
-      };
+    ResultLanguage.en =>
+      'In this prescription, the following medicines are written:',
+    ResultLanguage.bn => 'এই প্রেসক্রিপশনে নিচের ওষুধগুলো লেখা হয়েছে:',
+    ResultLanguage.hi =>
+      'इस प्रिस्क्रिप्शन में निम्नलिखित दवाइयाँ लिखी गई हैं:',
+  };
 
   String _extraLabel(ResultLanguage lang) => switch (lang) {
-        ResultLanguage.en => 'Tests advised:',
-        ResultLanguage.bn => 'পরামর্শ দেওয়া টেস্ট:',
-        ResultLanguage.hi => 'सुझाई गई जाँच:',
-      };
+    ResultLanguage.en => 'Tests advised:',
+    ResultLanguage.bn => 'পরামর্শ দেওয়া টেস্ট:',
+    ResultLanguage.hi => 'सुझाई गई जाँच:',
+  };
 
   String _followUpLabel(ResultLanguage lang) => switch (lang) {
-        ResultLanguage.en => 'Follow-up:',
-        ResultLanguage.bn => 'ফলো-আপ:',
-        ResultLanguage.hi => 'फॉलो-अप:',
-      };
+    ResultLanguage.en => 'Follow-up:',
+    ResultLanguage.bn => 'ফলো-আপ:',
+    ResultLanguage.hi => 'फॉलो-अप:',
+  };
 }
 
 class _QualityHeader extends StatelessWidget {
@@ -535,10 +534,7 @@ class _QualityHeader extends StatelessWidget {
 }
 
 class _MedicineCard extends StatelessWidget {
-  const _MedicineCard({
-    required this.medicine,
-    required this.language,
-  });
+  const _MedicineCard({required this.medicine, required this.language});
   final Medicine medicine;
   final ResultLanguage language;
 
@@ -587,7 +583,10 @@ class _MedicineCard extends StatelessWidget {
                     const SizedBox(height: 3),
                     Text(
                       friendly,
-                      style: const TextStyle(color: AppColors.muted, fontSize: 12),
+                      style: const TextStyle(
+                        color: AppColors.muted,
+                        fontSize: 12,
+                      ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -608,8 +607,11 @@ class _MedicineCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 2),
-                  const Icon(Icons.chevron_right_rounded,
-                      color: AppColors.muted, size: 16),
+                  const Icon(
+                    Icons.chevron_right_rounded,
+                    color: AppColors.muted,
+                    size: 16,
+                  ),
                 ],
               ),
             ],
@@ -634,10 +636,7 @@ void _showMedicineDetail(
 }
 
 class _MedicineDetailSheet extends StatelessWidget {
-  const _MedicineDetailSheet({
-    required this.medicine,
-    required this.language,
-  });
+  const _MedicineDetailSheet({required this.medicine, required this.language});
   final Medicine medicine;
   final ResultLanguage language;
 
@@ -757,7 +756,10 @@ class _MedicineDetailSheet extends StatelessWidget {
                     Expanded(
                       child: Text(
                         'This item is uncertain. Please check the original prescription or ask a pharmacist/doctor.',
-                        style: TextStyle(color: Color(0xFF805511), fontSize: 12),
+                        style: TextStyle(
+                          color: Color(0xFF805511),
+                          fontSize: 12,
+                        ),
                       ),
                     ),
                   ],
@@ -804,62 +806,62 @@ class _DetailRowCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.all(13),
-        decoration: BoxDecoration(
-          color: AppColors.canvas,
-          borderRadius: BorderRadius.circular(13),
+    padding: const EdgeInsets.all(13),
+    decoration: BoxDecoration(
+      color: AppColors.canvas,
+      borderRadius: BorderRadius.circular(13),
+    ),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 34,
+          height: 34,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: AppColors.tealSoft,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(row.icon, color: AppColors.teal, size: 18),
         ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: 34,
-              height: 34,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: AppColors.tealSoft,
-                borderRadius: BorderRadius.circular(10),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                row.title,
+                style: const TextStyle(
+                  color: AppColors.muted,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
-              child: Icon(row.icon, color: AppColors.teal, size: 18),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    row.title,
-                    style: const TextStyle(
-                      color: AppColors.muted,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    row.value,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w900,
-                      fontSize: 15,
-                    ),
-                  ),
-                  if (row.hint != null) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      row.hint!,
-                      style: const TextStyle(
-                        color: AppColors.muted,
-                        fontSize: 12,
-                        height: 1.35,
-                      ),
-                    ),
-                  ],
-                ],
+              const SizedBox(height: 3),
+              Text(
+                row.value,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w900,
+                  fontSize: 15,
+                ),
               ),
-            ),
-          ],
+              if (row.hint != null) ...[
+                const SizedBox(height: 4),
+                Text(
+                  row.hint!,
+                  style: const TextStyle(
+                    color: AppColors.muted,
+                    fontSize: 12,
+                    height: 1.35,
+                  ),
+                ),
+              ],
+            ],
+          ),
         ),
-      );
+      ],
+    ),
+  );
 }
 
 class _MedicalWarning extends StatelessWidget {

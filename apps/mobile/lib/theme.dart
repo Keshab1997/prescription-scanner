@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 abstract final class AppColors {
   static const teal = Color(0xFF0F766E);
@@ -9,8 +10,8 @@ abstract final class AppColors {
   static const amberSoft = Color(0xFFFFF8E8);
   static const ink = Color(0xFF172033);
   static const muted = Color(0xFF68758A);
-  static const line = Color(0xFFDFE7EE);
-  static const canvas = Color(0xFFF7FAFC);
+  static const line = Color(0xFFDFE7EE); // Soft border
+  static const canvas = Color(0xFFF8FAFC); // Slightly cooler gray-blue canvas
   static const success = Color(0xFF15803D);
   static const danger = Color(0xFFDC2626);
 }
@@ -24,76 +25,129 @@ abstract final class AppTheme {
       surface: Colors.white,
       error: AppColors.danger,
     );
+
+    final baseTextTheme = GoogleFonts.plusJakartaSansTextTheme();
+
     return ThemeData(
       useMaterial3: true,
       colorScheme: scheme,
       scaffoldBackgroundColor: AppColors.canvas,
-      textTheme: const TextTheme(
-        headlineSmall: TextStyle(
+      textTheme: baseTextTheme.copyWith(
+        headlineSmall: baseTextTheme.headlineSmall?.copyWith(
           color: AppColors.ink,
-          fontSize: 24,
+          fontSize: 26,
           fontWeight: FontWeight.w800,
-          letterSpacing: -0.6,
+          letterSpacing: -0.8,
         ),
-        titleLarge: TextStyle(
+        titleLarge: baseTextTheme.titleLarge?.copyWith(
           color: AppColors.ink,
+          fontSize: 22,
           fontWeight: FontWeight.w800,
+          letterSpacing: -0.5,
         ),
-        bodyMedium: TextStyle(color: AppColors.muted, height: 1.5),
+        titleMedium: baseTextTheme.titleMedium?.copyWith(
+          color: AppColors.ink,
+          fontSize: 18,
+          fontWeight: FontWeight.w700,
+          letterSpacing: -0.3,
+        ),
+        bodyLarge: baseTextTheme.bodyLarge?.copyWith(
+          color: AppColors.ink,
+          fontSize: 16,
+          height: 1.6,
+          fontWeight: FontWeight.w500,
+        ),
+        bodyMedium: baseTextTheme.bodyMedium?.copyWith(
+          color: AppColors.muted,
+          fontSize: 14,
+          height: 1.5,
+          fontWeight: FontWeight.w500,
+        ),
+        bodySmall: baseTextTheme.bodySmall?.copyWith(
+          color: AppColors.muted,
+          fontSize: 12,
+          fontWeight: FontWeight.w500,
+        ),
       ),
-      cardTheme: const CardThemeData(
+      cardTheme: CardThemeData(
         margin: EdgeInsets.zero,
-        elevation: 0,
+        elevation: 8,
+        shadowColor: AppColors.teal.withOpacity(0.08),
         color: Colors.white,
         surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(18)),
-          side: BorderSide(color: AppColors.line),
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(24)),
+          side: BorderSide(
+            color: Colors.white,
+            width: 2,
+          ), // Gives a subtle glassy edge
         ),
       ),
-      inputDecorationTheme: const InputDecorationTheme(
+      inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: Colors.white,
-        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 15),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.all(Radius.circular(14)),
-          borderSide: BorderSide(color: AppColors.line),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 20,
+          vertical: 18,
+        ),
+        border: const OutlineInputBorder(
+          borderRadius: BorderRadius.all(Radius.circular(16)),
+          borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.all(Radius.circular(14)),
-          borderSide: BorderSide(color: AppColors.line),
+          borderRadius: const BorderRadius.all(Radius.circular(16)),
+          borderSide: BorderSide(color: AppColors.line.withOpacity(0.6)),
         ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.all(Radius.circular(14)),
-          borderSide: BorderSide(color: AppColors.teal, width: 1.5),
+        focusedBorder: const OutlineInputBorder(
+          borderRadius: BorderRadius.all(Radius.circular(16)),
+          borderSide: BorderSide(color: AppColors.teal, width: 2),
+        ),
+        hintStyle: const TextStyle(
+          color: AppColors.muted,
+          fontWeight: FontWeight.w500,
         ),
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          minimumSize: const Size(0, 52),
+          minimumSize: const Size(0, 56),
+          elevation: 0,
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(16),
           ),
-          textStyle: const TextStyle(fontWeight: FontWeight.w800),
+          textStyle: const TextStyle(
+            fontWeight: FontWeight.w700,
+            fontSize: 16,
+            letterSpacing: -0.2,
+          ),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          minimumSize: const Size(0, 52),
-          side: const BorderSide(color: AppColors.line),
+          minimumSize: const Size(0, 56),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          side: const BorderSide(color: AppColors.line, width: 1.5),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(16),
           ),
-          textStyle: const TextStyle(fontWeight: FontWeight.w800),
+          textStyle: const TextStyle(
+            fontWeight: FontWeight.w700,
+            fontSize: 16,
+            letterSpacing: -0.2,
+          ),
         ),
       ),
-      appBarTheme: const AppBarTheme(
+      appBarTheme: AppBarTheme(
         backgroundColor: AppColors.canvas,
         surfaceTintColor: Colors.transparent,
-        titleTextStyle: TextStyle(
+        elevation: 0,
+        centerTitle: true,
+        iconTheme: const IconThemeData(color: AppColors.ink),
+        titleTextStyle: GoogleFonts.plusJakartaSans(
           color: AppColors.ink,
-          fontSize: 19,
+          fontSize: 18,
           fontWeight: FontWeight.w800,
+          letterSpacing: -0.3,
         ),
       ),
     );

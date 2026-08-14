@@ -119,7 +119,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
             icon: const Icon(Icons.shield_outlined, color: AppColors.teal),
             title: const Text('AI processing consent'),
             content: const Text(
-              'Your cropped prescription image will be sent securely to Google Gemini to transcribe visible medicine details. The app will not ask Gemini to diagnose or recommend treatment. The original image is processed on device and never stored on a server.',
+              'Your prescription image will be sent securely to KeshabStudios AI to transcribe visible medicine details. The app will not ask the AI to diagnose or recommend treatment. The original image is processed on device and never stored on a server.',
             ),
             actions: [
               TextButton(
@@ -142,8 +142,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
 
       // Supabase-free path: send the local image straight to Gemini.
       final localId = const Uuid().v4();
-      final result =
-          await vision.processImage(selected.path, localId: localId);
+      final result = await vision.processImage(selected.path, localId: localId);
       ResultStore.instance.save(result);
 
       // Clean up the local draft file now that it has been processed.
@@ -480,7 +479,6 @@ class _Tip extends StatelessWidget {
 
 class ProcessingScreen extends ConsumerStatefulWidget {
   const ProcessingScreen({required this.prescriptionId, super.key});
-
   final String prescriptionId;
 
   @override
@@ -494,11 +492,11 @@ class _ProcessingScreenState extends ConsumerState<ProcessingScreen>
   String? error;
 
   @override
-  void initState() {
+  initState() {
     super.initState();
     controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 2200),
+      duration: const Duration(milliseconds: 1800),
     )..repeat(reverse: true);
     WidgetsBinding.instance.addPostFrameCallback((_) => startProcessing());
   }
@@ -522,30 +520,24 @@ class _ProcessingScreenState extends ConsumerState<ProcessingScreen>
       running = true;
       error = null;
     });
+
     try {
-      // Vision already ran on the upload screen; the result is stored locally.
-      // Wait briefly so the spinner is visible, then load it back.
-      await Future<void>.delayed(const Duration(milliseconds: 900));
+      // The vision call already ran on the upload screen; the result is stored
+      // locally. Show it immediately instead of a fixed fake spinner delay.
+      await Future<void>.delayed(const Duration(milliseconds: 350));
       final result = ResultStore.instance.get(widget.prescriptionId);
       if (result == null) {
-        if (mounted) {
+        if (mounted)
           setState(
-            () => error =
-                'The result could not be found. Please scan again.',
+            () => error = 'The result could not be found. Please scan again.',
           );
-        }
         return;
       }
       if (!mounted) return;
-      context.go(
-        '/result?prescriptionId=${Uri.encodeComponent(result.id)}',
-      );
+      context.go('/result?prescriptionId=${Uri.encodeComponent(result.id)}');
     } catch (_) {
-      if (mounted) {
-        setState(
-          () => error = 'The result could not be loaded. Please retry.',
-        );
-      }
+      if (mounted)
+        setState(() => error = 'The result could not be loaded. Please retry.');
     } finally {
       if (mounted) setState(() => running = false);
     }
@@ -554,169 +546,218 @@ class _ProcessingScreenState extends ConsumerState<ProcessingScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBodyBehindAppBar: true,
       body: Container(
-        decoration: const BoxDecoration(
+        width: double.infinity,
+        decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [Color(0xFFE8F8F5), AppColors.canvas],
+            colors: [
+              AppColors.tealSoft,
+              AppColors.canvas,
+              AppColors.canvas,
+              Colors.white,
+            ],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
+            stops: const [0.0, 0.3, 0.7, 1.0],
           ),
         ),
         child: SafeArea(
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 26),
+          child: Column(
             children: [
-              Row(
-                children: [
-                  IconButton.filledTonal(
-                    onPressed: () => context.go('/home'),
-                    icon: const Icon(Icons.arrow_back_rounded),
-                  ),
-                  const SizedBox(width: 10),
-                  const Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Reading prescription',
-                        style: TextStyle(
-                          color: AppColors.ink,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w900,
-                        ),
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                child: Row(
+                  children: [
+                    IconButton.filledTonal(
+                      onPressed: () => context.go('/home'),
+                      icon: const Icon(Icons.close_rounded),
+                      style: IconButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        shadowColor: AppColors.teal.withValues(alpha: 0.1),
+                        elevation: 8,
                       ),
-                      Text(
-                        'You can safely leave this screen',
-                        style: TextStyle(color: AppColors.muted, fontSize: 11),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              const SizedBox(height: 32),
-              Center(
-                child: SizedBox(
-                  width: 190,
-                  height: 220,
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      Container(
-                        width: 190,
-                        height: 190,
-                        decoration: const BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: RadialGradient(
-                            colors: [Color(0x3320C7AE), Colors.transparent],
-                          ),
-                        ),
-                      ),
-                      const _ProcessingPaper(),
-                      AnimatedBuilder(
-                        animation: controller,
-                        builder: (_, _) => Positioned(
-                          top: 49 + (112 * controller.value),
-                          left: 43,
-                          right: 43,
-                          child: Container(
-                            height: 3,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF20C7AE),
-                              borderRadius: BorderRadius.circular(3),
-                              boxShadow: const [
-                                BoxShadow(
-                                  color: Color(0xAA20C7AE),
-                                  blurRadius: 12,
-                                ),
-                              ],
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'AI is Extracting',
+                            style: TextStyle(
+                              color: AppColors.ink,
+                              fontSize: 22,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: -0.5,
                             ),
                           ),
-                        ),
+                          Text(
+                            'Please wait a moment safely.',
+                            style: TextStyle(
+                              color: AppColors.muted,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                ),
-              ),
-              Text(
-                error == null
-                    ? 'Finding visible details…'
-                    : 'Processing paused',
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                error == null
-                    ? 'Gemini is structuring the prescription. Unclear fields will be marked for your review.'
-                    : error!,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: error == null ? AppColors.muted : AppColors.danger,
-                  height: 1.45,
-                ),
-              ),
-              const SizedBox(height: 24),
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(14),
-                  child: Column(
-                    children: [
-                      const _Step(
-                        'Secure upload',
-                        'Private image received',
-                        true,
-                        true,
-                      ),
-                      const _Step(
-                        'Quality check',
-                        'Image limits validated',
-                        true,
-                        true,
-                      ),
-                      _Step(
-                        'Gemini extraction',
-                        running
-                            ? 'Reading visible medicine details'
-                            : 'Waiting to retry',
-                        running,
-                        false,
-                      ),
-                      const _Step(
-                        'Safety validation',
-                        'Schema and confidence checks',
-                        false,
-                        false,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.shield_outlined, color: AppColors.muted, size: 16),
-                  SizedBox(width: 6),
-                  Flexible(
-                    child: Text(
-                      'No diagnosis or medicine recommendation is requested',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(color: AppColors.muted, fontSize: 11),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-              if (error != null) ...[
-                const SizedBox(height: 18),
-                FilledButton.icon(
-                  onPressed: running ? null : startProcessing,
-                  icon: const Icon(Icons.refresh_rounded),
-                  label: const Text('Try processing again'),
+              Expanded(
+                child: Center(
+                  child: error != null
+                      ? Padding(
+                          padding: const EdgeInsets.all(32),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(24),
+                                decoration: BoxDecoration(
+                                  color: AppColors.danger.withValues(
+                                    alpha: 0.1,
+                                  ),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.error_outline_rounded,
+                                  color: AppColors.danger,
+                                  size: 48,
+                                ),
+                              ),
+                              const SizedBox(height: 24),
+                              Text(
+                                error!,
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  color: AppColors.danger,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(height: 24),
+                              FilledButton.icon(
+                                onPressed: startProcessing,
+                                icon: const Icon(Icons.refresh_rounded),
+                                label: const Text('Try Again'),
+                              ),
+                            ],
+                          ),
+                        )
+                      : Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            SizedBox(
+                              width: 260,
+                              height: 320,
+                              child: Stack(
+                                alignment: Alignment.center,
+                                children: [
+                                  // Background Animated Glow
+                                  AnimatedBuilder(
+                                    animation: controller,
+                                    builder: (context, child) {
+                                      return Container(
+                                        width: 220 + (30 * controller.value),
+                                        height: 280 + (30 * controller.value),
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.rectangle,
+                                          borderRadius: BorderRadius.circular(
+                                            40,
+                                          ),
+                                          gradient: RadialGradient(
+                                            colors: [
+                                              AppColors.teal.withValues(
+                                                alpha:
+                                                    0.2 -
+                                                    (0.1 * controller.value),
+                                              ),
+                                              Colors.transparent,
+                                            ],
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+
+                                  const _ProcessingPaper(),
+
+                                  // Premium Scanning Line
+                                  AnimatedBuilder(
+                                    animation: controller,
+                                    builder: (_, _) => Positioned(
+                                      top: 40 + (190 * controller.value),
+                                      left: 20,
+                                      right: 20,
+                                      child: Column(
+                                        children: [
+                                          Container(
+                                            height: 4,
+                                            decoration: BoxDecoration(
+                                              color: AppColors.teal,
+                                              borderRadius:
+                                                  BorderRadius.circular(4),
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color: AppColors.teal
+                                                      .withValues(alpha: 0.8),
+                                                  blurRadius: 16,
+                                                  spreadRadius: 2,
+                                                ),
+                                                BoxShadow(
+                                                  color: Colors.white
+                                                      .withValues(alpha: 0.5),
+                                                  blurRadius: 4,
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          Container(
+                                            height: 40,
+                                            decoration: BoxDecoration(
+                                              gradient: LinearGradient(
+                                                begin: Alignment.topCenter,
+                                                end: Alignment.bottomCenter,
+                                                colors: [
+                                                  AppColors.teal.withValues(
+                                                    alpha: 0.15,
+                                                  ),
+                                                  Colors.transparent,
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 40),
+                            const CircularProgressIndicator(
+                              color: AppColors.teal,
+                            ),
+                            const SizedBox(height: 20),
+                            Text(
+                              'KeshabStudios AI is structuring...',
+                              style: TextStyle(
+                                color: AppColors.teal,
+                                fontWeight: FontWeight.w800,
+                                fontSize: 16,
+                                letterSpacing: -0.2,
+                              ),
+                            ),
+                          ],
+                        ),
                 ),
-                TextButton(
-                  onPressed: () => context.go('/upload'),
-                  child: const Text('Upload a different image'),
-                ),
-              ],
+              ),
             ],
           ),
         ),
@@ -731,80 +772,52 @@ class _ProcessingPaper extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 126,
-      height: 166,
-      padding: const EdgeInsets.all(22),
+      width: 180,
+      height: 240,
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: const [
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
           BoxShadow(
-            color: Color(0x221F5866),
-            blurRadius: 35,
-            offset: Offset(0, 18),
+            color: AppColors.indigo.withValues(alpha: 0.15),
+            blurRadius: 40,
+            offset: const Offset(0, 16),
+          ),
+          BoxShadow(
+            color: AppColors.teal.withValues(alpha: 0.08),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
-      child: const Column(
+      child: Column(
         children: [
-          _PaperLine(80),
-          _PaperLine(60),
-          _PaperLine(76),
-          _PaperLine(55),
-          _PaperLine(72),
-        ],
-      ),
-    );
-  }
-}
-
-class _Step extends StatelessWidget {
-  const _Step(this.title, this.subtitle, this.active, this.done);
-  final String title;
-  final String subtitle;
-  final bool active;
-  final bool done;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        children: [
-          Container(
-            width: 30,
-            height: 30,
-            decoration: BoxDecoration(
-              color: done
-                  ? const Color(0xFFE4F7EC)
-                  : active
-                  ? AppColors.teal
-                  : const Color(0xFFE9EEF1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              done ? Icons.check_rounded : Icons.auto_awesome,
-              color: done
-                  ? AppColors.success
-                  : active
-                  ? Colors.white
-                  : AppColors.muted,
-              size: 17,
-            ),
-          ),
-          const SizedBox(width: 11),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          Row(
             children: [
-              Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
-              Text(
-                subtitle,
-                style: const TextStyle(color: AppColors.muted, fontSize: 11),
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: AppColors.tealSoft,
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
+              const SizedBox(width: 16),
+              const Expanded(child: _PaperLine(100, color: AppColors.teal)),
             ],
           ),
+          const SizedBox(height: 32),
+          const _PaperLine(120, color: AppColors.line),
+          const SizedBox(height: 16),
+          const _PaperLine(90, color: AppColors.line),
+          const SizedBox(height: 16),
+          const _PaperLine(140, color: AppColors.line),
+          const SizedBox(height: 16),
+          const _PaperLine(80, color: AppColors.line),
         ],
       ),
     );
   }
 }
+
