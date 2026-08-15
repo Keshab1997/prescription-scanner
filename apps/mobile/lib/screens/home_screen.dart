@@ -27,17 +27,8 @@ class HomeScreen extends ConsumerWidget {
     return Scaffold(
       body: SafeArea(
         bottom: false,
-        child: RefreshIndicator(
-          onRefresh: () async {
-            ref.invalidate(quotaProvider);
-            ref.invalidate(recentPrescriptionsProvider);
-            await Future.wait([
-              ref.read(quotaProvider.future),
-              ref.read(recentPrescriptionsProvider.future),
-            ]);
-          },
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 110),
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 110),
             children: [
               Row(
                 children: [
@@ -149,7 +140,6 @@ class HomeScreen extends ConsumerWidget {
               ),
             ],
           ),
-        ),
       ),
     );
   }

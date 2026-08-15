@@ -10,9 +10,41 @@ class AppShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      extendBody: true,
-      body: child,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop) return;
+        // Inside the shell, back should move to Home rather than exit the
+        // app. From Home, confirm before leaving the app entirely.
+        if (currentPath != '/home') {
+          context.go('/home');
+          return;
+        }
+        final leave = await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: const Text('Exit app?'),
+            content: const Text('You will be signed out of this screen.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: const Text('Stay'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(dialogContext, true),
+                child: const Text('Exit'),
+              ),
+            ],
+          ),
+        );
+        if (leave == true && context.mounted) {
+          // Allow the pending pop so the system closes the app.
+          Navigator.of(context).maybePop();
+        }
+      },
+      child: Scaffold(
+        extendBody: true,
+        body: child,
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       floatingActionButton: Container(
         margin: const EdgeInsets.only(top: 30),
@@ -96,6 +128,7 @@ class AppShell extends StatelessWidget {
             ],
           ),
         ),
+      ),
       ),
     );
   }

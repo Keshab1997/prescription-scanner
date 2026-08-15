@@ -73,23 +73,78 @@ class AuthService {
     }
   }
 
+  /// Loads the Firestore profile document for the signed-in user. Returns the
+  /// raw data map, or null if the document does not exist yet.
+  Future<Map<String, dynamic>?> fetchProfile() async {
+    final user = auth.currentUser;
+    if (user == null) return null;
+    final snapshot =
+        await firestore.collection('profiles').doc(user.uid).get();
+    return snapshot.data();
+  }
+
+  /// Updates the user's display name both in Firebase Auth and the Firestore
+  /// profile document (creating it if the signup write was missed).
+  Future<void> updateProfile({required String displayName}) async {
+    final user = auth.currentUser;
+    if (user == null) {
+      throw fb.FirebaseAuthException(
+        code: 'not-signed-in',
+        message: 'Please sign in again.',
+      );
+    }
+    final trimmed = displayName.trim();
+    if (trimmed.isEmpty) {
+      throw ArgumentError('Display name cannot be empty.');
+    }
+    await user.updateDisplayName(trimmed);
+    await firestore.collection('profiles').doc(user.uid).set({
+      'displayName': trimmed,
+      'email': user.email,
+      'role': 'user',
+      'status': 'active',
+      'updatedAt': FieldValue.serverTimestamp(),
+      'createdAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+  }
+
   Future<void> sendPasswordReset(String email) async {
     await auth.sendPasswordResetEmail(email: email.trim());
   }
 
-  /// Re-authenticates the current user with their password, then updates it.
+  /// Updates the password directly. Suitable for the reset-password flow where
+  /// the user is already authenticated via a recent sign-in/reset link.
   Future<void> updatePassword(String password) async {
     final user = auth.currentUser;
-    if (user == null || user.email == null) {
+    if (user == null) {
       throw fb.FirebaseAuthException(
-        code: 'reauth-required',
+        code: 'not-signed-in',
         message: 'Please sign in again.',
       );
     }
-    // Requires a recent sign-in; callers should prompt for the current
-    // password and pass it through reauthenticateWithCredential first when
-    // the session is stale. Here we attempt the direct update.
     await user.updatePassword(password);
+  }
+
+  /// Re-authenticates with the current password and sets a new one. Firebase
+  /// requires a recent sign-in for password changes, so the current password
+  /// is needed to re-establish the credential.
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    final user = auth.currentUser;
+    if (user == null || user.email == null) {
+      throw fb.FirebaseAuthException(
+        code: 'not-signed-in',
+        message: 'Please sign in again.',
+      );
+    }
+    final credential = fb.EmailAuthProvider.credential(
+      email: user.email!,
+      password: currentPassword,
+    );
+    await user.reauthenticateWithCredential(credential);
+    await user.updatePassword(newPassword);
   }
 
   /// Re-authenticates with the current password (needed for sensitive
