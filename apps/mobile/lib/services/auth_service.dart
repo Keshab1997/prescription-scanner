@@ -16,10 +16,7 @@ class AuthService {
 
   Stream<fb.User?> get authChanges => auth.authStateChanges();
 
-  Future<bool> signIn({
-    required String email,
-    required String password,
-  }) async {
+  Future<bool> signIn({required String email, required String password}) async {
     final credential = await auth.signInWithEmailAndPassword(
       email: email.trim(),
       password: password,
@@ -66,10 +63,7 @@ class AuthService {
     if (snapshot.exists) {
       await ref.update(data);
     } else {
-      await ref.set({
-        ...data,
-        'createdAt': FieldValue.serverTimestamp(),
-      });
+      await ref.set({...data, 'createdAt': FieldValue.serverTimestamp()});
     }
   }
 
@@ -78,8 +72,7 @@ class AuthService {
   Future<Map<String, dynamic>?> fetchProfile() async {
     final user = auth.currentUser;
     if (user == null) return null;
-    final snapshot =
-        await firestore.collection('profiles').doc(user.uid).get();
+    final snapshot = await firestore.collection('profiles').doc(user.uid).get();
     return snapshot.data();
   }
 
@@ -110,6 +103,18 @@ class AuthService {
 
   Future<void> sendPasswordReset(String email) async {
     await auth.sendPasswordResetEmail(email: email.trim());
+  }
+
+  /// Re-sends the verification email for the currently signed-in user.
+  Future<void> resendEmailVerification() async {
+    final user = auth.currentUser;
+    if (user == null) {
+      throw fb.FirebaseAuthException(
+        code: 'not-signed-in',
+        message: 'Please sign in again.',
+      );
+    }
+    await user.sendEmailVerification();
   }
 
   /// Updates the password directly. Suitable for the reset-password flow where
@@ -177,10 +182,7 @@ class AuthService {
         message: 'Please sign in again.',
       );
     }
-    await firestore
-        .collection('account_deletion_requests')
-        .doc(user.uid)
-        .set({
+    await firestore.collection('account_deletion_requests').doc(user.uid).set({
       'email': user.email,
       'requestedAt': FieldValue.serverTimestamp(),
       'status': 'pending',
