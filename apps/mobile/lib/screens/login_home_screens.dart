@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:prescription_scanner/services/auth_service.dart';
 import 'package:prescription_scanner/theme.dart';
+import 'package:prescription_scanner/widgets/ui_animations.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -49,149 +50,249 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFFEAF8F5), AppColors.canvas],
-            stops: [0, .48],
-          ),
-        ),
+      body: AuroraBackdrop(
         child: SafeArea(
           child: Center(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.all(22),
               child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 430),
-                child: AutofillGroup(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Center(
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(23),
-                          child: Image.asset(
-                            'assets/brand/app_icon.png',
-                            width: 82,
-                            height: 82,
-                          ),
-                        ),
+                constraints: const BoxConstraints(maxWidth: 440),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.92),
+                    borderRadius: BorderRadius.circular(30),
+                    border: Border.all(color: Colors.white),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.indigo.withValues(alpha: 0.12),
+                        blurRadius: 40,
+                        offset: const Offset(0, 20),
                       ),
-                      const SizedBox(height: 20),
-                      Text(
-                        'Welcome back',
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.headlineSmall,
-                      ),
-                      const SizedBox(height: 6),
-                      const Text(
-                        'Scan smarter. Understand clearly.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: AppColors.muted),
-                      ),
-                      const SizedBox(height: 32),
-                      const _FieldLabel('Email address'),
-                      TextField(
-                        controller: email,
-                        keyboardType: TextInputType.emailAddress,
-                        textInputAction: TextInputAction.next,
-                        autofillHints: const [AutofillHints.email],
-                        decoration: const InputDecoration(
-                          hintText: 'name@example.com',
-                          prefixIcon: Icon(Icons.mail_outline_rounded),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      const _FieldLabel('Password'),
-                      TextField(
-                        controller: password,
-                        obscureText: obscure,
-                        autofillHints: const [AutofillHints.password],
-                        onSubmitted: (_) => submit(),
-                        decoration: InputDecoration(
-                          hintText: 'Enter your password',
-                          prefixIcon: const Icon(Icons.lock_outline_rounded),
-                          suffixIcon: IconButton(
-                            onPressed: () => setState(() => obscure = !obscure),
-                            icon: Icon(
-                              obscure
-                                  ? Icons.visibility_outlined
-                                  : Icons.visibility_off_outlined,
-                            ),
-                          ),
-                        ),
-                      ),
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: TextButton(
-                          onPressed: loading
-                              ? null
-                              : () => context.push('/forgot-password'),
-                          child: const Text('Forgot password?'),
-                        ),
-                      ),
-                      if (error != null)
-                        Container(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFFEEEEF),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            error!,
-                            style: const TextStyle(
-                              color: AppColors.danger,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ),
-                      FilledButton(
-                        onPressed: loading ? null : submit,
-                        child: loading
-                            ? const SizedBox.square(
-                                dimension: 22,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
+                    ],
+                  ),
+                  child: AutofillGroup(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(26, 32, 26, 26),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Entrance(
+                            delay: const Duration(milliseconds: 60),
+                            child: Center(
+                              child: Container(
+                                width: 88,
+                                height: 88,
+                                padding: const EdgeInsets.all(5),
+                                decoration: const BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  gradient: AppColors.brandGradient,
                                 ),
-                              )
-                            : const Text('Sign in securely'),
-                      ),
-                      const SizedBox(height: 12),
-                      TextButton(
-                        onPressed: loading
-                            ? null
-                            : () => context.push('/register'),
-                        child: const Text('New here? Create an account'),
-                      ),
-                      const SizedBox(height: 18),
-                      Container(
-                        padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: .72),
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: AppColors.line),
-                        ),
-                        child: const Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Icon(Icons.shield_outlined, color: AppColors.teal),
-                            SizedBox(width: 10),
-                            Expanded(
-                              child: Text(
-                                'Your prescription image is deleted from our server after a successful extraction.',
-                                style: TextStyle(
-                                  color: AppColors.muted,
-                                  fontSize: 12,
-                                  height: 1.45,
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: Colors.white,
+                                    border: Border.all(
+                                      color: Colors.white,
+                                      width: 2,
+                                    ),
+                                  ),
+                                  padding: const EdgeInsets.all(7),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(40),
+                                    child: Image.asset(
+                                      'assets/brand/app_icon.png',
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
                                 ),
                               ),
                             ),
-                          ],
-                        ),
+                          ),
+                          const SizedBox(height: 22),
+                          Entrance(
+                            delay: const Duration(milliseconds: 140),
+                            child: Text(
+                              'Welcome back',
+                              textAlign: TextAlign.center,
+                              style: Theme.of(context).textTheme.headlineSmall,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Entrance(
+                            delay: const Duration(milliseconds: 200),
+                            child: const Text(
+                              'Scan smarter. Understand clearly.',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: AppColors.muted,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 30),
+                          Entrance(
+                            delay: const Duration(milliseconds: 260),
+                            child: const _FieldLabel('Email address'),
+                          ),
+                          Entrance(
+                            delay: const Duration(milliseconds: 320),
+                            child: TextField(
+                              controller: email,
+                              keyboardType: TextInputType.emailAddress,
+                              textInputAction: TextInputAction.next,
+                              autofillHints: const [AutofillHints.email],
+                              decoration: const InputDecoration(
+                                hintText: 'name@example.com',
+                                prefixIcon: Icon(Icons.mail_outline_rounded),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Entrance(
+                            delay: const Duration(milliseconds: 380),
+                            child: const _FieldLabel('Password'),
+                          ),
+                          Entrance(
+                            delay: const Duration(milliseconds: 440),
+                            child: TextField(
+                              controller: password,
+                              obscureText: obscure,
+                              autofillHints: const [AutofillHints.password],
+                              onSubmitted: (_) => submit(),
+                              decoration: InputDecoration(
+                                hintText: 'Enter your password',
+                                prefixIcon: const Icon(
+                                  Icons.lock_outline_rounded,
+                                ),
+                                suffixIcon: IconButton(
+                                  onPressed: () =>
+                                      setState(() => obscure = !obscure),
+                                  icon: Icon(
+                                    obscure
+                                        ? Icons.visibility_outlined
+                                        : Icons.visibility_off_outlined,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: TextButton(
+                              onPressed: loading
+                                  ? null
+                                  : () => context.push('/forgot-password'),
+                              child: const Text('Forgot password?'),
+                            ),
+                          ),
+                          if (error != null)
+                            Entrance(
+                              child: Container(
+                                margin: const EdgeInsets.only(bottom: 12),
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFEEEEF),
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                                child: Text(
+                                  error!,
+                                  style: const TextStyle(
+                                    color: AppColors.danger,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          Entrance(
+                            delay: const Duration(milliseconds: 500),
+                            child: ScaleTap(
+                              onTap: loading ? null : submit,
+                              pressedScale: 0.97,
+                              child: Container(
+                                height: 56,
+                                alignment: Alignment.center,
+                                decoration: const BoxDecoration(
+                                  gradient: AppColors.brandGradient,
+                                  borderRadius: BorderRadius.all(
+                                    Radius.circular(17),
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Color(0x554F46E5),
+                                      blurRadius: 18,
+                                      offset: Offset(0, 8),
+                                    ),
+                                  ],
+                                ),
+                                child: loading
+                                    ? const SizedBox.square(
+                                        dimension: 22,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2.4,
+                                          color: Colors.white,
+                                        ),
+                                      )
+                                    : const Text(
+                                        'Sign in securely',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w800,
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          Entrance(
+                            delay: const Duration(milliseconds: 560),
+                            child: TextButton(
+                              onPressed: loading
+                                  ? null
+                                  : () => context.push('/register'),
+                              child: const Text(
+                                'New here? Create an account',
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+                          Entrance(
+                            delay: const Duration(milliseconds: 620),
+                            child: Container(
+                              padding: const EdgeInsets.all(14),
+                              decoration: BoxDecoration(
+                                color: AppColors.tealSoft.withValues(
+                                  alpha: 0.6,
+                                ),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(color: AppColors.line),
+                              ),
+                              child: const Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Icon(
+                                    Icons.shield_outlined,
+                                    color: AppColors.teal,
+                                    size: 20,
+                                  ),
+                                  SizedBox(width: 10),
+                                  Expanded(
+                                    child: Text(
+                                      'Your prescription image is processed on device and results stay only on your phone. Nothing is uploaded to a server.',
+                                      style: TextStyle(
+                                        color: AppColors.muted,
+                                        fontSize: 12,
+                                        height: 1.45,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
               ),

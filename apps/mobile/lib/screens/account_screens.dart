@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:prescription_scanner/services/auth_service.dart';
 import 'package:prescription_scanner/services/prescription_repository.dart';
 import 'package:prescription_scanner/theme.dart';
+import 'package:prescription_scanner/widgets/ui_animations.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -432,154 +433,197 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       body: ListView(
         padding: EdgeInsets.zero,
         children: [
-          Container(
-            height: 170,
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [AppColors.teal, AppColors.indigo],
+          Entrance(
+            child: Container(
+              height: 176,
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    AppColors.tealBright,
+                    AppColors.teal,
+                    AppColors.indigo,
+                  ],
+                ),
               ),
-            ),
-            alignment: Alignment.bottomLeft,
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 18),
-            child: Row(
-              children: [
-                CircleAvatar(
-                  radius: 34,
-                  backgroundColor: Colors.white,
-                  child: Text(
-                    _initials,
-                    style: const TextStyle(
-                      color: AppColors.teal,
-                      fontSize: 20,
-                      fontWeight: FontWeight.w900,
+              alignment: Alignment.bottomLeft,
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
+              child: Row(
+                children: [
+                  Container(
+                    width: 70,
+                    height: 70,
+                    padding: const EdgeInsets.all(3),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white,
+                    ),
+                    child: Container(
+                      alignment: Alignment.center,
+                      decoration: const BoxDecoration(
+                        gradient: AppColors.softGradient,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Text(
+                        _initials,
+                        style: const TextStyle(
+                          color: AppColors.teal,
+                          fontSize: 22,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (_loadingProfile)
-                        const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (_loadingProfile)
+                          const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        else ...[
+                          Text(
+                            _displayName,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 19,
+                              fontWeight: FontWeight.w900,
+                            ),
                           ),
-                        )
-                      else ...[
-                        Text(
-                          _displayName,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 19,
-                            fontWeight: FontWeight.w900,
+                          Text(
+                            _email,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 12,
+                            ),
                           ),
-                        ),
-                        Text(
-                          _email,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: Colors.white70,
-                            fontSize: 12,
+                        ],
+                        if (_profileError != null)
+                          const Text(
+                            'Could not load profile',
+                            style: TextStyle(color: Colors.white70, fontSize: 12),
                           ),
-                        ),
                       ],
-                      if (_profileError != null)
-                        const Text(
-                          'Could not load profile',
-                          style: TextStyle(color: Colors.white70, fontSize: 12),
-                        ),
-                    ],
+                    ),
                   ),
-                ),
-                IconButton(
-                  onPressed: _loadingProfile ? null : () => _editProfile(context),
-                  icon: const Icon(
-                    Icons.edit_rounded,
-                    color: Colors.white,
+                  IconButton(
+                    onPressed: _loadingProfile
+                        ? null
+                        : () => _editProfile(context),
+                    icon: const Icon(
+                      Icons.edit_rounded,
+                      color: Colors.white,
+                    ),
+                    tooltip: 'Edit profile',
                   ),
-                  tooltip: 'Edit profile',
-                ),
-              ],
+                ],
+              ),
             ),
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 110),
             child: Column(
               children: [
-                quotaAsync.when(
-                  loading: () => const _ProfileRow(
-                    icon: Icons.play_circle_outline_rounded,
-                    title: 'Scan limits & rewards',
-                    onTap: null,
-                  ),
-                  error: (_, _) => _ProfileRow(
-                    icon: Icons.play_circle_outline_rounded,
-                    title: 'Scan limits & rewards',
-                    onTap: () => _openScanLimits(context),
-                  ),
-                  data: (quota) => _ProfileRow(
-                    icon: Icons.play_circle_outline_rounded,
-                    title: 'Scan limits & rewards',
-                    subtitle:
-                        '${quota.remaining} of ${quota.dailyLimit} scans left today',
-                    onTap: () => _openScanLimits(context, quota),
+                Entrance(
+                  delay: const Duration(milliseconds: 80),
+                  child: quotaAsync.when(
+                    loading: () => const _ProfileRow(
+                      icon: Icons.play_circle_outline_rounded,
+                      title: 'Scan limits & rewards',
+                      onTap: null,
+                    ),
+                    error: (_, _) => _ProfileRow(
+                      icon: Icons.play_circle_outline_rounded,
+                      title: 'Scan limits & rewards',
+                      onTap: () => _openScanLimits(context),
+                    ),
+                    data: (quota) => _ProfileRow(
+                      icon: Icons.play_circle_outline_rounded,
+                      title: 'Scan limits & rewards',
+                      subtitle:
+                          '${quota.remaining} of ${quota.dailyLimit} scans left today',
+                      onTap: () => _openScanLimits(context, quota),
+                    ),
                   ),
                 ),
-                _ProfileRow(
-                  icon: Icons.shield_outlined,
-                  title: 'Privacy & consent',
-                  onTap: () => _showInfoDialog(
-                    context: context,
+                Entrance(
+                  delay: const Duration(milliseconds: 140),
+                  child: _ProfileRow(
+                    icon: Icons.shield_outlined,
                     title: 'Privacy & consent',
-                    body:
-                        'Your prescription images and results are processed on your device and stored only locally. They are never uploaded to any server, and Gemini is called directly from your device. See the app privacy policy for details.',
+                    onTap: () => _showInfoDialog(
+                      context: context,
+                      title: 'Privacy & consent',
+                      body:
+                          'Your prescription images and results are processed on your device and stored only locally. They are never uploaded to any server, and Gemini is called directly from your device. See the app privacy policy for details.',
+                    ),
                   ),
                 ),
-                _ProfileRow(
-                  icon: Icons.help_outline_rounded,
-                  title: 'Help & support',
-                  subtitle: 'keshabsarkar2018@gmail.com',
-                  onTap: () => _showInfoDialog(
-                    context: context,
+                Entrance(
+                  delay: const Duration(milliseconds: 200),
+                  child: _ProfileRow(
+                    icon: Icons.help_outline_rounded,
                     title: 'Help & support',
-                    body:
-                        'For help with Prescription Scanner, email us at keshabsarkar2018@gmail.com. We usually respond within 1–2 business days.',
+                    subtitle: 'keshabsarkar2018@gmail.com',
+                    onTap: () => _showInfoDialog(
+                      context: context,
+                      title: 'Help & support',
+                      body:
+                          'For help with Prescription Scanner, email us at keshabsarkar2018@gmail.com. We usually respond within 1–2 business days.',
+                    ),
                   ),
                 ),
-                _ProfileRow(
-                  icon: Icons.info_outline_rounded,
-                  title: 'Medical disclaimer',
-                  onTap: () => _showInfoDialog(
-                    context: context,
+                Entrance(
+                  delay: const Duration(milliseconds: 260),
+                  child: _ProfileRow(
+                    icon: Icons.info_outline_rounded,
                     title: 'Medical disclaimer',
-                    body:
-                        'Prescription Scanner provides AI-assisted transcription for informational purposes only. It is not a medical device and does not provide medical advice, diagnosis, or treatment. Always confirm details with your doctor or pharmacist before acting on any extracted information.',
+                    onTap: () => _showInfoDialog(
+                      context: context,
+                      title: 'Medical disclaimer',
+                      body:
+                          'Prescription Scanner provides AI-assisted transcription for informational purposes only. It is not a medical device and does not provide medical advice, diagnosis, or treatment. Always confirm details with your doctor or pharmacist before acting on any extracted information.',
+                    ),
                   ),
                 ),
-                _ProfileRow(
-                  icon: Icons.lock_outline_rounded,
-                  title: 'Change password',
-                  onTap: () => _changePassword(context),
+                Entrance(
+                  delay: const Duration(milliseconds: 320),
+                  child: _ProfileRow(
+                    icon: Icons.lock_outline_rounded,
+                    title: 'Change password',
+                    onTap: () => _changePassword(context),
+                  ),
                 ),
-                _ProfileRow(
-                  icon: Icons.delete_outline_rounded,
-                  title: 'Delete account & data',
-                  danger: true,
-                  onTap: () => requestDeletion(context, ref),
+                Entrance(
+                  delay: const Duration(milliseconds: 380),
+                  child: _ProfileRow(
+                    icon: Icons.delete_outline_rounded,
+                    title: 'Delete account & data',
+                    danger: true,
+                    onTap: () => requestDeletion(context, ref),
+                  ),
                 ),
-                _ProfileRow(
-                  icon: Icons.logout_rounded,
-                  title: 'Sign out',
-                  onTap: () async {
-                    await service.signOut();
-                    if (context.mounted) context.go('/login');
-                  },
+                Entrance(
+                  delay: const Duration(milliseconds: 440),
+                  child: _ProfileRow(
+                    icon: Icons.logout_rounded,
+                    title: 'Sign out',
+                    onTap: () async {
+                      await service.signOut();
+                      if (context.mounted) context.go('/login');
+                    },
+                  ),
                 ),
               ],
             ),

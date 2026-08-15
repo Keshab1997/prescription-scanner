@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:prescription_scanner/theme.dart';
+import 'package:prescription_scanner/widgets/ui_animations.dart';
 
 class AppShell extends StatelessWidget {
   const AppShell({required this.currentPath, required this.child, super.key});
@@ -45,67 +46,90 @@ class AppShell extends StatelessWidget {
       child: Scaffold(
         extendBody: true,
         body: child,
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      floatingActionButton: Container(
-        margin: const EdgeInsets.only(top: 30),
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.teal.withValues(alpha: 0.3),
-              blurRadius: 16,
-              offset: const Offset(0, 6),
-            ),
-          ],
+        floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+        floatingActionButton: _ScanFab(
+          onTap: () {
+            context.push('/upload');
+          },
         ),
-        child: FloatingActionButton(
-          onPressed: () => context.push('/upload'),
-          backgroundColor: AppColors.teal,
-          foregroundColor: Colors.white,
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(30),
-          ),
-          child: const Icon(Icons.document_scanner_rounded, size: 28),
+        bottomNavigationBar: _FloatingNavBar(
+          currentPath: currentPath,
+          onChanged: (path) => context.go(path),
         ),
       ),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.indigo.withValues(alpha: 0.05),
-              blurRadius: 20,
-              offset: const Offset(0, -4),
-            ),
-          ],
+    );
+  }
+}
+
+class _ScanFab extends StatelessWidget {
+  const _ScanFab({required this.onTap});
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 26),
+      child: ScaleTap(
+        onTap: onTap,
+        pressedScale: 0.88,
+        borderRadius: BorderRadius.circular(30),
+        child: Container(
+          width: 62,
+          height: 62,
+          decoration: const BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: AppColors.brandGradient,
+            boxShadow: [
+              BoxShadow(
+                color: Color(0x664F46E5),
+                blurRadius: 22,
+                offset: Offset(0, 10),
+              ),
+            ],
+          ),
+          child: const Icon(
+            Icons.document_scanner_rounded,
+            color: Colors.white,
+            size: 29,
+          ),
         ),
-        child: BottomAppBar(
+      ),
+    );
+  }
+}
+
+class _FloatingNavBar extends StatelessWidget {
+  const _FloatingNavBar({required this.currentPath, required this.onChanged});
+
+  final String currentPath;
+  final ValueChanged<String> onChanged;
+
+  bool _is(String path) => currentPath == path;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(26),
+        child: Container(
+          height: 72,
           color: Colors.white,
-          elevation: 0,
-          shape: const CircularNotchedRectangle(),
-          notchMargin: 10,
-          height: 65,
-          padding: EdgeInsets.zero,
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               _NavItem(
                 label: 'Home',
-                icon: currentPath == '/home'
-                    ? Icons.home_rounded
-                    : Icons.home_outlined,
-                selected: currentPath == '/home',
-                onTap: () => context.go('/home'),
+                icon: Icons.home_rounded,
+                selected: _is('/home'),
+                onTap: () => onChanged('/home'),
               ),
               _NavItem(
                 label: 'History',
-                icon: currentPath == '/history'
-                    ? Icons.history_rounded
-                    : Icons.history_outlined,
-                selected: currentPath == '/history',
-                onTap: () => context.go('/history'),
+                icon: Icons.history_rounded,
+                selected: _is('/history'),
+                onTap: () => onChanged('/history'),
               ),
-              const SizedBox(width: 48), // Space for the notched FAB
+              const SizedBox(width: 62), // FAB cradle
               _NavItem(
                 label: 'Help',
                 icon: Icons.help_outline_rounded,
@@ -113,22 +137,18 @@ class AppShell extends StatelessWidget {
                 onTap: () => ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     content: Text('Help centre is coming next.'),
-                    behavior: SnackBarBehavior.floating,
                   ),
                 ),
               ),
               _NavItem(
                 label: 'Profile',
-                icon: currentPath == '/profile'
-                    ? Icons.person_rounded
-                    : Icons.person_outline_rounded,
-                selected: currentPath == '/profile',
-                onTap: () => context.go('/profile'),
+                icon: Icons.person_rounded,
+                selected: _is('/profile'),
+                onTap: () => onChanged('/profile'),
               ),
             ],
           ),
         ),
-      ),
       ),
     );
   }
@@ -149,32 +169,53 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = selected
-        ? AppColors.teal
-        : AppColors.muted.withValues(alpha: 0.6);
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: SizedBox(
-        width: 60,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              padding: const EdgeInsets.only(bottom: 2),
-              child: Icon(icon, color: color, size: selected ? 26 : 24),
-            ),
-            if (selected)
-              Container(
-                width: 4,
-                height: 4,
-                decoration: const BoxDecoration(
-                  color: AppColors.teal,
-                  shape: BoxShape.circle,
+    return Expanded(
+      child: ScaleTap(
+        onTap: onTap,
+        pressedScale: 0.92,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 260),
+          curve: Curves.easeOutCubic,
+          alignment: Alignment.center,
+          margin: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            color: selected
+                ? AppColors.tealSoft.withValues(alpha: 0.9)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(18),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 260),
+                curve: Curves.easeOutBack,
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: selected ? AppColors.teal : Colors.transparent,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  icon,
+                  size: 22,
+                  color: selected ? Colors.white : AppColors.muted,
                 ),
               ),
-          ],
+              const SizedBox(height: 2),
+              AnimatedOpacity(
+                duration: const Duration(milliseconds: 200),
+                opacity: selected ? 1 : 0.55,
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+                    color: selected ? AppColors.teal : AppColors.muted,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

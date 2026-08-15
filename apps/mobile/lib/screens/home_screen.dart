@@ -6,6 +6,7 @@ import 'package:prescription_scanner/models/extracted_prescription.dart';
 import 'package:prescription_scanner/services/auth_service.dart';
 import 'package:prescription_scanner/services/prescription_repository.dart';
 import 'package:prescription_scanner/theme.dart';
+import 'package:prescription_scanner/widgets/ui_animations.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -28,104 +29,92 @@ class HomeScreen extends ConsumerWidget {
       body: SafeArea(
         bottom: false,
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 110),
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          firstName == null
-                              ? 'Good to see you'
-                              : 'Good to see you, $firstName',
-                          style: const TextStyle(color: AppColors.muted),
-                        ),
-                        Text(
-                          'Ready to scan?',
-                          style: Theme.of(context).textTheme.headlineSmall,
-                        ),
-                      ],
-                    ),
-                  ),
-                  Container(
-                    width: 46,
-                    height: 46,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [AppColors.teal, AppColors.indigo],
-                      ),
-                      borderRadius: BorderRadius.circular(15),
-                    ),
-                    child: Text(
-                      _initials(displayName),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 22),
-              _ScanHero(onTap: () => context.push('/upload')),
-              const SizedBox(height: 24),
-              const _SectionTitle("Today's scans"),
-              const SizedBox(height: 10),
-              quota.when(
-                loading: () => const _LoadingCard(height: 78),
-                error: (_, _) => _InlineError(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 120),
+          children: [
+            Entrance(
+              child: _HomeHeader(firstName: firstName, initials: _initials(displayName)),
+            ),
+            const SizedBox(height: 24),
+            Entrance(
+              delay: const Duration(milliseconds: 100),
+              child: _ScanHero(onTap: () => context.push('/upload')),
+            ),
+            const SizedBox(height: 26),
+            Entrance(
+              delay: const Duration(milliseconds: 160),
+              child: const _SectionTitle("Today's scans"),
+            ),
+            const SizedBox(height: 10),
+            quota.when(
+              loading: () => const ShimmerBox(height: 96, radius: 22),
+              error: (_, _) => Entrance(
+                child: _InlineError(
                   message: 'Could not load scan limits.',
                   onRetry: () => ref.invalidate(quotaProvider),
                 ),
-                data: (value) => _QuotaCard(quota: value),
               ),
-              const SizedBox(height: 20),
-              _SectionTitle(
+              data: (value) => Entrance(
+                delay: const Duration(milliseconds: 200),
+                child: _QuotaCard(quota: value),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Entrance(
+              delay: const Duration(milliseconds: 240),
+              child: _SectionTitle(
                 'Recent prescriptions',
                 action: TextButton(
                   onPressed: () => context.go('/history'),
                   child: const Text('View all'),
                 ),
               ),
-              const SizedBox(height: 8),
-              recent.when(
-                loading: () => const Column(
-                  children: [
-                    _LoadingCard(height: 78),
-                    SizedBox(height: 10),
-                    _LoadingCard(height: 78),
-                  ],
-                ),
-                error: (_, _) => _InlineError(
-                  message: 'Could not load recent prescriptions.',
-                  onRetry: () => ref.invalidate(recentPrescriptionsProvider),
-                ),
-                data: (items) => items.isEmpty
-                    ? const _EmptyRecent()
-                    : Column(
-                        children: items
-                            .map(
-                              (item) => Padding(
-                                padding: const EdgeInsets.only(bottom: 10),
+            ),
+            const SizedBox(height: 8),
+            recent.when(
+              loading: () => Column(
+                children: const [
+                  ShimmerBox(height: 78, radius: 20),
+                  SizedBox(height: 10),
+                  ShimmerBox(height: 78, radius: 20),
+                ],
+              ),
+              error: (_, _) => _InlineError(
+                message: 'Could not load recent prescriptions.',
+                onRetry: () => ref.invalidate(recentPrescriptionsProvider),
+              ),
+              data: (items) => items.isEmpty
+                  ? const _EmptyRecent()
+                  : Column(
+                      children: items
+                          .asMap()
+                          .entries
+                          .map(
+                            (entry) => Padding(
+                              padding: const EdgeInsets.only(bottom: 10),
+                              child: Entrance(
+                                delay: Duration(
+                                  milliseconds: 300 + entry.key * 70,
+                                ),
                                 child: _RecentPrescription(
-                                  item: item,
-                                  onTap: () => _openPrescription(context, item),
+                                  item: entry.value,
+                                  onTap: () =>
+                                      _openPrescription(context, entry.value),
                                 ),
                               ),
-                            )
-                            .toList(),
-                      ),
-              ),
-              const SizedBox(height: 6),
-              Container(
+                            ),
+                          )
+                          .toList(),
+                    ),
+            ),
+            const SizedBox(height: 6),
+            Entrance(
+              delay: const Duration(milliseconds: 500),
+              child: Container(
                 height: 54,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(13),
+                  borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: AppColors.line),
                 ),
                 child: const Text(
@@ -138,8 +127,9 @@ class HomeScreen extends ConsumerWidget {
                   ),
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -159,82 +149,292 @@ class HomeScreen extends ConsumerWidget {
   }
 }
 
-class _ScanHero extends StatelessWidget {
-  const _ScanHero({required this.onTap});
-  final VoidCallback onTap;
+class _HomeHeader extends StatelessWidget {
+  const _HomeHeader({required this.firstName, required this.initials});
+
+  final String? firstName;
+  final String initials;
 
   @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(22),
-    decoration: BoxDecoration(
-      gradient: const LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: [AppColors.teal, AppColors.indigo],
-      ),
-      borderRadius: BorderRadius.circular(24),
-      boxShadow: const [
-        BoxShadow(
-          color: Color(0x334F46E5),
-          blurRadius: 30,
-          offset: Offset(0, 16),
-        ),
-      ],
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+  Widget build(BuildContext context) {
+    final now = DateTime.now();
+    final hour = now.hour;
+    final greeting = hour < 12
+        ? 'Good morning'
+        : hour < 17
+        ? 'Good afternoon'
+        : 'Good evening';
+
+    return Row(
       children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: .14),
-            borderRadius: BorderRadius.circular(30),
-            border: Border.all(color: Colors.white24),
-          ),
-          child: const Row(
-            mainAxisSize: MainAxisSize.min,
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(Icons.auto_awesome, color: Colors.white, size: 15),
-              SizedBox(width: 6),
               Text(
-                'KeshabStudios-powered transcription',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
+                firstName == null ? greeting : '$greeting, $firstName',
+                style: const TextStyle(
+                  color: AppColors.muted,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
                 ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                'Ready to scan?',
+                style: Theme.of(context).textTheme.headlineSmall,
               ),
             ],
           ),
         ),
-        const SizedBox(height: 20),
-        const Text(
-          'Turn a prescription\ninto a clear list.',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 25,
-            height: 1.1,
-            fontWeight: FontWeight.w900,
+        ScaleTap(
+          onTap: () => context.go('/profile'),
+          pressedScale: 0.92,
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
+            width: 46,
+            height: 46,
+            padding: const EdgeInsets.all(2.5),
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: AppColors.brandGradient,
+            ),
+            child: Container(
+              alignment: Alignment.center,
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+              ),
+              child: Text(
+                initials,
+                style: const TextStyle(
+                  color: AppColors.teal,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 15,
+                ),
+              ),
+            ),
           ),
-        ),
-        const SizedBox(height: 10),
-        const Text(
-          'Only visible details are transcribed. Anything unclear is marked for review.',
-          style: TextStyle(color: Colors.white70, height: 1.45),
-        ),
-        const SizedBox(height: 20),
-        FilledButton.icon(
-          onPressed: onTap,
-          style: FilledButton.styleFrom(
-            backgroundColor: Colors.white,
-            foregroundColor: AppColors.teal,
-          ),
-          icon: const Icon(Icons.document_scanner_outlined),
-          label: const Text('Scan prescription'),
         ),
       ],
-    ),
-  );
+    );
+  }
+}
+
+class _ScanHero extends StatefulWidget {
+  const _ScanHero({required this.onTap});
+  final VoidCallback onTap;
+
+  @override
+  State<_ScanHero> createState() => _ScanHeroState();
+}
+
+class _ScanHeroState extends State<_ScanHero>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _scan;
+
+  @override
+  void initState() {
+    super.initState();
+    _scan = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2200),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _scan.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ScaleTap(
+      onTap: widget.onTap,
+      pressedScale: 0.98,
+      borderRadius: BorderRadius.circular(30),
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(22, 20, 22, 22),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [AppColors.tealBright, AppColors.teal, AppColors.indigo],
+          ),
+          borderRadius: BorderRadius.circular(30),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x334F46E5),
+              blurRadius: 34,
+              offset: Offset(0, 18),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.16),
+                  borderRadius: BorderRadius.circular(30),
+                  border: Border.all(color: Colors.white24),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.auto_awesome, color: Colors.white, size: 15),
+                    SizedBox(width: 6),
+                    Text(
+                      'KeshabStudios on-device AI',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 18),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Turn a prescription\ninto a clear list.',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 24,
+                          height: 1.1,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      const Text(
+                        'Only visible details are transcribed. Anything unclear is marked for review.',
+                        style: TextStyle(color: Colors.white70, height: 1.45),
+                      ),
+                      const SizedBox(height: 18),
+                      FilledButton.icon(
+                        onPressed: widget.onTap,
+                        style: FilledButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: AppColors.teal,
+                          minimumSize: const Size(0, 50),
+                        ),
+                        icon: const Icon(Icons.document_scanner_outlined),
+                        label: const Text('Scan prescription'),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 14),
+                _HeroPaper(scan: _scan),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _HeroPaper extends StatelessWidget {
+  const _HeroPaper({required this.scan});
+  final Animation<double> scan;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: scan,
+      builder: (context, _) {
+        return Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: Container(
+            width: 104,
+            height: 128,
+            padding: const EdgeInsets.fromLTRB(22, 26, 22, 16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(18),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.18),
+                  blurRadius: 22,
+                  offset: const Offset(0, 12),
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(6),
+              child: Stack(
+                children: [
+                  const Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _PaperLine(60, color: Color(0xFF8ED0C6)),
+                      SizedBox(height: 10),
+                      _PaperLine(44, color: AppColors.line),
+                      SizedBox(height: 10),
+                      _PaperLine(52, color: AppColors.line),
+                      SizedBox(height: 10),
+                      _PaperLine(38, color: AppColors.line),
+                    ],
+                  ),
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    top: -4 + scan.value * (100 - 4),
+                    child: Container(
+                      height: 3,
+                      decoration: BoxDecoration(
+                        color: AppColors.teal,
+                        borderRadius: BorderRadius.circular(3),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.teal.withValues(alpha: 0.9),
+                            blurRadius: 12,
+                            spreadRadius: 2,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _PaperLine extends StatelessWidget {
+  const _PaperLine(this.width, {this.color = AppColors.line});
+  final double width;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: width,
+      height: 5,
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(5),
+      ),
+    );
+  }
 }
 
 class _QuotaCard extends StatelessWidget {
@@ -247,85 +447,98 @@ class _QuotaCard extends StatelessWidget {
     final progress = total == 0 ? 0.0 : quota.remaining / total;
     final unavailable = !quota.aiEnabled || quota.maintenanceMode;
     return Container(
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: unavailable
-              ? [AppColors.muted, AppColors.muted.withValues(alpha: 0.8)]
-              : [AppColors.teal, AppColors.indigo],
+              ? [AppColors.muted, AppColors.muted.withValues(alpha: 0.85)]
+              : [AppColors.ink, AppColors.indigo],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: AppColors.teal.withValues(alpha: 0.3),
-            blurRadius: 16,
-            offset: const Offset(0, 8),
+            color: (unavailable
+                    ? AppColors.muted
+                    : AppColors.indigo)
+                .withValues(alpha: 0.25),
+            blurRadius: 18,
+            offset: const Offset(0, 10),
           ),
         ],
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Row(
-          children: [
-            Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.2),
-                shape: BoxShape.circle,
-              ),
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  CircularProgressIndicator(
-                    value: progress.clamp(0.0, 1.0).toDouble(),
-                    strokeWidth: 4,
-                    color: Colors.white,
-                    backgroundColor: Colors.white.withValues(alpha: 0.2),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 62,
+            height: 62,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                TweenAnimationBuilder<double>(
+                  tween: Tween(
+                    begin: 0,
+                    end: progress.clamp(0.0, 1.0).toDouble(),
                   ),
-                  Text(
-                    unavailable ? '—' : '${quota.remaining}',
+                  duration: const Duration(milliseconds: 1000),
+                  curve: Curves.easeOutCubic,
+                  builder: (context, value, _) => SizedBox(
+                    width: 62,
+                    height: 62,
+                    child: CircularProgressIndicator(
+                      value: value,
+                      strokeWidth: 5,
+                      color: Colors.white,
+                      backgroundColor: Colors.white.withValues(alpha: 0.2),
+                    ),
+                  ),
+                ),
+                if (unavailable)
+                  const Icon(Icons.cloud_off_rounded, color: Colors.white)
+                else
+                  AnimatedCount(
+                    value: quota.remaining,
                     style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.w900,
-                      fontSize: 16,
+                      fontSize: 17,
                     ),
                   ),
-                ],
-              ),
+              ],
             ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    unavailable
-                        ? 'AI temporarily unavailable'
-                        : '${quota.remaining} scans remaining',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w800,
-                      color: Colors.white,
-                      fontSize: 18,
-                    ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  unavailable
+                      ? 'AI temporarily unavailable'
+                      : '${quota.remaining} scans remaining',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                    fontSize: 18,
+                    letterSpacing: -0.2,
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    unavailable
-                        ? 'Please try again later'
-                        : '${quota.used} used today · resets daily',
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.8),
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                    ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  unavailable
+                      ? 'Please try again later'
+                      : '${quota.used} used today · resets daily',
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.85),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -349,9 +562,9 @@ class _RecentPrescription extends StatelessWidget {
         ? AppColors.success
         : AppColors.muted;
     return Card(
+      clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
         child: Padding(
           padding: const EdgeInsets.all(13),
           child: Row(
@@ -359,11 +572,9 @@ class _RecentPrescription extends StatelessWidget {
               Container(
                 width: 48,
                 height: 54,
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [AppColors.tealSoft, AppColors.indigoSoft],
-                  ),
-                  borderRadius: BorderRadius.circular(13),
+                decoration: const BoxDecoration(
+                  gradient: AppColors.softGradient,
+                  borderRadius: BorderRadius.all(Radius.circular(13)),
                 ),
                 child: const Icon(
                   Icons.description_outlined,
@@ -435,21 +646,6 @@ class _SectionTitle extends StatelessWidget {
   );
 }
 
-class _LoadingCard extends StatelessWidget {
-  const _LoadingCard({required this.height});
-  final double height;
-
-  @override
-  Widget build(BuildContext context) => Container(
-    height: height,
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(18),
-      border: Border.all(color: AppColors.line),
-    ),
-  );
-}
-
 class _InlineError extends StatelessWidget {
   const _InlineError({required this.message, required this.onRetry});
   final String message;
@@ -471,23 +667,27 @@ class _EmptyRecent extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Card(
     child: Padding(
-      padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 20),
+      padding: const EdgeInsets.symmetric(vertical: 34, horizontal: 20),
       child: Column(
         children: [
-          Container(
-            width: 72,
-            height: 72,
-            decoration: BoxDecoration(
-              color: AppColors.tealSoft,
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.document_scanner_rounded,
-              color: AppColors.teal,
-              size: 32,
+          PulseRing(
+            color: AppColors.tealBright,
+            pulses: 1,
+            child: Container(
+              width: 72,
+              height: 72,
+              decoration: const BoxDecoration(
+                color: AppColors.tealSoft,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.document_scanner_rounded,
+                color: AppColors.teal,
+                size: 32,
+              ),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 18),
           const Text(
             'No prescriptions yet',
             style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18),

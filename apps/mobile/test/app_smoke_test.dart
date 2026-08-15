@@ -75,7 +75,10 @@ void main() {
     await tester.pumpWidget(
       const ProviderScope(child: PrescriptionScannerApp()),
     );
-    await tester.pumpAndSettle();
+    // The login screen has a looping aurora backdrop, so pumpAndSettle would
+    // never settle. Pump a fixed window instead to let entrance animations
+    // complete before asserting.
+    await tester.pump(const Duration(milliseconds: 900));
 
     expect(find.text('Prescription Scanner'), findsNothing);
     expect(find.text('Welcome back'), findsOneWidget);

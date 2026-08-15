@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,6 +12,7 @@ import 'package:prescription_scanner/services/gemini_vision_service.dart';
 import 'package:prescription_scanner/services/prescription_upload_service.dart';
 import 'package:prescription_scanner/services/result_store.dart';
 import 'package:prescription_scanner/theme.dart';
+import 'package:prescription_scanner/widgets/ui_animations.dart';
 
 const String _consentBox = 'rx_consent';
 
@@ -298,8 +300,31 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
   }
 }
 
-class _EmptyScanFrame extends StatelessWidget {
+class _EmptyScanFrame extends StatefulWidget {
   const _EmptyScanFrame({super.key});
+
+  @override
+  State<_EmptyScanFrame> createState() => _EmptyScanFrameState();
+}
+
+class _EmptyScanFrameState extends State<_EmptyScanFrame>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _beam;
+
+  @override
+  void initState() {
+    super.initState();
+    _beam = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2300),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _beam.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -314,13 +339,17 @@ class _EmptyScanFrame extends StatelessWidget {
         borderRadius: BorderRadius.circular(25),
         border: Border.all(color: const Color(0xFFA8C4C0)),
       ),
-      child: const Center(
+      child: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _PaperPreview(),
-            SizedBox(height: 24),
-            Text(
+            PulseRing(
+              color: AppColors.tealBright,
+              pulses: 1,
+              child: _BeamPaper(beam: _beam),
+            ),
+            const SizedBox(height: 34),
+            const Text(
               'Place the full prescription in frame',
               textAlign: TextAlign.center,
               style: TextStyle(
@@ -329,8 +358,8 @@ class _EmptyScanFrame extends StatelessWidget {
                 fontWeight: FontWeight.w900,
               ),
             ),
-            SizedBox(height: 8),
-            Padding(
+            const SizedBox(height: 8),
+            const Padding(
               padding: EdgeInsets.symmetric(horizontal: 30),
               child: Text(
                 'Use bright, even light and keep every corner visible.',
@@ -339,6 +368,71 @@ class _EmptyScanFrame extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _BeamPaper extends StatelessWidget {
+  const _BeamPaper({required this.beam});
+  final Animation<double> beam;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: beam,
+      builder: (context, _) => Container(
+        width: 80,
+        height: 104,
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x221B4955),
+              blurRadius: 25,
+              offset: Offset(0, 12),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(6),
+          child: Stack(
+            children: [
+              const Column(
+                children: [
+                  _PaperLine(30, color: Color(0xFF8ED0C6)),
+                  SizedBox(height: 9),
+                  _PaperLine(48),
+                  SizedBox(height: 9),
+                  _PaperLine(38),
+                  SizedBox(height: 9),
+                  _PaperLine(46),
+                ],
+              ),
+              Positioned(
+                left: 0,
+                right: 0,
+                top: -3 + beam.value * (78 - 3),
+                child: Container(
+                  height: 3,
+                  decoration: BoxDecoration(
+                    color: AppColors.teal,
+                    borderRadius: BorderRadius.circular(3),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.teal.withValues(alpha: 0.9),
+                        blurRadius: 10,
+                        spreadRadius: 2,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -382,38 +476,6 @@ class _SelectedScanFrame extends StatelessWidget {
           ],
         ),
       ],
-    );
-  }
-}
-
-class _PaperPreview extends StatelessWidget {
-  const _PaperPreview();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 80,
-      height: 104,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x221B4955),
-            blurRadius: 25,
-            offset: Offset(0, 12),
-          ),
-        ],
-      ),
-      child: const Column(
-        children: [
-          _PaperLine(30, color: Color(0xFF8ED0C6)),
-          _PaperLine(48),
-          _PaperLine(38),
-          _PaperLine(46),
-        ],
-      ),
     );
   }
 }
@@ -655,106 +717,129 @@ class _ProcessingScreenState extends ConsumerState<ProcessingScreen>
                       : Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            SizedBox(
-                              width: 260,
-                              height: 320,
-                              child: Stack(
-                                alignment: Alignment.center,
-                                children: [
-                                  // Background Animated Glow
-                                  AnimatedBuilder(
-                                    animation: controller,
-                                    builder: (context, child) {
-                                      return Container(
-                                        width: 220 + (30 * controller.value),
-                                        height: 280 + (30 * controller.value),
-                                        decoration: BoxDecoration(
-                                          shape: BoxShape.rectangle,
-                                          borderRadius: BorderRadius.circular(
-                                            40,
-                                          ),
-                                          gradient: RadialGradient(
-                                            colors: [
-                                              AppColors.teal.withValues(
-                                                alpha:
-                                                    0.2 -
-                                                    (0.1 * controller.value),
-                                              ),
-                                              Colors.transparent,
-                                            ],
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                  ),
-
-                                  const _ProcessingPaper(),
-
-                                  // Premium Scanning Line
-                                  AnimatedBuilder(
-                                    animation: controller,
-                                    builder: (_, _) => Positioned(
-                                      top: 40 + (190 * controller.value),
-                                      left: 20,
-                                      right: 20,
-                                      child: Column(
-                                        children: [
-                                          Container(
-                                            height: 4,
-                                            decoration: BoxDecoration(
-                                              color: AppColors.teal,
-                                              borderRadius:
-                                                  BorderRadius.circular(4),
-                                              boxShadow: [
-                                                BoxShadow(
-                                                  color: AppColors.teal
-                                                      .withValues(alpha: 0.8),
-                                                  blurRadius: 16,
-                                                  spreadRadius: 2,
+                            Entrance(
+                              child: SizedBox(
+                                width: 260,
+                                height: 320,
+                                child: Stack(
+                                  alignment: Alignment.center,
+                                  children: [
+                                    // Background Animated Glow
+                                    AnimatedBuilder(
+                                      animation: controller,
+                                      builder: (context, child) {
+                                        return Container(
+                                          width: 220 + (30 * controller.value),
+                                          height: 280 + (30 * controller.value),
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.rectangle,
+                                            borderRadius: BorderRadius.circular(
+                                              40,
+                                            ),
+                                            gradient: RadialGradient(
+                                              colors: [
+                                                AppColors.teal.withValues(
+                                                  alpha:
+                                                      0.2 -
+                                                      (0.1 * controller.value),
                                                 ),
-                                                BoxShadow(
-                                                  color: Colors.white
-                                                      .withValues(alpha: 0.5),
-                                                  blurRadius: 4,
-                                                ),
+                                                Colors.transparent,
                                               ],
                                             ),
                                           ),
-                                          Container(
-                                            height: 40,
-                                            decoration: BoxDecoration(
-                                              gradient: LinearGradient(
-                                                begin: Alignment.topCenter,
-                                                end: Alignment.bottomCenter,
-                                                colors: [
-                                                  AppColors.teal.withValues(
-                                                    alpha: 0.15,
+                                        );
+                                      },
+                                    ),
+
+                                    const _ProcessingPaper(),
+                                    _OrbitingDots(animation: controller),
+
+                                    // Premium Scanning Line
+                                    AnimatedBuilder(
+                                      animation: controller,
+                                      builder: (_, _) => Positioned(
+                                        top: 40 + (190 * controller.value),
+                                        left: 20,
+                                        right: 20,
+                                        child: Column(
+                                          children: [
+                                            Container(
+                                              height: 4,
+                                              decoration: BoxDecoration(
+                                                color: AppColors.teal,
+                                                borderRadius:
+                                                    BorderRadius.circular(4),
+                                                boxShadow: [
+                                                  BoxShadow(
+                                                    color: AppColors.teal
+                                                        .withValues(alpha: 0.8),
+                                                    blurRadius: 16,
+                                                    spreadRadius: 2,
                                                   ),
-                                                  Colors.transparent,
+                                                  BoxShadow(
+                                                    color: Colors.white
+                                                        .withValues(alpha: 0.5),
+                                                    blurRadius: 4,
+                                                  ),
                                                 ],
                                               ),
                                             ),
-                                          ),
-                                        ],
+                                            Container(
+                                              height: 40,
+                                              decoration: BoxDecoration(
+                                                gradient: LinearGradient(
+                                                  begin: Alignment.topCenter,
+                                                  end: Alignment.bottomCenter,
+                                                  colors: [
+                                                    AppColors.teal.withValues(
+                                                      alpha: 0.15,
+                                                    ),
+                                                    Colors.transparent,
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                for (var i = 0; i < 3; i++)
+                                  Padding(
+                                    padding: EdgeInsets.only(
+                                      right: i == 2 ? 0 : 8,
+                                    ),
+                                    child: AnimatedBuilder(
+                                      animation: controller,
+                                      builder: (context, _) => Opacity(
+                                        opacity:
+                                            (controller.value - i / 3 + 1) % 1.0,
+                                        child: const Icon(
+                                          Icons.circle,
+                                          size: 8,
+                                          color: AppColors.teal,
+                                        ),
                                       ),
                                     ),
                                   ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 40),
-                            const CircularProgressIndicator(
-                              color: AppColors.teal,
-                            ),
-                            const SizedBox(height: 20),
-                            Text(
-                              'KeshabStudios AI is structuring...',
-                              style: TextStyle(
-                                color: AppColors.teal,
-                                fontWeight: FontWeight.w800,
-                                fontSize: 16,
-                                letterSpacing: -0.2,
-                              ),
+                                const SizedBox(width: 10),
+                                Text(
+                                  'KeshabStudios AI is structuring...',
+                                  style: TextStyle(
+                                    color: AppColors.teal,
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 15,
+                                    letterSpacing: -0.2,
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
@@ -819,6 +904,41 @@ class _ProcessingPaper extends StatelessWidget {
           const _PaperLine(80, color: AppColors.line),
         ],
       ),
+    );
+  }
+}
+
+class _OrbitingDots extends StatelessWidget {
+  const _OrbitingDots({required this.animation});
+  final Animation<double> animation;
+
+  static const double _radius = 128;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: animation,
+      builder: (context, _) {
+        final t = animation.value * 2 * math.pi;
+        return Stack(
+          alignment: Alignment.center,
+          children: [
+            for (var i = 0; i < 3; i++)
+              Positioned(
+                left: _radius * math.cos(t + i * 2 * math.pi / 3) - 4,
+                top: _radius * math.sin(t + i * 2 * math.pi / 3) - 4,
+                child: Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: AppColors.indigo.withValues(alpha: 0.55),
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
     );
   }
 }

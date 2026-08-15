@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:prescription_scanner/models/extracted_prescription.dart';
 import 'package:prescription_scanner/services/result_store.dart';
 import 'package:prescription_scanner/theme.dart';
+import 'package:prescription_scanner/widgets/ui_animations.dart';
 
 /// UI language for the patient-friendly summary on the result screen.
 enum ResultLanguage {
@@ -265,12 +266,15 @@ class ResultScreen extends ConsumerWidget {
                 language: ref.watch(resultLanguageProvider),
               ),
               const SizedBox(height: 12),
-              ...details.medicines.map(
-                (medicine) => Padding(
+              ...details.medicines.asMap().entries.map(
+                (entry) => Padding(
                   padding: const EdgeInsets.only(bottom: 10),
-                  child: _MedicineCard(
-                    medicine: medicine,
-                    language: ref.watch(resultLanguageProvider),
+                  child: Entrance(
+                    delay: Duration(milliseconds: 120 + entry.key * 70),
+                    child: _MedicineCard(
+                      medicine: entry.value,
+                      language: ref.watch(resultLanguageProvider),
+                    ),
                   ),
                 ),
               ),
@@ -488,6 +492,8 @@ class _QualityHeader extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: [Color(0xFFEAF9F6), AppColors.indigoSoft],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(20),
       ),
@@ -507,18 +513,27 @@ class _QualityHeader extends StatelessWidget {
             ),
           ),
           SizedBox(
-            width: 60,
-            height: 60,
+            width: 62,
+            height: 62,
             child: Stack(
               alignment: Alignment.center,
               children: [
-                CircularProgressIndicator(
-                  value: details.overallConfidence,
-                  strokeWidth: 6,
-                  color: details.needsManualReview
-                      ? AppColors.amber
-                      : AppColors.teal,
-                  backgroundColor: Colors.white70,
+                TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0, end: details.overallConfidence),
+                  duration: const Duration(milliseconds: 1100),
+                  curve: Curves.easeOutCubic,
+                  builder: (context, value, _) => SizedBox(
+                    width: 62,
+                    height: 62,
+                    child: CircularProgressIndicator(
+                      value: value,
+                      strokeWidth: 6,
+                      color: details.needsManualReview
+                          ? AppColors.amber
+                          : AppColors.teal,
+                      backgroundColor: Colors.white70,
+                    ),
+                  ),
                 ),
                 Text(
                   '$percentage%',

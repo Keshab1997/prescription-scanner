@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:prescription_scanner/services/auth_service.dart';
 import 'package:prescription_scanner/services/auth_session_notifier.dart';
 import 'package:prescription_scanner/theme.dart';
+import 'package:prescription_scanner/widgets/ui_animations.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
@@ -227,10 +228,23 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
           ? Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Icon(
-                  Icons.mark_email_read_outlined,
-                  color: AppColors.teal,
-                  size: 72,
+                Entrance(
+                  child: Center(
+                    child: Container(
+                      width: 96,
+                      height: 96,
+                      alignment: Alignment.center,
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: AppColors.softGradient,
+                      ),
+                      child: const Icon(
+                        Icons.mark_email_read_outlined,
+                        color: AppColors.teal,
+                        size: 42,
+                      ),
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 20),
                 FilledButton(
@@ -363,26 +377,61 @@ class _AuthScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(),
-      body: SafeArea(
-        top: false,
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(24, 4, 24, 30),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 430),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(title, style: Theme.of(context).textTheme.headlineSmall),
-                  const SizedBox(height: 7),
-                  Text(
-                    subtitle,
-                    style: const TextStyle(color: AppColors.muted),
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+      ),
+      body: AuroraBackdrop(
+        child: SafeArea(
+          top: false,
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(22, 4, 22, 30),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 440),
+                child: Container(
+                  padding: const EdgeInsets.fromLTRB(24, 26, 24, 24),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.92),
+                    borderRadius: BorderRadius.circular(26),
+                    border: Border.all(color: Colors.white),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.indigo.withValues(alpha: 0.10),
+                        blurRadius: 36,
+                        offset: const Offset(0, 18),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 28),
-                  child,
-                ],
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Entrance(
+                        delay: const Duration(milliseconds: 80),
+                        child: Text(
+                          title,
+                          style: Theme.of(context).textTheme.headlineSmall,
+                        ),
+                      ),
+                      const SizedBox(height: 7),
+                      Entrance(
+                        delay: const Duration(milliseconds: 150),
+                        child: Text(
+                          subtitle,
+                          style: const TextStyle(
+                            color: AppColors.muted,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 26),
+                      Entrance(
+                        delay: const Duration(milliseconds: 230),
+                        child: child,
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
           ),

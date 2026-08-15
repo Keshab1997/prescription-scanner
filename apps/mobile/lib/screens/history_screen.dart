@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:prescription_scanner/models/extracted_prescription.dart';
 import 'package:prescription_scanner/services/result_store.dart';
 import 'package:prescription_scanner/theme.dart';
+import 'package:prescription_scanner/widgets/ui_animations.dart';
 
 class HistoryScreen extends ConsumerStatefulWidget {
   const HistoryScreen({super.key});
@@ -36,42 +37,58 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
           child: ListView(
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 110),
             children: [
-              const Text(
-                'Your records',
-                style: TextStyle(color: AppColors.muted),
+              Entrance(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Your records',
+                      style: TextStyle(color: AppColors.muted),
+                    ),
+                    Text(
+                      'History',
+                      style: Theme.of(context).textTheme.headlineSmall,
+                    ),
+                  ],
+                ),
               ),
-              Text('History', style: Theme.of(context).textTheme.headlineSmall),
               const SizedBox(height: 18),
-              TextField(
-                controller: search,
-                onChanged: (_) => setState(() {}),
-                decoration: InputDecoration(
-                  hintText: 'Search by date or status',
-                  prefixIcon: const Icon(Icons.search_rounded),
-                  suffixIcon: search.text.isEmpty
-                      ? null
-                      : IconButton(
-                          onPressed: () => setState(search.clear),
-                          icon: const Icon(Icons.close_rounded),
-                        ),
+              Entrance(
+                delay: const Duration(milliseconds: 90),
+                child: TextField(
+                  controller: search,
+                  onChanged: (_) => setState(() {}),
+                  decoration: InputDecoration(
+                    hintText: 'Search by date or status',
+                    prefixIcon: const Icon(Icons.search_rounded),
+                    suffixIcon: search.text.isEmpty
+                        ? null
+                        : IconButton(
+                            onPressed: () => setState(search.clear),
+                            icon: const Icon(Icons.close_rounded),
+                          ),
+                  ),
                 ),
               ),
               const SizedBox(height: 12),
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: [
-                    _FilterChip('all', 'All', filter, setFilter),
-                    _FilterChip('completed', 'Clear', filter, setFilter),
-                    _FilterChip(
-                      'needs_review',
-                      'Needs review',
-                      filter,
-                      setFilter,
-                    ),
-                    _FilterChip('processing', 'Processing', filter, setFilter),
-                    _FilterChip('failed', 'Failed', filter, setFilter),
-                  ],
+              Entrance(
+                delay: const Duration(milliseconds: 140),
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      _FilterChip('all', 'All', filter, setFilter),
+                      _FilterChip('completed', 'Clear', filter, setFilter),
+                      _FilterChip(
+                        'needs_review',
+                        'Needs review',
+                        filter,
+                        setFilter,
+                      ),
+                      _FilterChip('processing', 'Processing', filter, setFilter),
+                      _FilterChip('failed', 'Failed', filter, setFilter),
+                    ],
+                  ),
                 ),
               ),
               const SizedBox(height: 18),
@@ -81,12 +98,17 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                   if (visible.isEmpty) return const _EmptyHistory();
                   return Column(
                     children: [
-                      ...visible.map(
-                        (item) => Padding(
+                      ...visible.asMap().entries.map(
+                        (entry) => Padding(
                           padding: const EdgeInsets.only(bottom: 10),
-                          child: _HistoryItem(
-                            item: item,
-                            onTap: () => openItem(item),
+                          child: Entrance(
+                            delay: Duration(
+                              milliseconds: 200 + entry.key * 60,
+                            ),
+                            child: _HistoryItem(
+                              item: entry.value,
+                              onTap: () => openItem(entry.value),
+                            ),
                           ),
                         ),
                       ),
@@ -165,10 +187,45 @@ class _FilterChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.only(right: 7),
-    child: ChoiceChip(
-      label: Text(label),
-      selected: value == selectedValue,
-      onSelected: (_) => onSelected(value),
+    child: ScaleTap(
+      onTap: () => onSelected(value),
+      pressedScale: 0.94,
+      borderRadius: BorderRadius.circular(100),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 240),
+        curve: Curves.easeOutCubic,
+        padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 9),
+        decoration: BoxDecoration(
+          gradient: value == selectedValue
+              ? AppColors.brandGradient
+              : const LinearGradient(
+                  colors: [Colors.white, Colors.white],
+                ),
+          borderRadius: BorderRadius.circular(100),
+          border: Border.all(
+            color: value == selectedValue
+                ? Colors.transparent
+                : AppColors.line,
+          ),
+          boxShadow: value == selectedValue
+              ? [
+                  BoxShadow(
+                    color: AppColors.indigo.withValues(alpha: 0.3),
+                    blurRadius: 12,
+                    offset: const Offset(0, 5),
+                  ),
+                ]
+              : null,
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: value == selectedValue ? Colors.white : AppColors.muted,
+            fontWeight: FontWeight.w700,
+            fontSize: 13,
+          ),
+        ),
+      ),
     ),
   );
 }
@@ -192,9 +249,9 @@ class _HistoryItem extends StatelessWidget {
         ? const Color(0xFFA56100)
         : AppColors.success;
     return Card(
+      clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
         child: Padding(
           padding: const EdgeInsets.all(13),
           child: Row(
@@ -203,9 +260,9 @@ class _HistoryItem extends StatelessWidget {
                 width: 50,
                 height: 54,
                 alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: AppColors.indigoSoft,
-                  borderRadius: BorderRadius.circular(13),
+                decoration: const BoxDecoration(
+                  gradient: AppColors.softGradient,
+                  borderRadius: BorderRadius.all(Radius.circular(14)),
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -252,7 +309,7 @@ class _HistoryItem extends StatelessWidget {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
                 decoration: BoxDecoration(
                   color: color.withValues(alpha: .1),
                   borderRadius: BorderRadius.circular(20),
