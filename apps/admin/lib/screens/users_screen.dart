@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-import '../main.dart' show adminApiSecret;
-
-/// Live user directory pulled from Supabase via the `admin_list_users` RPC.
-/// The admin app authenticates with Firebase, not Supabase, so it cannot use
-/// RLS — the RPC gates access on a shared admin secret passed at call time.
+/// Live user directory pulled from the Firestore `profiles` collection. Mobile
+/// users are written a profile doc on signup, so this reflects every account.
+/// Read access is gated by Firestore security rules (admin-only).
 class UsersScreen extends StatefulWidget {
   const UsersScreen({super.key});
 
@@ -30,14 +28,12 @@ class _UsersScreenState extends State<UsersScreen> {
   Future<void> _load() async {
     setState(() => _loading = true);
     try {
-      if (adminApiSecret.isEmpty) {
-        throw Exception(
-            'ADMIN_API_SECRET is not set. Re-run with --dart-define=ADMIN_API_SECRET=...');
-      }
-      final res = await Supabase.instance.client
-          .rpc('admin_list_users', params: {'p_secret': adminApiSecret});
-      final list = (res as List)
-          .map((e) => AppUser.fromMap(e as Map<String, dynamic>))
+      final snapshot = await FirebaseFirestore.instance
+          .collection('profiles')
+          .orderBy('createdAt', descending: true)
+          .get();
+      final list = snapshot.docs
+          .map((doc) => AppUser.fromMap(doc.data()))
           .toList();
       if (mounted) {
         setState(() {
@@ -73,7 +69,7 @@ class _UsersScreenState extends State<UsersScreen> {
                   Text('Users',
                       style:
                           TextStyle(fontSize: 24, fontWeight: FontWeight.w800)),
-                  Text('Supabase accounts using the mobile app.'),
+                  Text('Accounts created from the mobile app.'),
                 ],
               ),
             ),
@@ -120,84 +116,56 @@ class _UsersScreenState extends State<UsersScreen> {
     }
     if (_error != null) {
       return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.error_outline, size: 36, color: Colors.black38),
-              const SizedBox(height: 12),
-              Text(_error!,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(color: Colors.black54)),
-            ],
-          ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.error_outline, size: 36, color: Colors.black38),
+            const SizedBox(height: 12),
+            Text(_error!, style: const TextStyle(color: Colors.black54)),
+          ],
         ),
       );
     }
     if (_users.isEmpty) {
       return const Center(
-        child: Padding(
-          padding: EdgeInsets.all(24),
-          child: Text('No users yet.',
-              style: TextStyle(color: Colors.black54)),
-        ),
+        child: Text('No users yet.', style: TextStyle(color: Colors.black54)),
       );
     }
     return ListView.separated(
-      padding: const EdgeInsets.symmetric(vertical: 8),
       itemCount: _users.length,
-      separatorBuilder: (_, _) => const Divider(height: 1, indent: 16, endIndent: 16),
-      itemBuilder: (context, i) {
-        final u = _users[i];
+      separatorBuilder: (_, __) => const Divider(height: 1),
+      itemBuilder: (context, index) {
+        final u = _users[index];
+        final blocked = u.status == 'blocked';
         return ListTile(
           leading: CircleAvatar(
-            backgroundColor: const Color(0xFF0F766E).withValues(alpha: 0.12),
+            backgroundColor: blocked ? Colors.red.shade50 : Colors.teal.shade50,
             child: Text(
-              (u.displayName.isNotEmpty ? u.displayName : u.email)
-                      .substring(0, 1)
-                      .toUpperCase(),
-              style: const TextStyle(
-                  color: Color(0xFF0F766E), fontWeight: FontWeight.w700),
+              (u.displayName.isNotEmpty ? u.displayName[0] : '?').toUpperCase(),
+              style: TextStyle(
+                color: blocked ? Colors.red : Colors.teal.shade700,
+                fontWeight: FontWeight.w800,
+              ),
             ),
           ),
-          title: Text(
-            u.displayName.isNotEmpty ? u.displayName : (u.email.isEmpty ? 'Unknown' : u.email),
-            style: const TextStyle(fontWeight: FontWeight.w600),
-          ),
-          subtitle: Text(u.email.isEmpty ? 'no email' : u.email),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: u.status == 'blocked'
-                      ? const Color(0xFFB91C1C).withValues(alpha: 0.12)
-                      : const Color(0xFF0F766E).withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(u.status,
-                    style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: u.status == 'blocked'
-                            ? const Color(0xFFB91C1C)
-                            : const Color(0xFF0F766E))),
+          title: Text(u.displayName.isEmpty ? 'Unnamed user' : u.displayName),
+          subtitle: Text(u.email),
+          trailing: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(
+              color: blocked
+                  ? Colors.red.withValues(alpha: 0.1)
+                  : Colors.green.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(30),
+            ),
+            child: Text(
+              blocked ? 'Blocked' : 'Active',
+              style: TextStyle(
+                color: blocked ? Colors.red : Colors.green.shade700,
+                fontWeight: FontWeight.w600,
+                fontSize: 12,
               ),
-              if (u.role != 'user') ...[
-                const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: Colors.black12,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Text(u.role,
-                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-                ),
-              ],
-            ],
+            ),
           ),
         );
       },
@@ -211,22 +179,32 @@ class _StatChip extends StatelessWidget {
   final String value;
 
   @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: Colors.black12),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Text(label, style: const TextStyle(color: Colors.black54, fontSize: 12)),
-            const SizedBox(height: 4),
-            Text(value,
-                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
+            Text(
+              value,
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w900,
+                color: Color(0xFF0F766E),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: const TextStyle(color: Colors.black54, fontSize: 13),
+            ),
           ],
         ),
-      ),
-    );
-  }
+      );
 }
 
 class AppUser {
@@ -238,6 +216,7 @@ class AppUser {
     required this.status,
     required this.createdAt,
   });
+
   final String id;
   final String displayName;
   final String email;
@@ -246,13 +225,16 @@ class AppUser {
   final DateTime createdAt;
 
   factory AppUser.fromMap(Map<String, dynamic> m) {
+    final created = m['createdAt'];
     return AppUser(
       id: m['id'] as String? ?? '',
-      displayName: m['display_name'] as String? ?? '',
+      displayName: m['displayName'] as String? ?? '',
       email: m['email'] as String? ?? '',
       role: m['role'] as String? ?? 'user',
       status: m['status'] as String? ?? 'active',
-      createdAt: m['created_at'] == null
+      createdAt: created is Timestamp
+          ? created.toDate()
+          : m['created_at'] == null
           ? DateTime.now()
           : DateTime.parse(m['created_at'] as String),
     );

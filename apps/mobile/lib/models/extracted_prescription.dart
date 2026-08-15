@@ -1,6 +1,6 @@
-/// Local, Supabase-free representation of an extracted prescription.
+/// Local representation of an extracted prescription, stored on-device only.
 ///
-/// Field names intentionally mirror the previous Supabase-backed
+/// Field names intentionally mirror the former server-backed
 /// `PrescriptionDetail` / `MedicineItem` so the existing result-screen UI
 /// widgets can be reused with minimal changes.
 class ExtractedPrescription {

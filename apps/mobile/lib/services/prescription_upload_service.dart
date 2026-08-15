@@ -8,50 +8,22 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:prescription_scanner/config.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
-final prescriptionUploadServiceProvider = Provider<PrescriptionUploadService?>((
-  ref,
-) {
-  if (!AppConfig.hasSupabaseConfig) return null;
-  return PrescriptionUploadService(Supabase.instance.client);
+final prescriptionUploadServiceProvider =
+    Provider<PrescriptionUploadService>((ref) {
+  return PrescriptionUploadService();
 });
 
+/// Image preparation only. The actual AI transcription runs on-device via
+/// [GeminiVisionService]; prescription images are never uploaded to a server.
 class PrescriptionUploadService {
-  PrescriptionUploadService(this.client);
+  PrescriptionUploadService();
 
-  final SupabaseClient client;
   final ImagePicker _picker = ImagePicker();
 
   static const maxImageBytes = 10 * 1024 * 1024;
   static const minShortEdge = 600;
   static const minLongEdge = 900;
-  static const aiConsentPolicyVersion = '2026-08-13';
-
-  Future<bool> hasCurrentAiConsent() async {
-    final rows = await client
-        .from('consent_records')
-        .select('id')
-        .eq('consent_type', 'ai_processing')
-        .eq('policy_version', aiConsentPolicyVersion)
-        .eq('granted', true)
-        .limit(1);
-    return rows.isNotEmpty;
-  }
-
-  Future<void> recordAiConsent() async {
-    final userId = client.auth.currentUser?.id;
-    if (userId == null) {
-      throw const ScanUploadException('Sign in again to continue.');
-    }
-    await client.from('consent_records').insert({
-      'user_id': userId,
-      'consent_type': 'ai_processing',
-      'policy_version': aiConsentPolicyVersion,
-      'granted': true,
-      'locale': 'en-IN',
-    });
-  }
 
   Future<PreparedPrescription?> pickAndPrepare(ImageSource source) async {
     final picked = await _picker.pickImage(
@@ -134,97 +106,8 @@ class PrescriptionUploadService {
     );
   }
 
-  Future<UploadedPrescription> reserveAndUpload(
-    PreparedPrescription draft,
-  ) async {
-    String? prescriptionId;
-    try {
-      final rpcResult = await client.rpc(
-        'create_prescription_upload',
-        params: {
-          'p_original_filename': 'prescription.jpg',
-          'p_mime_type': 'image/jpeg',
-          'p_size_bytes': draft.sizeBytes,
-          'p_image_hash': draft.sha256Hash,
-        },
-      );
-      final row = _firstRpcRow(rpcResult);
-      prescriptionId = row['prescription_id']?.toString();
-      final storagePath = row['storage_path']?.toString();
-      if (prescriptionId == null || storagePath == null) {
-        throw ScanUploadException('The upload reservation was invalid.');
-      }
-
-      await client.storage
-          .from('prescriptions')
-          .upload(
-            storagePath,
-            File(draft.path),
-            fileOptions: const FileOptions(
-              contentType: 'image/jpeg',
-              upsert: false,
-              cacheControl: '0',
-            ),
-          );
-
-      return UploadedPrescription(
-        prescriptionId: prescriptionId,
-        storagePath: storagePath,
-      );
-    } catch (error) {
-      if (prescriptionId != null) {
-        try {
-          await client.rpc(
-            'cancel_prescription_upload',
-            params: {'p_prescription_id': prescriptionId},
-          );
-        } catch (_) {
-          // A cleanup worker will remove stale reservations if this best-effort call fails.
-        }
-      }
-      if (error is ScanUploadException) rethrow;
-      if (error is PostgrestException) {
-        throw ScanUploadException(_friendlyDatabaseMessage(error));
-      }
-      if (error is StorageException) {
-        throw ScanUploadException(
-          'Secure upload failed. Check your connection and retry.',
-        );
-      }
-      throw ScanUploadException('The prescription could not be uploaded.');
-    }
-  }
-
   Future<void> deleteLocalDraft(PreparedPrescription draft) =>
       _safeDelete(draft.path);
-
-  Map<String, dynamic> _firstRpcRow(Object? result) {
-    if (result is List && result.isNotEmpty && result.first is Map) {
-      return Map<String, dynamic>.from(result.first as Map);
-    }
-    if (result is Map) return Map<String, dynamic>.from(result);
-    return const {};
-  }
-
-  String _friendlyDatabaseMessage(PostgrestException error) {
-    final message = error.message.toUpperCase();
-    if (message.contains('DAILY_LIMIT_REACHED')) {
-      return 'You have used all available scans for today.';
-    }
-    if (message.contains('AI_DISABLED')) {
-      return 'AI processing is temporarily unavailable.';
-    }
-    if (message.contains('MAINTENANCE_MODE')) {
-      return 'Prescription Scanner is under maintenance. Try again later.';
-    }
-    if (message.contains('USER_NOT_ACTIVE')) {
-      return 'This account cannot upload prescriptions.';
-    }
-    if (message.contains('IMAGE_SIZE_LIMIT')) {
-      return 'The image is larger than the server limit.';
-    }
-    return 'The secure upload could not be reserved.';
-  }
 
   Future<(int, int)> _readDimensions(List<int> bytes) async {
     final codec = await ui.instantiateImageCodec(Uint8List.fromList(bytes));
@@ -259,16 +142,6 @@ class PreparedPrescription {
   final int width;
   final int height;
   final String sha256Hash;
-}
-
-class UploadedPrescription {
-  const UploadedPrescription({
-    required this.prescriptionId,
-    required this.storagePath,
-  });
-
-  final String prescriptionId;
-  final String storagePath;
 }
 
 class ScanValidationException implements Exception {

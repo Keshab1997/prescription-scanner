@@ -1,17 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:admin_api_key_manager/admin_api_key_manager.dart';
 
 import 'firebase_options.dart';
 import 'screens/login_screen.dart';
 import 'screens/dashboard_screen.dart';
-
-const _supabaseUrl = String.fromEnvironment('SUPABASE_URL');
-const _supabaseAnonKey = String.fromEnvironment('SUPABASE_PUBLISHABLE_KEY');
-const adminApiSecret = String.fromEnvironment('ADMIN_API_SECRET');
 
 void main() => runApp(const AdminApp());
 
@@ -56,12 +51,6 @@ class _AdminBootstrapState extends State<AdminBootstrap> {
       await Firebase.initializeApp(
         options: DefaultFirebaseOptions.currentPlatform,
       );
-      if (_supabaseUrl.isNotEmpty && _supabaseAnonKey.isNotEmpty) {
-        await Supabase.initialize(
-          url: _supabaseUrl,
-          publishableKey: _supabaseAnonKey,
-        );
-      }
       await Hive.initFlutter();
       await KeyCache.init();
       if (mounted) setState(() => _ready = true);

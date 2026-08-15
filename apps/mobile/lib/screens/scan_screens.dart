@@ -70,10 +70,6 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
 
   Future<void> selectImage(ImageSource source) async {
     final service = ref.read(prescriptionUploadServiceProvider);
-    if (service == null) {
-      setState(() => error = 'Supabase configuration is missing.');
-      return;
-    }
     setState(() {
       preparing = true;
       error = null;
@@ -84,6 +80,10 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
       final oldDraft = draft;
       setState(() => draft = prepared);
       if (oldDraft != null) unawaited(service.deleteLocalDraft(oldDraft));
+      // Start AI extraction immediately on selection so the slow on-device
+      // Gemini call begins without a second tap. The explicit "Continue
+      // securely" button stays available to retry if processing fails.
+      unawaited(upload());
     } on ScanValidationException catch (exception) {
       if (mounted) setState(() => error = exception.message);
     } catch (_) {

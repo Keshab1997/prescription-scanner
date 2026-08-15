@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:admin_api_key_manager/admin_api_key_manager.dart';
 
 import 'package:prescription_scanner/app.dart';
@@ -17,21 +16,8 @@ Future<void> main() async {
   // splash (logo). Run each init independently and keep the app booting.
   final initErrors = <String>[];
 
-  // Supabase is used only for authentication (login/account).
-  if (AppConfig.hasSupabaseConfig) {
-    try {
-      await Supabase.initialize(
-        url: AppConfig.supabaseUrl,
-        publishableKey: AppConfig.supabasePublishableKey,
-      );
-    } catch (e, st) {
-      initErrors.add('Supabase: $e');
-      debugPrint('[main] Supabase init failed: $e\n$st');
-    }
-  }
-
-  // Firebase powers the admin_api_key_manager key pool (Gemini keys only).
-  // Prescription data itself is NOT stored in Firebase.
+  // Firebase powers authentication, Firestore (profiles/quota/feedback), and
+  // the admin_api_key_manager key pool (Gemini keys).
   try {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,

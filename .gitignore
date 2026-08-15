@@ -27,3 +27,6 @@ Thumbs.db
 # Supabase local
 supabase/.branches/
 supabase/.temp/
+
+# ZCode agent internal data
+.zcode/

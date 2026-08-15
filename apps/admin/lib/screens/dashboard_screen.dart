@@ -2,10 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fb;
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:admin_api_key_manager/admin_api_key_manager.dart';
-
-import '../main.dart' show adminApiSecret;
 
 import 'keys_screen.dart';
 import 'usage_screen.dart';
@@ -267,23 +264,19 @@ class _OverviewState extends State<_Overview> {
   }
 
   Future<void> _loadStats() async {
-    if (adminApiSecret.isEmpty) {
-      if (mounted) {
-        setState(() {
-          _statsError = 'ADMIN_API_SECRET not set.';
-          _statsLoading = false;
-        });
-      }
-      return;
-    }
     try {
-      final res = await Supabase.instance.client
-          .rpc('admin_operation_stats', params: {'p_secret': adminApiSecret});
-      final map = (res as Map).cast<String, dynamic>();
+      final profiles = await FirebaseFirestore.instance
+          .collection('profiles')
+          .count()
+          .get();
+      final failures = await FirebaseFirestore.instance
+          .collection('api_error_logs')
+          .count()
+          .get();
       if (mounted) {
         setState(() {
-          _totalExtractions = (map['total_extractions'] as num? ?? 0).toInt();
-          _failedExtractions = (map['failed_extractions'] as num? ?? 0).toInt();
+          _totalExtractions = profiles.count ?? 0;
+          _failedExtractions = failures.count ?? 0;
           _statsLoading = false;
         });
       }

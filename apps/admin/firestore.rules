@@ -3,17 +3,67 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Whether the caller is the configured admin (Firebase-auth'd email).
-    // Mobile app users authenticate with Supabase, NOT Firebase, so their
-    // Firestore requests arrive with request.auth == null. Writes from the
-    // mobile app must therefore be gated on data shape, not on auth.
+    // Admin is identified by a configured Firebase-auth email.
     function isAdmin() {
       return request.auth != null
         && request.auth.token.email == 'Keshabsarkar2018@gmail.com';
     }
 
-    // Gemini API key pool — admin-only writes.
-    // The keys are consumed client-side on the mobile app (it calls Gemini
+    // A request is from the signed-in mobile user.
+    function isSelf(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    // ---- User profiles ----
+    // Written by the mobile app on signup (auth.uid == doc id). Admins read
+    // all profiles to populate the Users dashboard.
+    match /profiles/{uid} {
+      allow read: if isAdmin();
+      allow create, update: if isSelf(uid)
+        && request.resource.data.keys().hasOnly(
+          ['displayName', 'email', 'role', 'status', 'createdAt', 'updatedAt']
+        )
+        && request.resource.data.email is string
+        && request.resource.data.displayName is string;
+      allow delete: if isAdmin();
+    }
+
+    // ---- App-wide settings (limits, feature flags) ----
+    match /app_settings/{docId} {
+      allow read: if request.auth != null;
+      allow write: if isAdmin();
+    }
+
+    // ---- Per-user daily usage (scan quota) ----
+    match /daily_usage/{docId} {
+      allow read: if isAdmin();
+      allow write: if request.auth != null
+        && request.resource.data.user_id == request.auth.uid;
+    }
+
+    // ---- AI consent records (per user) ----
+    match /consent_records/{docId} {
+      allow read: if isAdmin();
+      allow write: if request.auth != null
+        && request.resource.data.user_id == request.auth.uid;
+    }
+
+    // ---- Prescription feedback (per user) ----
+    match /prescription_feedback/{docId} {
+      allow read: if isAdmin();
+      allow write: if request.auth != null
+        && request.resource.data.user_id == request.auth.uid;
+    }
+
+    // ---- Account deletion requests ----
+    match /account_deletion_requests/{uid} {
+      allow read: if isAdmin() || isSelf(uid);
+      allow create: if isSelf(uid);
+      allow update, delete: if isAdmin();
+    }
+
+    // ---- Gemini API key pool ----
+    // Keys are consumed client-side on the mobile app (it calls Gemini
     // directly), so on-device secrecy is not achievable; we only protect
     // writes (admin-only) and keep reads open for the mobile app.
     match /admin_api_keys/{keyId} {
@@ -21,29 +71,23 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // Key groups (optional pool segmentation used by ApiKeyManager).
     match /admin_key_groups/{groupId} {
       allow read: if true;
       allow write: if isAdmin();
     }
 
-    // Batched error logs from the key manager (mobile + admin).
-    // Mobile writes arrive unauthenticated (Supabase auth), so writes must be
-    // allowed for request.auth == null. Logs are non-sensitive (no keys) and
-    // auto-deleted via TTL, so open writes are acceptable. Reads are open to
-    // any signed-in admin-console user (the console requires Firebase login).
+    // ---- Key-pool error logs / alerts ----
     match /api_error_logs/{logId} {
       allow read: if request.auth != null;
-      allow write: if request.auth == null || isAdmin();
+      allow write: if request.auth != null;
     }
 
-    // All-keys-failed alert written by the mobile app when every key dies.
     match /admin_alerts/{alertId} {
       allow read: if request.auth != null;
-      allow write: if request.auth == null || isAdmin();
+      allow write: if request.auth != null;
     }
 
-    // Admin contact record.
+    // ---- Admin contact record ----
     match /admin_contacts/{docId} {
       allow read: if request.auth != null;
       allow write: if isAdmin();

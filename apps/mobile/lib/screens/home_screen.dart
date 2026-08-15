@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:prescription_scanner/models/extracted_prescription.dart';
 import 'package:prescription_scanner/services/auth_service.dart';
 import 'package:prescription_scanner/services/prescription_repository.dart';
 import 'package:prescription_scanner/theme.dart';
@@ -11,8 +12,8 @@ class HomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final user = ref.watch(authServiceProvider)?.currentUser;
-    final displayName = user?.userMetadata?['display_name']?.toString().trim();
+    final user = ref.watch(authServiceProvider).currentUser;
+    final displayName = user?.displayName?.trim();
     final nameParts =
         displayName
             ?.split(RegExp(r'\s+'))
@@ -153,14 +154,8 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 
-  void _openPrescription(BuildContext context, PrescriptionSummary item) {
-    if (item.isProcessing || item.isFailed) {
-      context.push(
-        '/processing?prescriptionId=${Uri.encodeComponent(item.id)}',
-      );
-    } else {
-      context.push('/result?prescriptionId=${Uri.encodeComponent(item.id)}');
-    }
+  void _openPrescription(BuildContext context, ExtractedPrescription item) {
+    context.push('/result?prescriptionId=${Uri.encodeComponent(item.id)}');
   }
 
   String _initials(String? name) {
@@ -348,25 +343,21 @@ class _QuotaCard extends StatelessWidget {
 
 class _RecentPrescription extends StatelessWidget {
   const _RecentPrescription({required this.item, required this.onTap});
-  final PrescriptionSummary item;
+  final ExtractedPrescription item;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final status = item.isFailed
-        ? 'Failed'
-        : item.isProcessing
-        ? 'Processing'
-        : item.needsReview
+    final status = item.needsManualReview
         ? 'Review'
-        : 'Clear';
-    final statusColor = item.isFailed
-        ? AppColors.danger
-        : item.isProcessing
-        ? AppColors.indigo
-        : item.needsReview
+        : item.isPrescription
+        ? 'Clear'
+        : 'Not a prescription';
+    final statusColor = item.needsManualReview
         ? const Color(0xFFA56100)
-        : AppColors.success;
+        : item.isPrescription
+        ? AppColors.success
+        : AppColors.muted;
     return Card(
       child: InkWell(
         onTap: onTap,
@@ -399,9 +390,7 @@ class _RecentPrescription extends StatelessWidget {
                       style: const TextStyle(fontWeight: FontWeight.w800),
                     ),
                     Text(
-                      item.isFailed
-                          ? 'Tap to retry processing'
-                          : '${item.medicineCount} medicines extracted',
+                      '${item.medicines.length} medicines extracted',
                       style: const TextStyle(
                         color: AppColors.muted,
                         fontSize: 12,

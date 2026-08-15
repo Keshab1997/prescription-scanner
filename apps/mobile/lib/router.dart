@@ -1,10 +1,9 @@
+import 'package:firebase_auth/firebase_auth.dart' as fb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:prescription_scanner/config.dart';
 import 'package:prescription_scanner/screens.dart';
 import 'package:prescription_scanner/services/auth_session_notifier.dart';
 import 'package:prescription_scanner/widgets/app_shell.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   final authNotifier = ref.watch(authSessionNotifierProvider);
@@ -20,16 +19,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           path == '/forgot-password' ||
           path == '/reset-password';
 
-      if (!AppConfig.hasSupabaseConfig) {
-        return isAuthRoute ? null : '/login';
-      }
-
       if (authNotifier.passwordRecovery && path != '/reset-password') {
         return '/reset-password';
       }
 
-      final session = Supabase.instance.client.auth.currentSession;
-      final signedIn = session != null && !session.isExpired;
+      final user = fb.FirebaseAuth.instance.currentUser;
+      final signedIn = user != null;
       if (!signedIn && !isAuthRoute) return '/login';
       if (signedIn &&
           (path == '/login' ||

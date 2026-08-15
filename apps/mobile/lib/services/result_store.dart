@@ -2,9 +2,9 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:prescription_scanner/models/extracted_prescription.dart';
 
-/// Local, Supabase-free store for extracted prescriptions. Results are kept in
-/// a Hive box keyed by the local prescription id, so the result and history
-/// screens no longer depend on Supabase. (Auth/login still uses Supabase.)
+/// Local store for extracted prescriptions. Results are kept in a Hive box
+/// keyed by the local prescription id; prescription images and results never
+/// leave the device, so the result and history screens depend only on this.
 class ResultStore {
   ResultStore._();
 

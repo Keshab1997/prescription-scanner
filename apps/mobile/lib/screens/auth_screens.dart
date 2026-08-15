@@ -54,10 +54,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       );
       return;
     }
-    if (service == null) {
-      setState(() => error = 'Supabase configuration is missing.');
-      return;
-    }
 
     setState(() {
       loading = true;
@@ -206,10 +202,6 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
       return;
     }
     final service = ref.read(authServiceProvider);
-    if (service == null) {
-      setState(() => error = 'Supabase configuration is missing.');
-      return;
-    }
     setState(() {
       loading = true;
       error = null;
@@ -309,10 +301,6 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
       return;
     }
     final service = ref.read(authServiceProvider);
-    if (service == null) {
-      setState(() => error = 'Supabase configuration is missing.');
-      return;
-    }
     setState(() {
       loading = true;
       error = null;

@@ -32,7 +32,6 @@ class ProfileScreen extends ConsumerWidget {
     if (confirmed != true || !context.mounted) return;
 
     final service = ref.read(authServiceProvider);
-    if (service == null) return;
     try {
       await service.requestAccountDeletion();
       if (!context.mounted) return;
@@ -52,11 +51,9 @@ class ProfileScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final service = ref.watch(authServiceProvider);
-    final user = service?.currentUser;
-    final displayName =
-        user?.userMetadata?['display_name']?.toString().trim().isNotEmpty ==
-            true
-        ? user!.userMetadata!['display_name'].toString()
+    final user = service.currentUser;
+    final displayName = user?.displayName?.trim().isNotEmpty == true
+        ? user!.displayName!
         : 'Prescription Scanner User';
     final email = user?.email ?? 'Not signed in';
     final initials = displayName

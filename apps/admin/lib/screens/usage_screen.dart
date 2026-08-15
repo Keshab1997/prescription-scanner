@@ -1,16 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:admin_api_key_manager/admin_api_key_manager.dart';
 
-import '../main.dart' show adminApiSecret;
-
-/// Real usage analytics. Two real failure sources are merged:
-///  • `api_error_logs` (Firestore) — failures from the mobile app's direct
-///    Gemini path via the key-manager (auto-retry stats live here).
-///  • `prescriptions` (Supabase) — extraction failures from the Edge Function
-///    flow (status = 'failed', error_code set). This is where real failures
-///    currently land, so it makes the page meaningful.
+/// Real usage analytics. Failures come from `api_error_logs` (Firestore) —
+/// the mobile app's direct Gemini path via the key-manager (auto-retry
+/// stats live here). Extraction itself runs on-device, so there is no
+/// server-side prescription failure table to merge.
 class UsageScreen extends StatelessWidget {
   const UsageScreen({super.key});
 
@@ -41,44 +36,6 @@ class _UsageBody extends StatefulWidget {
 }
 
 class _UsageBodyState extends State<_UsageBody> {
-  List<Map<String, dynamic>> _rxFailures = const [];
-  bool _rxLoading = true;
-  String? _rxError;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadRxFailures();
-  }
-
-  Future<void> _loadRxFailures() async {
-    if (adminApiSecret.isEmpty) {
-      if (mounted) setState(() => _rxError = 'ADMIN_API_SECRET not set.');
-      return;
-    }
-    try {
-      final res = await Supabase.instance.client.rpc(
-        'admin_prescription_failures',
-        params: {'p_secret': adminApiSecret, 'p_limit': 200},
-      );
-      if (mounted) {
-        setState(() {
-          _rxFailures = (res as List)
-              .map((e) => e as Map<String, dynamic>)
-              .toList();
-          _rxLoading = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _rxError = e.toString().replaceFirst('Exception: ', '');
-          _rxLoading = false;
-        });
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<QuerySnapshot>(
@@ -91,7 +48,7 @@ class _UsageBodyState extends State<_UsageBody> {
         if (snap.hasError) {
           return const Center(child: Text('Failed to load usage data.'));
         }
-        if (!snap.hasData || _rxLoading) {
+        if (!snap.hasData) {
           return const Center(child: CircularProgressIndicator());
         }
 
@@ -100,21 +57,15 @@ class _UsageBodyState extends State<_UsageBody> {
                 ApiErrorLog.fromMap(d.data() as Map<String, dynamic>, d.id))
             .toList();
 
-        final total = logs.length + _rxFailures.length;
+        final total = logs.length;
         final retried = logs.where((l) => l.retried).length;
         final recovered = logs.where((l) => l.retried && l.retrySuccess).length;
 
-        // Merge failures-by-type from both sources.
+        // Failures-by-type.
         final byType = <String, int>{};
         for (final l in logs) {
           final type = l.errorType.isNotEmpty ? l.errorType : 'unknown';
           byType[type] = (byType[type] ?? 0) + 1;
-        }
-        for (final f in _rxFailures) {
-          final code = (f['error_code'] as String?)?.isNotEmpty == true
-              ? f['error_code'] as String
-              : 'unknown';
-          byType[code] = (byType[code] ?? 0) + 1;
         }
 
         // Key-manager failures by key name.
@@ -131,18 +82,11 @@ class _UsageBodyState extends State<_UsageBody> {
 
         final stats = [
           _Stat('Total failures', '$total'),
-          _Stat('Extraction failures', '${_rxFailures.length}'),
           _Stat('Auto-retried (key pool)', '$retried'),
           _Stat('Recovered after retry', '$recovered'),
         ];
 
         final children = [
-          if (_rxError != null)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: Text('Extraction-failure source: $_rxError',
-                  style: const TextStyle(color: Colors.redAccent, fontSize: 12)),
-            ),
           widget.isNarrow
               ? Column(
                   children: stats
