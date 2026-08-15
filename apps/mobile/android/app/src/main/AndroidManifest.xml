@@ -53,5 +53,11 @@
             <action android:name="android.intent.action.PROCESS_TEXT" />
             <data android:mimeType="text/plain" />
         </intent>
+        <!-- Required on Android 11+ so url_launcher can resolve mailto: links
+             for the "Help & support" row on the profile screen. -->
+        <intent>
+            <action android:name="android.intent.action.SENDTO" />
+            <data android:scheme="mailto" />
+        </intent>
     </queries>
 </manifest>

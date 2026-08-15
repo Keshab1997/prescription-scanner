@@ -53,6 +53,9 @@ class ResultStore {
   }
 
   void delete(String id) => _box.delete(id);
+
+  /// Removes every locally stored prescription from this device.
+  Future<void> clear() => _box.clear();
 }
 
 final resultStoreProvider = Provider<ResultStore>(

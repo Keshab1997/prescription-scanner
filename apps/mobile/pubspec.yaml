@@ -32,6 +32,8 @@ dependencies:
   http: ^1.2.0
   uuid: ^4.4.0
   google_fonts: ^8.2.1
+  url_launcher: ^6.3.1
+  package_info_plus: ^8.0.2
 
 dev_dependencies:
   flutter_test:
