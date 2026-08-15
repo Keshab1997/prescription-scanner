@@ -72,7 +72,7 @@ abstract final class AppTheme {
       cardTheme: CardThemeData(
         margin: EdgeInsets.zero,
         elevation: 8,
-        shadowColor: AppColors.teal.withOpacity(0.08),
+        shadowColor: AppColors.teal.withValues(alpha: 0.08),
         color: Colors.white,
         surfaceTintColor: Colors.transparent,
         shape: const RoundedRectangleBorder(
@@ -96,7 +96,7 @@ abstract final class AppTheme {
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: const BorderRadius.all(Radius.circular(16)),
-          borderSide: BorderSide(color: AppColors.line.withOpacity(0.6)),
+          borderSide: BorderSide(color: AppColors.line.withValues(alpha: 0.6)),
         ),
         focusedBorder: const OutlineInputBorder(
           borderRadius: BorderRadius.all(Radius.circular(16)),

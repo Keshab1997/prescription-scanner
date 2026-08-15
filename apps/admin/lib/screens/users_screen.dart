@@ -133,7 +133,7 @@ class _UsersScreenState extends State<UsersScreen> {
     }
     return ListView.separated(
       itemCount: _users.length,
-      separatorBuilder: (_, __) => const Divider(height: 1),
+      separatorBuilder: (_, _) => const Divider(height: 1),
       itemBuilder: (context, index) {
         final u = _users[index];
         final blocked = u.status == 'blocked';

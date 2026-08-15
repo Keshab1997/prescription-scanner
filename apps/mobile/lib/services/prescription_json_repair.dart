@@ -160,7 +160,9 @@ String _stripDanglingKey(String text) {
   // this token is a value (preceded by `:`) or a dangling key (preceded by
   // `,`/`{`/`[`). Only a key position needs stripping.
   var j = lastQuote - 1;
-  while (j >= 0 && text[j] == ' ') j--;
+  while (j >= 0 && text[j] == ' ') {
+    j--;
+  }
   if (j < 0 || text[j] == ':' || text[j] == '}') return text;
 
   // Back up to the preceding comma (or the enclosing opener) to drop the key.

@@ -250,7 +250,7 @@ class _QuotaCard extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: unavailable
-              ? [AppColors.muted, AppColors.muted.withOpacity(0.8)]
+              ? [AppColors.muted, AppColors.muted.withValues(alpha: 0.8)]
               : [AppColors.teal, AppColors.indigo],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -258,7 +258,7 @@ class _QuotaCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: AppColors.teal.withOpacity(0.3),
+            color: AppColors.teal.withValues(alpha: 0.3),
             blurRadius: 16,
             offset: const Offset(0, 8),
           ),
@@ -272,7 +272,7 @@ class _QuotaCard extends StatelessWidget {
               width: 56,
               height: 56,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
+                color: Colors.white.withValues(alpha: 0.2),
                 shape: BoxShape.circle,
               ),
               child: Stack(
@@ -282,7 +282,7 @@ class _QuotaCard extends StatelessWidget {
                     value: progress.clamp(0.0, 1.0).toDouble(),
                     strokeWidth: 4,
                     color: Colors.white,
-                    backgroundColor: Colors.white.withOpacity(0.2),
+                    backgroundColor: Colors.white.withValues(alpha: 0.2),
                   ),
                   Text(
                     unavailable ? '—' : '${quota.remaining}',
@@ -316,7 +316,7 @@ class _QuotaCard extends StatelessWidget {
                         ? 'Please try again later'
                         : '${quota.used} used today · resets daily',
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.8),
+                      color: Colors.white.withValues(alpha: 0.8),
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
                     ),

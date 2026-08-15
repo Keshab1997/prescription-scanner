@@ -37,6 +37,8 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  firebase_auth_platform_interface: ^7.7.0
+  firebase_core_platform_interface: ^6.0.0
 
 flutter:
   uses-material-design: true

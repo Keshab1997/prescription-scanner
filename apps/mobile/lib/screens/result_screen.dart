@@ -770,7 +770,7 @@ class _MedicineDetailSheet extends StatelessWidget {
               child: ListView.separated(
                 controller: scroll,
                 itemCount: rows.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 12),
+                separatorBuilder: (_, _) => const SizedBox(height: 12),
                 itemBuilder: (context, i) => _DetailRowCard(row: rows[i]),
               ),
             ),

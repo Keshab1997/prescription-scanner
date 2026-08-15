@@ -51,7 +51,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
   void dispose() {
     final service = ref.read(prescriptionUploadServiceProvider);
     final currentDraft = draft;
-    if (service != null && currentDraft != null) {
+    if (currentDraft != null) {
       unawaited(service.deleteLocalDraft(currentDraft));
     }
     super.dispose();
@@ -59,7 +59,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
 
   Future<void> recoverInterruptedPick() async {
     final service = ref.read(prescriptionUploadServiceProvider);
-    if (service == null || busy) return;
+    if (busy) return;
     try {
       final recovered = await service.recoverInterruptedPick();
       if (recovered != null && mounted) setState(() => draft = recovered);
@@ -102,7 +102,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
     final service = ref.read(prescriptionUploadServiceProvider);
     final vision = GeminiVisionService();
     final selected = draft;
-    if (service == null || selected == null) return;
+    if (selected == null) return;
 
     setState(() {
       uploading = true;
@@ -527,17 +527,19 @@ class _ProcessingScreenState extends ConsumerState<ProcessingScreen>
       await Future<void>.delayed(const Duration(milliseconds: 350));
       final result = ResultStore.instance.get(widget.prescriptionId);
       if (result == null) {
-        if (mounted)
+        if (mounted) {
           setState(
             () => error = 'The result could not be found. Please scan again.',
           );
+        }
         return;
       }
       if (!mounted) return;
       context.go('/result?prescriptionId=${Uri.encodeComponent(result.id)}');
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         setState(() => error = 'The result could not be loaded. Please retry.');
+      }
     } finally {
       if (mounted) setState(() => running = false);
     }
