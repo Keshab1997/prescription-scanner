@@ -32,7 +32,10 @@ class HomeScreen extends ConsumerWidget {
           padding: const EdgeInsets.fromLTRB(20, 20, 20, 120),
           children: [
             Entrance(
-              child: _HomeHeader(firstName: firstName, initials: _initials(displayName)),
+              child: _HomeHeader(
+                firstName: firstName,
+                initials: _initials(displayName),
+              ),
             ),
             const SizedBox(height: 24),
             Entrance(
@@ -277,7 +280,10 @@ class _ScanHeroState extends State<_ScanHero>
             Align(
               alignment: Alignment.centerLeft,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 11,
+                  vertical: 7,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.16),
                   borderRadius: BorderRadius.circular(30),
@@ -459,9 +465,7 @@ class _QuotaCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: (unavailable
-                    ? AppColors.muted
-                    : AppColors.indigo)
+            color: (unavailable ? AppColors.muted : AppColors.indigo)
                 .withValues(alpha: 0.25),
             blurRadius: 18,
             offset: const Offset(0, 10),
@@ -664,54 +668,69 @@ class _InlineError extends StatelessWidget {
 class _EmptyRecent extends StatelessWidget {
   const _EmptyRecent();
 
+  static const double _cardHeight = 330;
+  static const double _illustrationSize = 112;
+
   @override
-  Widget build(BuildContext context) => Card(
-    child: Padding(
-      padding: const EdgeInsets.symmetric(vertical: 34, horizontal: 20),
-      child: Column(
-        children: [
-          PulseRing(
-            color: AppColors.tealBright,
-            pulses: 1,
-            child: Container(
-              width: 72,
-              height: 72,
-              decoration: const BoxDecoration(
-                color: AppColors.tealSoft,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.document_scanner_rounded,
-                color: AppColors.teal,
-                size: 32,
-              ),
-            ),
-          ),
-          const SizedBox(height: 18),
-          const Text(
-            'No prescriptions yet',
-            style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'Your structured results will appear here.',
-            style: TextStyle(color: AppColors.muted, fontSize: 14),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 20),
-          FilledButton.icon(
-            onPressed: () => context.push('/upload'),
-            icon: const Icon(Icons.add_rounded, size: 20),
-            label: const Text('Scan the first prescription'),
-            style: FilledButton.styleFrom(
-              minimumSize: const Size(0, 48),
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(100),
+  Widget build(BuildContext context) => SizedBox(
+    height: _cardHeight,
+    child: Card(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 34, horizontal: 20),
+        child: Column(
+          children: [
+            // The ripple is clipped to a fixed paint area. Neither the circle
+            // scale nor its opacity can change this Column or Card's height.
+            SizedBox.square(
+              dimension: _illustrationSize,
+              child: ClipRect(
+                child: Center(
+                  child: PulseRing(
+                    color: AppColors.tealBright,
+                    pulses: 1,
+                    child: Container(
+                      width: 72,
+                      height: 72,
+                      decoration: const BoxDecoration(
+                        color: AppColors.tealSoft,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.document_scanner_rounded,
+                        color: AppColors.teal,
+                        size: 32,
+                      ),
+                    ),
+                  ),
+                ),
               ),
             ),
-          ),
-        ],
+            const SizedBox(height: 18),
+            const Text(
+              'No prescriptions yet',
+              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Your structured results will appear here.',
+              style: TextStyle(color: AppColors.muted, fontSize: 14),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 20),
+            FilledButton.icon(
+              onPressed: () => context.push('/upload'),
+              icon: const Icon(Icons.add_rounded, size: 20),
+              label: const Text('Scan the first prescription'),
+              style: FilledButton.styleFrom(
+                minimumSize: const Size(0, 48),
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(100),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     ),
   );

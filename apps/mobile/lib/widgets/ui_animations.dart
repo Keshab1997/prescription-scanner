@@ -291,9 +291,7 @@ class _Orb extends StatelessWidget {
         height: size,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          gradient: RadialGradient(
-            colors: [color, color.withValues(alpha: 0)],
-          ),
+          gradient: RadialGradient(colors: [color, color.withValues(alpha: 0)]),
         ),
       ),
     );
@@ -340,24 +338,38 @@ class _PulseRingState extends State<PulseRing>
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: _controller,
-      builder: (context, child) => Stack(alignment: Alignment.center, children: [
-        for (var i = 0; i < widget.pulses; i++)
-          LayoutBuilder(builder: (context, constraints) {
-            final phase = (_controller.value - i / widget.pulses) % 1.0;
-            return Container(
-              width: 100 + 170 * phase,
-              height: 100 + 170 * phase,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: widget.color.withValues(alpha: 0.30 * (1 - phase)),
-                  width: 2,
-                ),
+      builder: (context, child) => Stack(
+        alignment: Alignment.center,
+        clipBehavior: Clip.none,
+        children: [
+          // Positioned rings never participate in Stack layout. Their visual
+          // growth is paint-only, so the widget always keeps the exact size of
+          // [child] throughout the animation.
+          for (var i = 0; i < widget.pulses; i++)
+            Positioned.fill(
+              child: Builder(
+                builder: (context) {
+                  final phase = (_controller.value - i / widget.pulses) % 1.0;
+                  return Transform.scale(
+                    scale: 1 + 1.7 * phase,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: widget.color.withValues(
+                            alpha: 0.30 * (1 - phase),
+                          ),
+                          width: 2,
+                        ),
+                      ),
+                    ),
+                  );
+                },
               ),
-            );
-          }),
-        child!,
-      ]),
+            ),
+          child!,
+        ],
+      ),
       child: widget.child,
     );
   }
