@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 /// Admin-managed runtime configuration.
@@ -91,12 +92,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _appMessage = null;
     });
     try {
-      await FirebaseFirestore.instance.collection('app_settings').doc('1').set({
+      final firestore = FirebaseFirestore.instance;
+      final batch = firestore.batch();
+      batch.set(firestore.collection('app_settings').doc('1'), {
         'daily_limit': dailyLimit,
         'ai_enabled': _aiEnabled,
         'maintenance_mode': _maintenanceMode,
         'updated_at': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
+      batch.set(firestore.collection('admin_audit_logs').doc(), {
+        'admin_uid': FirebaseAuth.instance.currentUser!.uid,
+        'action': 'app_settings_updated',
+        'target_id': 'app_settings/1',
+        'changed_fields': ['daily_limit', 'ai_enabled', 'maintenance_mode'],
+        'created_at': FieldValue.serverTimestamp(),
+      });
+      await batch.commit();
       if (mounted) setState(() => _appMessage = 'App settings saved.');
     } catch (error) {
       if (mounted) {
@@ -120,14 +131,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _contactMessage = null;
     });
     try {
-      await FirebaseFirestore.instance
-          .collection('admin_contacts')
-          .doc('primary')
-          .set({
-            'email': email,
-            'phone': phone,
-            'updatedAt': FieldValue.serverTimestamp(),
-          }, SetOptions(merge: true));
+      final firestore = FirebaseFirestore.instance;
+      final batch = firestore.batch();
+      batch.set(
+        firestore.collection('admin_contacts').doc('primary'),
+        {
+          'email': email,
+          'phone': phone,
+          'updatedAt': FieldValue.serverTimestamp(),
+        },
+        SetOptions(merge: true),
+      );
+      batch.set(firestore.collection('admin_audit_logs').doc(), {
+        'admin_uid': FirebaseAuth.instance.currentUser!.uid,
+        'action': 'admin_contact_updated',
+        'target_id': 'admin_contacts/primary',
+        'changed_fields': ['email', 'phone'],
+        'created_at': FieldValue.serverTimestamp(),
+      });
+      await batch.commit();
       if (mounted) setState(() => _contactMessage = 'Admin contact saved.');
     } catch (error) {
       if (mounted) {
@@ -203,20 +225,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
           onSave: _saveContact,
         );
 
+        final controls = constraints.maxWidth >= 900
+            ? Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(child: appCard),
+                  const SizedBox(width: 18),
+                  Expanded(child: contactCard),
+                ],
+              )
+            : Column(
+                children: [appCard, const SizedBox(height: 18), contactCard],
+              );
+
         return SingleChildScrollView(
           padding: const EdgeInsets.only(bottom: 24),
-          child: constraints.maxWidth >= 900
-              ? Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(child: appCard),
-                    const SizedBox(width: 18),
-                    Expanded(child: contactCard),
-                  ],
-                )
-              : Column(
-                  children: [appCard, const SizedBox(height: 18), contactCard],
-                ),
+          child: Column(
+            children: [
+              controls,
+              const SizedBox(height: 18),
+              const _AuditLogCard(),
+            ],
+          ),
         );
       },
     );
@@ -404,6 +434,104 @@ class _ContactCard extends StatelessWidget {
       ),
     );
   }
+}
+
+class _AuditLogCard extends StatelessWidget {
+  const _AuditLogCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Row(
+              children: [
+                Icon(Icons.history_rounded, color: Color(0xFF0F766E)),
+                SizedBox(width: 10),
+                Text(
+                  'Recent admin activity',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+              stream: FirebaseFirestore.instance
+                  .collection('admin_audit_logs')
+                  .orderBy('created_at', descending: true)
+                  .limit(20)
+                  .snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.hasError) {
+                  return const Text(
+                    'Could not load audit activity.',
+                    style: TextStyle(color: Colors.redAccent),
+                  );
+                }
+                if (!snapshot.hasData) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                final documents = snapshot.data!.docs;
+                if (documents.isEmpty) {
+                  return const Text(
+                    'No admin changes recorded yet.',
+                    style: TextStyle(color: Colors.black54),
+                  );
+                }
+                return ListView.separated(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: documents.length,
+                  separatorBuilder: (_, _) => const Divider(height: 1),
+                  itemBuilder: (context, index) {
+                    final data = documents[index].data();
+                    final timestamp = data['created_at'];
+                    final date = timestamp is Timestamp
+                        ? timestamp.toDate().toLocal()
+                        : null;
+                    return ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      dense: true,
+                      leading: const Icon(Icons.verified_user_outlined),
+                      title: Text(
+                        _auditActionLabel(data['action']?.toString()),
+                      ),
+                      subtitle: Text(data['target_id']?.toString() ?? ''),
+                      trailing: date == null
+                          ? null
+                          : Text(
+                              '${date.day.toString().padLeft(2, '0')}/'
+                              '${date.month.toString().padLeft(2, '0')} '
+                              '${date.hour.toString().padLeft(2, '0')}:'
+                              '${date.minute.toString().padLeft(2, '0')}',
+                              style: const TextStyle(
+                                color: Colors.black45,
+                                fontSize: 11,
+                              ),
+                            ),
+                    );
+                  },
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+String _auditActionLabel(String? action) {
+  return switch (action) {
+    'user_blocked' => 'User blocked',
+    'user_unblocked' => 'User unblocked',
+    'app_settings_updated' => 'App settings updated',
+    'admin_contact_updated' => 'Admin contact updated',
+    _ => action ?? 'Admin action',
+  };
 }
 
 class _StatusText extends StatelessWidget {

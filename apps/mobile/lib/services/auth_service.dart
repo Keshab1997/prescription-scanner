@@ -47,6 +47,18 @@ class AuthService {
             'Verify your email before signing in. A new verification link was requested.',
       );
     }
+
+    final profile = await firestore
+        .collection('profiles')
+        .doc(refreshedUser!.uid)
+        .get();
+    if (profile.data()?['status'] == 'blocked') {
+      await auth.signOut();
+      throw fb.FirebaseAuthException(
+        code: 'user-blocked',
+        message: 'This account has been blocked by an administrator.',
+      );
+    }
     return true;
   }
 
@@ -236,6 +248,8 @@ String friendlyAuthError(Object error) {
         return 'Use a stronger password with at least 8 characters.';
       case 'email-not-verified':
         return 'Verify your email first. If allowed, a new verification link was sent.';
+      case 'user-blocked':
+        return 'This account has been blocked. Contact support for help.';
       case 'too-many-requests':
         return 'Too many attempts. Please wait and try again.';
       case 'requires-recent-login':

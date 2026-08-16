@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:admin_api_key_manager/admin_api_key_manager.dart';
 
-/// Real usage analytics. Failures come from `api_error_logs` (Firestore) —
-/// the mobile app's direct Gemini path via the key-manager (auto-retry
-/// stats live here). Extraction itself runs on-device, so there is no
-/// server-side prescription failure table to merge.
+/// Operational failure analytics from Firestore `api_error_logs`. The mobile
+/// app calls Gemini directly and stores structured prescription results only
+/// on the user's device, so this screen intentionally contains no medical
+/// result content.
 class UsageScreen extends StatelessWidget {
   const UsageScreen({super.key});
 

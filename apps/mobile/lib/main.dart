@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -26,8 +27,17 @@ Future<void> main() async {
     final existingUser = FirebaseAuth.instance.currentUser;
     if (existingUser != null) {
       await existingUser.reload();
-      if (FirebaseAuth.instance.currentUser?.emailVerified != true) {
+      final refreshedUser = FirebaseAuth.instance.currentUser;
+      if (refreshedUser?.emailVerified != true) {
         await FirebaseAuth.instance.signOut();
+      } else {
+        final profile = await FirebaseFirestore.instance
+            .collection('profiles')
+            .doc(refreshedUser!.uid)
+            .get();
+        if (profile.data()?['status'] == 'blocked') {
+          await FirebaseAuth.instance.signOut();
+        }
       }
     }
   } catch (e, st) {

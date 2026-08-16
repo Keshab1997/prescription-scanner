@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 
 /// Read-only, audit-safe prescription directory.
 ///
-/// Scanned results are stored only on the user's device (local Hive); the
-/// original image and structured result never leave the phone. There is
-/// therefore no server-side prescription table to list here. This screen
-/// explains that and shows any server-side extraction failures if present.
+/// Structured results are stored on the user's device in UID-scoped Hive.
+/// Prepared images are sent directly to Google Gemini for transcription, but
+/// this app does not keep images/results in its own cloud prescription store.
+/// Therefore there is no server-side prescription directory to list here.
 class PrescriptionsScreen extends StatefulWidget {
   const PrescriptionsScreen({super.key});
 
@@ -40,16 +40,16 @@ class _PrescriptionsScreenState extends State<PrescriptionsScreen> {
         if (isNarrow)
           Column(
             children: const [
-              _StatChip('On-device', '100%'),
-              _StatChip('Server copies', '0'),
+              _StatChip('Local structured results', 'UID'),
+              _StatChip('App cloud copies', '0'),
             ],
           )
         else
           Row(
             children: const [
-              _StatChip('On-device', '100%'),
+              _StatChip('Local structured results', 'UID'),
               SizedBox(width: 12),
-              _StatChip('Server copies', '0'),
+              _StatChip('App cloud copies', '0'),
             ],
           ),
         const SizedBox(height: 16),
@@ -77,9 +77,10 @@ class _PrescriptionsScreenState extends State<PrescriptionsScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Prescription images and results are processed on the '
-                      'device and kept locally. They are not uploaded to a '
-                      'server, so there is nothing to list here.',
+                      'Prepared images are sent directly to Google Gemini for '
+                      'transcription. This app keeps no prescription image or '
+                      'structured-result copy in its own cloud database; '
+                      'account-scoped results remain on the user’s device.',
                       textAlign: TextAlign.center,
                       style: const TextStyle(color: Colors.black54),
                     ),

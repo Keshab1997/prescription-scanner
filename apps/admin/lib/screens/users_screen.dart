@@ -1,5 +1,6 @@
-import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
 
 /// Live user directory pulled from the Firestore `profiles` collection. Mobile
 /// users are written a profile doc on signup, so this reflects every account.
@@ -18,6 +19,8 @@ class _UsersScreenState extends State<UsersScreen> {
   int _total = 0;
   int _active = 0;
   int _blocked = 0;
+  String _query = '';
+  String _statusFilter = 'all';
 
   @override
   void initState() {
@@ -26,7 +29,10 @@ class _UsersScreenState extends State<UsersScreen> {
   }
 
   Future<void> _load() async {
-    setState(() => _loading = true);
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
     try {
       final snapshot = await FirebaseFirestore.instance
           .collection('profiles')
@@ -52,6 +58,69 @@ class _UsersScreenState extends State<UsersScreen> {
         });
       }
     }
+  }
+
+  Future<void> _setBlocked(AppUser user, bool blocked) async {
+    if (user.id == FirebaseAuth.instance.currentUser?.uid) {
+      _showMessage('You cannot block your own administrator account.');
+      return;
+    }
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(blocked ? 'Block this user?' : 'Unblock this user?'),
+        content: Text(
+          blocked
+              ? '${user.email} will lose scan/cloud access immediately and will be signed out when the app refreshes or restarts.'
+              : '${user.email} will regain access after signing in again.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(blocked ? 'Block user' : 'Unblock user'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    try {
+      final firestore = FirebaseFirestore.instance;
+      final profile = firestore.collection('profiles').doc(user.id);
+      final audit = firestore.collection('admin_audit_logs').doc();
+      final batch = firestore.batch();
+      batch.update(profile, {
+        'status': blocked ? 'blocked' : 'active',
+        'blockedReason': blocked
+            ? 'Blocked by administrator'
+            : FieldValue.delete(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+      batch.set(audit, {
+        'admin_uid': FirebaseAuth.instance.currentUser!.uid,
+        'action': blocked ? 'user_blocked' : 'user_unblocked',
+        'target_id': user.id,
+        'changed_fields': ['status', 'blockedReason'],
+        'created_at': FieldValue.serverTimestamp(),
+      });
+      await batch.commit();
+      await _load();
+      _showMessage(blocked ? 'User blocked.' : 'User unblocked.');
+    } catch (error) {
+      _showMessage('Could not update the user: $error');
+    }
+  }
+
+  void _showMessage(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
@@ -101,6 +170,36 @@ class _UsersScreenState extends State<UsersScreen> {
             ],
           ),
         const SizedBox(height: 16),
+        if (isNarrow)
+          Column(
+            children: [
+              _UserSearch(onChanged: (value) => setState(() => _query = value)),
+              const SizedBox(height: 10),
+              _StatusFilter(
+                value: _statusFilter,
+                onChanged: (value) => setState(() => _statusFilter = value),
+              ),
+            ],
+          )
+        else
+          Row(
+            children: [
+              Expanded(
+                child: _UserSearch(
+                  onChanged: (value) => setState(() => _query = value),
+                ),
+              ),
+              const SizedBox(width: 12),
+              SizedBox(
+                width: 190,
+                child: _StatusFilter(
+                  value: _statusFilter,
+                  onChanged: (value) => setState(() => _statusFilter = value),
+                ),
+              ),
+            ],
+          ),
+        const SizedBox(height: 12),
         Expanded(
           child: Card(clipBehavior: Clip.antiAlias, child: _body()),
         ),
@@ -124,16 +223,27 @@ class _UsersScreenState extends State<UsersScreen> {
         ),
       );
     }
-    if (_users.isEmpty) {
+    final normalizedQuery = _query.trim().toLowerCase();
+    final visibleUsers = _users.where((user) {
+      final matchesStatus =
+          _statusFilter == 'all' || user.status == _statusFilter;
+      final searchable = '${user.displayName} ${user.email}'.toLowerCase();
+      return matchesStatus &&
+          (normalizedQuery.isEmpty || searchable.contains(normalizedQuery));
+    }).toList();
+    if (visibleUsers.isEmpty) {
       return const Center(
-        child: Text('No users yet.', style: TextStyle(color: Colors.black54)),
+        child: Text(
+          'No matching users.',
+          style: TextStyle(color: Colors.black54),
+        ),
       );
     }
     return ListView.separated(
-      itemCount: _users.length,
+      itemCount: visibleUsers.length,
       separatorBuilder: (_, _) => const Divider(height: 1),
       itemBuilder: (context, index) {
-        final u = _users[index];
+        final u = visibleUsers[index];
         final blocked = u.status == 'blocked';
         return ListTile(
           leading: CircleAvatar(
@@ -148,25 +258,99 @@ class _UsersScreenState extends State<UsersScreen> {
           ),
           title: Text(u.displayName.isEmpty ? 'Unnamed user' : u.displayName),
           subtitle: Text(u.email),
-          trailing: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-            decoration: BoxDecoration(
-              color: blocked
-                  ? Colors.red.withValues(alpha: 0.1)
-                  : Colors.green.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(30),
-            ),
-            child: Text(
-              blocked ? 'Blocked' : 'Active',
-              style: TextStyle(
-                color: blocked ? Colors.red : Colors.green.shade700,
-                fontWeight: FontWeight.w600,
-                fontSize: 12,
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 5,
+                ),
+                decoration: BoxDecoration(
+                  color: blocked
+                      ? Colors.red.withValues(alpha: 0.1)
+                      : Colors.green.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(30),
+                ),
+                child: Text(
+                  blocked ? 'Blocked' : 'Active',
+                  style: TextStyle(
+                    color: blocked ? Colors.red : Colors.green.shade700,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 12,
+                  ),
+                ),
               ),
-            ),
+              PopupMenuButton<String>(
+                tooltip: 'User actions',
+                onSelected: (value) {
+                  if (value == 'block') _setBlocked(u, true);
+                  if (value == 'unblock') _setBlocked(u, false);
+                },
+                itemBuilder: (_) => [
+                  PopupMenuItem(
+                    value: blocked ? 'unblock' : 'block',
+                    child: Row(
+                      children: [
+                        Icon(
+                          blocked
+                              ? Icons.lock_open_rounded
+                              : Icons.block_rounded,
+                          color: blocked ? Colors.green : Colors.redAccent,
+                        ),
+                        const SizedBox(width: 9),
+                        Text(blocked ? 'Unblock user' : 'Block user'),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
         );
       },
+    );
+  }
+}
+
+class _UserSearch extends StatelessWidget {
+  const _UserSearch({required this.onChanged});
+  final ValueChanged<String> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      onChanged: onChanged,
+      decoration: const InputDecoration(
+        hintText: 'Search by name or email',
+        prefixIcon: Icon(Icons.search_rounded),
+        border: OutlineInputBorder(),
+        isDense: true,
+      ),
+    );
+  }
+}
+
+class _StatusFilter extends StatelessWidget {
+  const _StatusFilter({required this.value, required this.onChanged});
+  final String value;
+  final ValueChanged<String> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return DropdownButtonFormField<String>(
+      initialValue: value,
+      decoration: const InputDecoration(
+        labelText: 'Status',
+        border: OutlineInputBorder(),
+        isDense: true,
+      ),
+      items: const [
+        DropdownMenuItem(value: 'all', child: Text('All users')),
+        DropdownMenuItem(value: 'active', child: Text('Active')),
+        DropdownMenuItem(value: 'blocked', child: Text('Blocked')),
+      ],
+      onChanged: (selected) => onChanged(selected ?? 'all'),
     );
   }
 }

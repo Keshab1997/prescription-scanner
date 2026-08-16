@@ -29,6 +29,16 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == uid;
     }
 
+    function isActiveUser() {
+      return isVerifiedUser()
+        && exists(
+          /databases/$(database)/documents/profiles/$(request.auth.uid)
+        )
+        && get(
+          /databases/$(database)/documents/profiles/$(request.auth.uid)
+        ).data.status == 'active';
+    }
+
     function validString(value, minLength, maxLength) {
       return value is string
         && value.size() >= minLength
@@ -68,7 +78,7 @@ service cloud.firestore {
     }
 
     match /app_settings/{docId} {
-      allow read: if isVerifiedUser();
+      allow read: if isAdmin() || isActiveUser();
       allow write: if isAdmin();
     }
 
@@ -77,10 +87,11 @@ service cloud.firestore {
       // resource == null covers a missing doc (first scan of the day), so the
       // client can fall back to "0 used" without hitting a rule error.
       allow read: if isAdmin() || (
-        isVerifiedUser() && (resource == null || resource.data.user_id == request.auth.uid)
+        isActiveUser()
+        && (resource == null || resource.data.user_id == request.auth.uid)
       );
 
-      allow create: if isVerifiedUser()
+      allow create: if isActiveUser()
         && request.resource.data.keys().hasAll([
           'user_id', 'usage_date', 'request_count', 'successful_count',
           'failed_count', 'updated_at'
@@ -97,7 +108,7 @@ service cloud.firestore {
         && request.resource.data.failed_count == 0
         && request.resource.data.updated_at == request.time;
 
-      allow update: if isVerifiedUser()
+      allow update: if isActiveUser()
         && resource.data.user_id == request.auth.uid
         && request.resource.data.user_id == resource.data.user_id
         && request.resource.data.usage_date == resource.data.usage_date
@@ -117,18 +128,18 @@ service cloud.firestore {
     // existing/future server audit records by owner UID.
     match /consent_records/{docId} {
       allow read: if isAdmin() || (
-        isVerifiedUser() && resource.data.user_id == request.auth.uid
+        isActiveUser() && resource.data.user_id == request.auth.uid
       );
-      allow create: if isVerifiedUser()
+      allow create: if isActiveUser()
         && request.resource.data.user_id == request.auth.uid;
       allow update, delete: if isAdmin();
     }
 
     match /prescription_feedback/{docId} {
       allow read: if isAdmin() || (
-        isVerifiedUser() && resource.data.user_id == request.auth.uid
+        isActiveUser() && resource.data.user_id == request.auth.uid
       );
-      allow create: if isVerifiedUser()
+      allow create: if isActiveUser()
         && request.resource.data.keys().hasAll([
           'user_id', 'prescription_id', 'category', 'details', 'created_at'
         ])
@@ -167,18 +178,18 @@ service cloud.firestore {
     // Temporary compatibility for the current direct-Gemini architecture.
     // API keys are not user data; move them behind a backend before production.
     match /admin_api_keys/{keyId} {
-      allow read: if isVerifiedUser();
+      allow read: if isAdmin() || isActiveUser();
       allow write: if isAdmin();
     }
 
     match /admin_key_groups/{groupId} {
-      allow read: if isVerifiedUser();
+      allow read: if isAdmin() || isActiveUser();
       allow write: if isAdmin();
     }
 
     match /api_error_logs/{logId} {
       allow read: if isAdmin();
-      allow create: if isVerifiedUser()
+      allow create: if isActiveUser()
         && request.resource.data.keys().hasAll([
           'keyId', 'keyName', 'userId', 'feature', 'errorType',
           'statusCode', 'message', 'retried', 'retrySuccess',
@@ -207,6 +218,15 @@ service cloud.firestore {
         && request.resource.data.ttlExpireAt is timestamp;
       allow update: if false;
       allow delete: if isAdmin();
+    }
+
+    match /admin_audit_logs/{logId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin()
+        && request.resource.data.admin_uid == request.auth.uid
+        && validString(request.resource.data.action, 1, 80)
+        && request.resource.data.created_at == request.time;
+      allow update, delete: if false;
     }
 
     match /admin_alerts/{alertId} {
