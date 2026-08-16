@@ -4,9 +4,9 @@ import 'package:go_router/go_router.dart';
 /// Prevents a standalone/deep-linked page from closing the Android app when
 /// there is no route underneath it.
 ///
-/// A normal pushed page still pops to its real previous page. If the current
-/// page is the root of the navigator, Back navigates to [fallbackLocation]
-/// instead of allowing the system to exit the app.
+/// Back is intercepted before Navigator begins popping. This avoids mutating
+/// go_router from a PopScope notification while Flutter is deactivating route
+/// elements (which can trigger framework `_dependents.isEmpty` assertions).
 class AppBackScope extends StatefulWidget {
   const AppBackScope({
     required this.fallbackLocation,
@@ -22,37 +22,32 @@ class AppBackScope extends StatefulWidget {
 }
 
 class _AppBackScopeState extends State<AppBackScope> {
-  bool _backNavigationScheduled = false;
+  bool _handlingBack = false;
 
-  void _handleBack(bool didPop) {
-    if (didPop || _backNavigationScheduled) return;
-    _backNavigationScheduled = true;
+  Future<bool> _onBackButtonPressed() async {
+    // Returning true tells Router that this Back event was fully handled, so
+    // no second pop/deactivation runs underneath our navigation operation.
+    if (_handlingBack) return true;
+    _handlingBack = true;
 
-    // Never mutate go_router's route tree from inside PopScope's notification.
-    // At that point Flutter may still be deactivating inherited elements; a
-    // synchronous pop/go can trigger framework `_dependents.isEmpty` asserts.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-
-      final router = GoRouter.of(context);
-      if (router.canPop()) {
-        router.pop();
-      } else {
-        final currentPath = router.routeInformationProvider.value.uri.path;
-        if (currentPath != widget.fallbackLocation) {
-          router.go(widget.fallbackLocation);
-        }
+    final router = GoRouter.of(context);
+    if (router.canPop()) {
+      router.pop();
+    } else {
+      final currentPath = router.routeInformationProvider.value.uri.path;
+      if (currentPath != widget.fallbackLocation) {
+        router.go(widget.fallbackLocation);
       }
+    }
 
-      if (mounted) _backNavigationScheduled = false;
-    });
+    if (mounted) _handlingBack = false;
+    return true;
   }
 
   @override
   Widget build(BuildContext context) {
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, _) => _handleBack(didPop),
+    return BackButtonListener(
+      onBackButtonPressed: _onBackButtonPressed,
       child: widget.child,
     );
   }

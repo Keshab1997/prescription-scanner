@@ -15,29 +15,18 @@ class AppShell extends StatefulWidget {
 }
 
 class _AppShellState extends State<AppShell> {
-  bool _backActionScheduled = false;
+  bool _handlingBack = false;
 
-  void _scheduleBackAction(bool didPop) {
-    if (didPop || _backActionScheduled) return;
-    _backActionScheduled = true;
+  Future<bool> _onBackButtonPressed() async {
+    // BackButtonListener consumes the event before Navigator starts a pop.
+    // This keeps route mutation out of PopScope's element-deactivation phase.
+    if (_handlingBack) return true;
+    _handlingBack = true;
 
-    // Route changes and dialogs are deferred until PopScope has completely
-    // finished dispatching the system Back event. Mutating the navigator
-    // synchronously here can violate Flutter inherited-element lifecycle
-    // invariants and trigger `_dependents.isEmpty` framework assertions.
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (!mounted) return;
-      await _performBackAction();
-      if (mounted) _backActionScheduled = false;
-    });
-  }
-
-  Future<void> _performBackAction() async {
-    // Inside the shell, Back returns to Home. Home itself is the only place
-    // where the user can explicitly confirm closing the app.
     if (widget.currentPath != '/home') {
       context.go('/home');
-      return;
+      if (mounted) _handlingBack = false;
+      return true;
     }
 
     final leave = await showDialog<bool>(
@@ -62,13 +51,14 @@ class _AppShellState extends State<AppShell> {
     if (leave == true && mounted) {
       await SystemNavigator.pop();
     }
+    if (mounted) _handlingBack = false;
+    return true;
   }
 
   @override
   Widget build(BuildContext context) {
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, _) => _scheduleBackAction(didPop),
+    return BackButtonListener(
+      onBackButtonPressed: _onBackButtonPressed,
       child: Scaffold(
         extendBody: true,
         body: widget.child,

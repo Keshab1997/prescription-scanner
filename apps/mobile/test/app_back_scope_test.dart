@@ -55,7 +55,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('shell back navigation is deferred and lifecycle-safe', (
+  testWidgets('shell back navigation is intercepted and lifecycle-safe', (
     tester,
   ) async {
     final router = GoRouter(
@@ -85,6 +85,38 @@ void main() {
     await tester.binding.handlePopRoute();
     await tester.pumpAndSettle();
 
+    expect(find.text('Shell home'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('home back shows and dismisses exit confirmation safely', (
+    tester,
+  ) async {
+    final router = GoRouter(
+      initialLocation: '/home',
+      routes: [
+        ShellRoute(
+          builder: (_, state, child) =>
+              AppShell(currentPath: state.uri.path, child: child),
+          routes: [
+            GoRoute(
+              path: '/home',
+              builder: (_, _) => const Center(child: Text('Shell home')),
+            ),
+          ],
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
+    await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+    await tester.pump();
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.text('Exit app?'), findsOneWidget);
+
+    await tester.tap(find.text('Stay'));
+    await tester.pumpAndSettle();
     expect(find.text('Shell home'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
