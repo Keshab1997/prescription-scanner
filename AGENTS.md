@@ -1,215 +1,280 @@
 # AGENTS.md — Prescription Scanner
 
-Project-specific instructions for ZCode/AI agents working in this repository.
+Repository-specific instructions for coding agents working on this project.
 
-## Project summary
+## Product and repository
 
-Prescription Scanner is an Android-first Flutter app by Keshab Studios for AI-assisted prescription transcription.
+Prescription Scanner is an Android-first Flutter application by Keshab Studios. It transcribes visible prescription details with Google Gemini and presents a structured, review-oriented result. It must never diagnose, prescribe, recommend treatment, or silently guess unclear medical text.
 
-Main parts:
+Main directories:
 
-- `apps/mobile` — Flutter Android user app
-- `apps/admin` — Flutter Web admin console
-- `supabase` — **legacy** Supabase migrations/Edge Functions; no longer used by the app (kept for reference only)
-- `apps/admin/firestore.rules` — Firestore security rules (the live backend)
-- `docs` — implementation notes and deployment docs
-- `design` — approved visual assets
+- `apps/mobile` — Flutter Android user application
+- `apps/admin` — Flutter Web administrator console
+- `apps/admin/firestore.rules` — current Firestore authorization rules
+- `docs` — setup and implementation notes
+- `design` — approved KS mascot/icon assets
+- `supabase` — legacy reference implementation; not used by the current runtime
 
-Current app direction:
+Current identifiers:
 
+- Android application ID: `com.keshabstudios.prescriptionscanner`
+- Firebase project: `prescription-scanner-admin`
+- Primary verified admin email fallback: `Keshabsarkar2018@gmail.com`
 - First market: India
-- First language: English
-- Backend: **Firebase** (Firebase Auth + Firestore + Firebase Storage-ready)
-- AI provider: Gemini, called **directly on-device** from the mobile app via the Firestore-backed admin API key pool (`admin_api_key_manager`). No server-side AI.
-- Prescription images and results are processed on-device and stored only in local Hive; they never leave the phone.
-- Android package/app ID target: `com.keshabstudios.prescriptionscanner`
+- Primary UI language: English, with Bengali/Hindi result summaries
 
-## Token-saving workflow
+## Current architecture
 
-Use the smallest useful context first.
+### Authentication and cloud data
 
-1. For questions about architecture or file relationships, use `graphify` first if available.
-2. Use focused search before reading whole files.
-3. Read only the specific files/line ranges needed.
-4. Do not dump generated/build/cache files unless the bug is specifically there.
-5. Avoid repeatedly re-reading files after edits; trust successful edit/write tool results.
-6. Prefer one targeted build/test command over many broad commands.
-7. Keep final responses short, with exact file paths and commands.
+- Firebase Authentication provides email/password sign-in.
+- Mobile users must verify their email before Home, Firestore settings or scanning are available.
+- Firestore stores profiles, app settings, per-user daily usage, feedback and deletion requests.
+- The admin web app requires a verified user plus either:
+  - Firebase custom claim `admin: true`, or
+  - the configured admin email fallback.
+- Firestore rules are the final security boundary. UI checks are not authorization.
 
-Ignore these unless directly relevant:
+### Prescription processing
 
-- `.dart_tool/`
-- `build/`
-- `.gradle/`
-- `.idea/`
-- `.DS_Store`
-- generated Flutter localization files unless localization is being changed
-- generated plugin registrant files unless Android plugin registration is the suspected issue
+- The mobile app prepares/compresses the image locally.
+- The prepared image is sent directly from the device to Google Gemini.
+- Do not claim that image processing is entirely on-device or that the image never leaves the phone.
+- The app does not upload prescription images to its own Firebase/Supabase storage.
+- The prepared local image is deleted after processing.
+- Structured prescription results remain locally in Hive and are namespaced by Firebase UID.
 
-## Accuracy rules
+### Local user isolation
 
-- Never guess Firebase/Gemini secrets.
-- Never say a fix is verified unless a relevant command actually passed.
-- If tests fail because of unrelated stale tests, say that clearly.
-- If Flutter is not on PATH, use the local SDK path from `apps/mobile/android/local.properties`.
-- Before deleting or overwriting user-created files, read/check them first.
-- Match the surrounding Dart/Flutter style; avoid unnecessary comments.
+- Results box: `ks_results_v2`
+- Consent box: `ks_consent_v2`
+- Result key format: `{firebaseUid}::{prescriptionId}`
+- Every result includes `_owner_uid` and must be checked against the active Firebase UID.
+- Legacy owner-less `rx_results` and shared `rx_consent` data are deleted rather than assigned to an arbitrary user.
+- Account deletion clears only that UID's local results and consent.
+- Never reintroduce unscoped `getAll()`, `get(id)`, `save(result)` or `delete(id)` APIs.
 
-## Security rules
+### Gemini key pool
 
-- Never put Gemini API keys or Firebase service-account keys in Flutter source.
-- Gemini keys live only in the Firestore `admin_api_keys` pool (read by the on-device app through `admin_api_key_manager`); never hardcode them.
-- Gemini is called **directly from the device** — prescription images and results never leave the phone and are not uploaded to any server.
-- Do not log prescription image contents, extracted medical data, JWTs, or secrets.
-- Do not commit local env files containing project keys.
+- `admin_api_key_manager` reads Gemini keys from Firestore collections `admin_api_keys` and `admin_key_groups`.
+- `ApiKeyManager` starts lazily only after a verified user begins a scan.
+- A Gemini key fetched by a client application is not a true secret. The current direct-client design is temporary compatibility; a backend proxy is recommended before a high-risk production launch.
+- Never hardcode Gemini keys, service-account credentials, JWTs or private keys.
+
+## Firestore data model
+
+Mobile collections:
+
+- `profiles/{uid}`
+  - `displayName`, `email`, `role`, `status`, `createdAt`, `updatedAt`
+  - users may only edit `displayName` and `updatedAt`
+- `app_settings/1`
+  - `daily_limit`
+  - `ai_enabled`
+  - `maintenance_mode`
+  - `updated_at`
+- `daily_usage/{uid}-{yyyy-MM-dd}`
+  - `user_id`, `usage_date`, `request_count`, `successful_count`, `failed_count`, `updated_at`
+- `prescription_feedback/{autoId}`
+  - must contain the authenticated `user_id`
+- `account_deletion_requests/{uid}`
+
+Administrative collections:
+
+- `admin_api_keys`
+- `admin_key_groups`
+- `api_error_logs`
+- `admin_alerts`
+- `admin_contacts/primary`
+
+When changing fields, update all of these together:
+
+1. mobile/admin Dart code
+2. `apps/admin/firestore.rules`
+3. tests
+4. documentation when behavior or privacy wording changes
+
+Validate rules locally from `apps/admin`:
+
+```bash
+npx --yes firebase-tools@14.12.1 \
+  emulators:exec --only firestore \
+  --project demo-prescription-scanner \
+  "echo rules-ok"
+```
+
+Rules are not live until manually deployed/published:
+
+```bash
+cd apps/admin
+firebase deploy --only firestore:rules
+```
 
 ## Firebase configuration
 
-The mobile app uses Firebase (Auth + Firestore). Firebase is initialized from
-`apps/mobile/lib/firebase_options.dart` (generated by `flutterfire configure`),
-and `google-services.json` is already at `apps/mobile/android/app/`.
+Mobile configuration:
 
-The mobile app reads only two Dart compile-time environment values (via
-`--dart-define-from-file=.env.local.json`):
+- `apps/mobile/lib/firebase_options.dart`
+- `apps/mobile/android/app/google-services.json`
+- Android Firebase app ID must correspond to `com.keshabstudios.prescriptionscanner`.
 
-- `GEMINI_API_KEY` — optional build-time Gemini key seed (prefer the Firestore `admin_api_keys` pool instead)
-- `APP_ENV`
+Current Android Firebase app ID:
 
-The app no longer shows a “Supabase configuration is missing” message.
+```text
+1:780785545429:android:43c8668bd33be20a4eb25c
+```
 
-Firestore collections used:
+When package registration changes, regenerate with `flutterfire configure` and ensure Dart options and `google-services.json` still match.
 
-- `profiles/{uid}` — written on signup; read by the admin Users screen
-- `app_settings/1` — daily scan limit, `ai_enabled`, `maintenance_mode`
-- `daily_usage/{uid-YYYY-MM-DD}` — per-user daily scan count
-- `prescription_feedback/{auto}` — user feedback
-- `account_deletion_requests/{uid}` — deletion requests
-- `admin_api_keys`, `admin_key_groups`, `api_error_logs`, `admin_alerts` — key pool + telemetry
+Admin configuration:
 
-Security rules: `apps/admin/firestore.rules` (rewritten for Firebase-authenticated mobile + admin console).
+- `apps/admin/lib/firebase_options.dart`
+- `apps/admin/.firebaserc`
+- `apps/admin/firebase.json`
 
-Preferred local run command:
+Do not call a Firebase client API key a private secret. Do treat service-account JSON and Admin SDK credentials as secrets.
+
+## Mobile navigation rules
+
+- Back navigation is handled before Navigator deactivation with `BackButtonListener`.
+- Do not navigate synchronously from `PopScope.onPopInvokedWithResult`; this previously triggered Flutter's `_dependents.isEmpty` assertion.
+- Pushed standalone pages pop to their real previous page.
+- Root standalone pages use a safe fallback route.
+- Shell pages return to Home.
+- Home shows an explicit exit confirmation.
+- Add/update tests in `apps/mobile/test/app_back_scope_test.dart` for navigation changes.
+
+## Animation and layout rules
+
+Animations must be paint-only when surrounding content must stay fixed.
+
+- Do not animate parent width, height, margin or padding for ripple effects.
+- Use fixed `SizedBox`/constraints, `ClipRect`, `Stack`, `Positioned`, `Transform`, opacity and `RepaintBoundary`.
+- `PulseRing` children must not participate in parent layout sizing.
+- Keep New Scan preview height fixed at 320 and its animation viewport fixed at 132 unless an approved design change requires otherwise.
+- Test small, middle and expanded animation frames at 320, 360 and 412 logical-pixel widths.
+
+Relevant tests:
+
+- `apps/mobile/test/pulse_ring_layout_test.dart`
+- `apps/mobile/test/scan_preview_layout_test.dart`
+
+## Medical and privacy requirements
+
+- Transcription only; no diagnosis or treatment recommendation.
+- Never guess medicine name, strength, dose, frequency, duration or route.
+- Missing/unclear fields must stay null or be marked for manual review.
+- Do not log images, extracted prescription content, user tokens or API keys.
+- User-facing privacy text must accurately state that Google Gemini receives the prepared image.
+- Do not say “nothing is uploaded” or “the image never leaves the device.”
+- Results are local and UID-scoped; feedback and operational usage are stored in Firestore.
+
+## Flutter workflow
+
+Required SDK for CI:
+
+```text
+Flutter 3.38.4
+Dart 3.10.3
+Java 17 for Android builds
+```
+
+Mobile validation:
 
 ```bash
 cd apps/mobile
-/Users/keshabsarkar/flutter/bin/flutter run --dart-define-from-file=.env.local.json
+flutter pub get
+dart format --output=none --set-exit-if-changed lib test
+flutter analyze
+flutter test
+flutter build apk --debug
 ```
 
-Preferred local debug APK command:
+Admin validation:
 
 ```bash
-cd apps/mobile
-/Users/keshabsarkar/flutter/bin/flutter build apk --debug --dart-define-from-file=.env.local.json
+cd apps/admin
+flutter pub get
+dart format --output=none --set-exit-if-changed lib test
+flutter analyze
+flutter test
+flutter build web
 ```
 
-Do not replace these with plain `flutter run` unless the app has been changed to load env values another way.
+CI workflow:
 
-Local env files should be ignored:
+- `.github/workflows/mobile_ci.yml` validates both mobile Android and admin web.
+- `.github/workflows/manual_android_build.yml` calls the reusable `Keshab1997/flutter-builder@v1` workflow for a manual APK build.
+- Formatting failures are blocking; do not use `continue-on-error`.
 
-- `.env.local.json`
-- `.env*.json`
-
-## Flutter/mobile workflow
-
-For most mobile changes:
-
-1. Inspect only relevant files under `apps/mobile/lib` and `apps/mobile/android`.
-2. Run formatting only on changed Dart files when possible.
-3. Run `flutter analyze` from `apps/mobile`.
-4. Run targeted tests if applicable.
-5. For Android startup/config changes, run a debug APK build.
-
-Useful commands:
-
-```bash
-cd apps/mobile
-/Users/keshabsarkar/flutter/bin/flutter analyze
-/Users/keshabsarkar/flutter/bin/flutter test
-/Users/keshabsarkar/flutter/bin/flutter build apk --debug --dart-define-from-file=.env.local.json
-```
-
-Known current test issue:
-
-- `apps/mobile/test/widget_test.dart` references old template `MyApp`; this can fail even when the app build is okay.
-- Prefer `apps/mobile/test/app_smoke_test.dart` for startup smoke validation until the stale template test is fixed.
+Prefer targeted tests while editing, then run the complete relevant suite before claiming verification. Never say a fix passed unless the command or CI job actually passed.
 
 ## Android notes
 
-Main Android files:
+Important files:
 
 - `apps/mobile/android/app/build.gradle.kts`
 - `apps/mobile/android/settings.gradle.kts`
 - `apps/mobile/android/app/src/main/AndroidManifest.xml`
-- `apps/mobile/android/app/src/main/kotlin/com/example/prescription_scanner/MainActivity.kt`
+- `apps/mobile/android/app/src/main/kotlin/com/keshabstudios/prescriptionscanner/MainActivity.kt`
 
-Startup-crash checks:
+Requirements:
 
-- Confirm `INTERNET` permission exists in main manifest for release/debug APK behavior.
-- If `google_mobile_ads` is included, ensure main manifest has `com.google.android.gms.ads.APPLICATION_ID` metadata.
-- If app opens then closes immediately, ask for or collect `adb logcat` fatal exception output before broad refactors.
+- Main manifest must include `INTERNET` and `CAMERA`.
+- Keep the AdMob metadata valid while `google_mobile_ads` is installed.
+- Do not use debug signing for a Play Store release.
+- For startup crashes, obtain the fatal `adb logcat` stack before broad refactors.
 
-## Firebase / Firestore workflow
+## Admin requirements
 
-Backend files (live):
+- Never render the Dashboard for a merely signed-in user.
+- Keep `apps/admin/lib/admin_authorization.dart` aligned with Firestore `isAdmin()`.
+- Admin email matching is case-insensitive in both Dart and Firestore rules.
+- Password input must never be trimmed.
+- Settings page owns `app_settings/1` and `admin_contacts/primary` with merge semantics.
+- Permission-denied errors should explain that a verified administrator and published rules are required.
 
-- `apps/mobile/lib/firebase_options.dart` — Firebase project config
-- `apps/admin/firestore.rules` — Firestore security rules
-- `apps/admin/firebase.json` — Firestore rules/indexes binding
-- `docs/vision_setup.md` — Gemini key pool setup
+## Legacy Supabase code
 
-Rules:
+The current app does not use Supabase Auth, Storage or Edge Functions. Do not extend these unless the architecture is explicitly changed:
 
-- Schema/access changes go in `firestore.rules`; deploy with `firebase deploy --only firestore:rules` (from `apps/admin`).
-- Keep the admin email allowlist in `isAdmin()` in `firestore.rules` in sync with the real admin account.
-- The mobile app calls Gemini **directly on-device**; no Edge Function. Prescription images are never uploaded.
-- Validate auth, Firestore rules, and the on-device privacy guarantee (no server copy of images/results) when touching the scan flow.
+- `supabase/migrations`
+- `supabase/functions`
+- `supabase/config.toml`
+- `docs/supabase_*`
 
-Legacy (unused, do not extend):
+Keep legacy files for reference or move them in a dedicated cleanup task; do not mix Supabase and Firebase runtime paths accidentally.
 
-- `supabase/migrations/`, `supabase/functions/`, `supabase/config.toml`, `docs/supabase_*` — kept only as reference. The app no longer depends on Supabase.
+## Agent operating rules
 
-## BrowserClaw workflow
+- Search narrowly before reading large files.
+- Do not inspect generated/cache/build folders unless directly relevant.
+- Avoid unrelated refactors and formatting churn.
+- Format changed Dart files before committing.
+- Preserve user-created assets unless a requested design change replaces them.
+- Ask before changing package ID, branding, quota/product policy, medical disclaimers, backend architecture or deleting user data.
+- Ask before publishing, deploying or pushing externally.
+- Batch GitHub changes when possible so Device Flow authorization is requested once, not after every small edit.
+- Never request a PAT, private key or service-account secret in chat.
 
-Use BrowserClaw only when the user's logged-in browser session is needed, for example the Firebase console.
+Ignored/generated paths include:
 
-Token-saving browser loop:
-
-1. `tabs` list/new
-2. `grep` for specific text or controls
-3. `act` click/fill
-4. `diff` to verify
-5. use `snapshot` only as last resort
-6. close the tab when done
-
-Never use Playwright browser tools unless the user explicitly asks.
-
-## When to ask before changing
-
-Ask the user first when:
-
-- changing app branding, package ID, pricing/quota, auth flow, or medical disclaimer text
-- adding paid services or external integrations
-- deleting data, migrations, assets, or generated deliverables
-- replacing Firebase project settings or security rules
-- publishing, deploying, pushing, or uploading anything external
-
-No need to ask for straightforward fixes such as:
-
-- manifest permission/meta-data fixes
-- stale test import/name fixes
-- formatting changed files
-- adding ignored local config files for user-provided public keys
+- `.dart_tool`
+- `build`
+- `.gradle`
+- `.idea`
+- `.vscode`
+- coverage output
+- local `.env*` files
 
 ## Final response style
 
-Use concise Bangla/Banglish when the user writes Bangla/Banglish.
+When the user writes Bangla/Banglish, respond concisely in Bangla/Banglish.
 
-Include:
+Always state:
 
 - what changed
-- exact file path(s)
-- exact command(s) run
-- whether build/tests passed or failed
-- next command the user should run
-
-Avoid long explanations unless the user asks.
+- exact files changed
+- tests/build commands actually run
+- pass/fail status
+- any remaining manual deploy/publish step
