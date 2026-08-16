@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:prescription_scanner/theme.dart';
 import 'package:prescription_scanner/widgets/ui_animations.dart';
@@ -25,7 +26,9 @@ class AppShell extends StatelessWidget {
           context: context,
           builder: (dialogContext) => AlertDialog(
             title: const Text('Exit app?'),
-            content: const Text('You will be signed out of this screen.'),
+            content: const Text(
+              'Your account will remain signed in for the next time you open the app.',
+            ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(dialogContext, false),
@@ -39,8 +42,9 @@ class AppShell extends StatelessWidget {
           ),
         );
         if (leave == true && context.mounted) {
-          // Allow the pending pop so the system closes the app.
-          Navigator.of(context).maybePop();
+          // The app exits only after explicit confirmation. The Firebase
+          // session is intentionally preserved.
+          await SystemNavigator.pop();
         }
       },
       child: Scaffold(
@@ -135,9 +139,7 @@ class _FloatingNavBar extends StatelessWidget {
                 icon: Icons.help_outline_rounded,
                 selected: false,
                 onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Help centre is coming next.'),
-                  ),
+                  const SnackBar(content: Text('Help centre is coming next.')),
                 ),
               ),
               _NavItem(

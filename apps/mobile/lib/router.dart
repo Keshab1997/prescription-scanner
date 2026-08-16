@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:prescription_scanner/screens.dart';
 import 'package:prescription_scanner/services/auth_session_notifier.dart';
+import 'package:prescription_scanner/widgets/app_back_scope.dart';
 import 'package:prescription_scanner/widgets/app_shell.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -36,14 +37,26 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     },
     routes: [
       GoRoute(path: '/login', builder: (_, _) => const LoginScreen()),
-      GoRoute(path: '/register', builder: (_, _) => const RegisterScreen()),
+      GoRoute(
+        path: '/register',
+        builder: (_, _) => const AppBackScope(
+          fallbackLocation: '/login',
+          child: RegisterScreen(),
+        ),
+      ),
       GoRoute(
         path: '/forgot-password',
-        builder: (_, _) => const ForgotPasswordScreen(),
+        builder: (_, _) => const AppBackScope(
+          fallbackLocation: '/login',
+          child: ForgotPasswordScreen(),
+        ),
       ),
       GoRoute(
         path: '/reset-password',
-        builder: (_, _) => const ResetPasswordScreen(),
+        builder: (_, _) => const AppBackScope(
+          fallbackLocation: '/login',
+          child: ResetPasswordScreen(),
+        ),
       ),
       ShellRoute(
         builder: (_, state, child) =>
@@ -54,17 +67,29 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(path: '/profile', builder: (_, _) => const ProfileScreen()),
         ],
       ),
-      GoRoute(path: '/upload', builder: (_, _) => const UploadScreen()),
+      GoRoute(
+        path: '/upload',
+        builder: (_, _) => const AppBackScope(
+          fallbackLocation: '/home',
+          child: UploadScreen(),
+        ),
+      ),
       GoRoute(
         path: '/processing',
-        builder: (_, state) => ProcessingScreen(
-          prescriptionId: state.uri.queryParameters['prescriptionId'] ?? '',
+        builder: (_, state) => AppBackScope(
+          fallbackLocation: '/home',
+          child: ProcessingScreen(
+            prescriptionId: state.uri.queryParameters['prescriptionId'] ?? '',
+          ),
         ),
       ),
       GoRoute(
         path: '/result',
-        builder: (_, state) => ResultScreen(
-          prescriptionId: state.uri.queryParameters['prescriptionId'] ?? '',
+        builder: (_, state) => AppBackScope(
+          fallbackLocation: '/home',
+          child: ResultScreen(
+            prescriptionId: state.uri.queryParameters['prescriptionId'] ?? '',
+          ),
         ),
       ),
     ],
