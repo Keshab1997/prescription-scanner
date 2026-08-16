@@ -72,7 +72,7 @@ class _UsersScreenState extends State<UsersScreen> {
         title: Text(blocked ? 'Block this user?' : 'Unblock this user?'),
         content: Text(
           blocked
-              ? '${user.email} will lose scan/cloud access immediately and will be signed out when the app refreshes or restarts.'
+              ? '${user.email} will lose scan/cloud access on the next protected request and will be signed out on the next login or app restart.'
               : '${user.email} will regain access after signing in again.',
         ),
         actions: [

@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fb;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -16,21 +15,7 @@ final authSessionNotifierProvider = Provider<AuthSessionNotifier>((ref) {
 /// is driven by the reset-password screen calling [completePasswordRecovery].
 class AuthSessionNotifier extends ChangeNotifier {
   AuthSessionNotifier() {
-    _subscription = fb.FirebaseAuth.instance.authStateChanges().listen((user) {
-      _profileSubscription?.cancel();
-      _profileSubscription = null;
-      if (user != null) {
-        _profileSubscription = FirebaseFirestore.instance
-            .collection('profiles')
-            .doc(user.uid)
-            .snapshots()
-            .listen((snapshot) async {
-              if (snapshot.data()?['status'] == 'blocked' &&
-                  fb.FirebaseAuth.instance.currentUser?.uid == user.uid) {
-                await fb.FirebaseAuth.instance.signOut();
-              }
-            });
-      }
+    _subscription = fb.FirebaseAuth.instance.authStateChanges().listen((_) {
       notifyListeners();
     });
   }
@@ -38,8 +23,6 @@ class AuthSessionNotifier extends ChangeNotifier {
   fb.User? get currentUser => fb.FirebaseAuth.instance.currentUser;
 
   StreamSubscription<fb.User?>? _subscription;
-  StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>?
-  _profileSubscription;
   bool passwordRecovery = false;
 
   void completePasswordRecovery() {
@@ -50,7 +33,6 @@ class AuthSessionNotifier extends ChangeNotifier {
   @override
   void dispose() {
     _subscription?.cancel();
-    _profileSubscription?.cancel();
     super.dispose();
   }
 }
