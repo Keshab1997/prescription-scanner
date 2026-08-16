@@ -32,7 +32,7 @@ class _PrescriptionScannerAppState
         return Stack(
           fit: StackFit.expand,
           children: [
-            if (child != null) child,
+            child ?? const SizedBox.shrink(),
             if (_showLaunchSplash)
               AnimatedLaunchSplash(onFinished: _finishLaunchSplash),
           ],

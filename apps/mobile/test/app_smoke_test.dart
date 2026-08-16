@@ -56,8 +56,7 @@ class _MockAuthPlatform extends FirebaseAuthPlatform {
   FirebaseAuthPlatform setInitialValues({
     PigeonUserDetails? currentUser,
     String? languageCode,
-  }) =>
-      this;
+  }) => this;
 
   @override
   FirebaseAuthPlatform delegateFor({required FirebaseApp app}) =>

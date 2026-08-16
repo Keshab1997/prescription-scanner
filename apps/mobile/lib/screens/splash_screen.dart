@@ -36,22 +36,19 @@ class _AnimatedLaunchSplashState extends State<AnimatedLaunchSplash>
       parent: _controller,
       curve: const Interval(0, 0.22, curve: Curves.easeOut),
     );
-    _logoScale = TweenSequence<double>([
-      TweenSequenceItem(
-        tween: Tween(begin: 0.72, end: 1.06)
-            .chain(CurveTween(curve: Curves.easeOutBack)),
-        weight: 68,
-      ),
-      TweenSequenceItem(
-        tween: Tween(begin: 1.06, end: 1),
-        weight: 32,
-      ),
-    ]).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: const Interval(0, 0.48),
-      ),
-    );
+    _logoScale =
+        TweenSequence<double>([
+          TweenSequenceItem(
+            tween: Tween(
+              begin: 0.72,
+              end: 1.06,
+            ).chain(CurveTween(curve: Curves.easeOutBack)),
+            weight: 68,
+          ),
+          TweenSequenceItem(tween: Tween(begin: 1.06, end: 1), weight: 32),
+        ]).animate(
+          CurvedAnimation(parent: _controller, curve: const Interval(0, 0.48)),
+        );
     _logoLift = Tween<double>(begin: 12, end: 0).animate(
       CurvedAnimation(
         parent: _controller,
@@ -71,8 +68,10 @@ class _AnimatedLaunchSplashState extends State<AnimatedLaunchSplash>
     _exitOpacity = TweenSequence<double>([
       TweenSequenceItem(tween: ConstantTween<double>(1), weight: 86),
       TweenSequenceItem(
-        tween: Tween<double>(begin: 1, end: 0)
-            .chain(CurveTween(curve: Curves.easeInCubic)),
+        tween: Tween<double>(
+          begin: 1,
+          end: 0,
+        ).chain(CurveTween(curve: Curves.easeInCubic)),
         weight: 14,
       ),
     ]).animate(_controller);
@@ -176,10 +175,7 @@ class _AnimatedLaunchSplashState extends State<AnimatedLaunchSplash>
 }
 
 class _AnimatedLogo extends StatelessWidget {
-  const _AnimatedLogo({
-    required this.beamPosition,
-    required this.beamVisible,
-  });
+  const _AnimatedLogo({required this.beamPosition, required this.beamVisible});
 
   final double beamPosition;
   final bool beamVisible;
