@@ -111,12 +111,13 @@ void main() {
     await tester.pumpWidget(MaterialApp.router(routerConfig: router));
     await tester.pump();
 
-    await tester.binding.handlePopRoute();
+    final backHandled = tester.binding.handlePopRoute();
     await tester.pumpAndSettle();
     expect(find.text('Exit app?'), findsOneWidget);
 
     await tester.tap(find.text('Stay'));
     await tester.pumpAndSettle();
+    await backHandled;
     expect(find.text('Shell home'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
