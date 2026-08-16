@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:firebase_auth/firebase_auth.dart' as fb;
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -102,13 +103,25 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
       error = null;
     });
     try {
-      final ownerUid = fb.FirebaseAuth.instance.currentUser?.uid;
-      if (ownerUid == null) {
+      var currentUser = fb.FirebaseAuth.instance.currentUser;
+      if (currentUser == null) {
         throw const VisionException(
           'Please sign in again before scanning.',
           statusCode: 401,
         );
       }
+      await currentUser.reload();
+      currentUser = fb.FirebaseAuth.instance.currentUser;
+      if (currentUser == null || !currentUser.emailVerified) {
+        throw const VisionException(
+          'Verify your email, then sign out and sign in again before scanning.',
+          statusCode: 403,
+        );
+      }
+      // Refresh the ID token so Firestore receives the latest email_verified
+      // claim immediately after the user clicks the verification link.
+      await currentUser.getIdToken(true);
+      final ownerUid = currentUser.uid;
 
       final repository = ref.read(prescriptionRepositoryProvider);
       final quota = await repository.loadQuota(ownerUid);
@@ -181,7 +194,18 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
       );
     } on VisionException catch (exception) {
       if (mounted) setState(() => error = exception.message);
-    } catch (_) {
+    } on FirebaseException catch (exception, stackTrace) {
+      debugPrint('[scan] Firebase ${exception.code}: ${exception.message}');
+      debugPrintStack(stackTrace: stackTrace);
+      if (mounted) {
+        final message = exception.code == 'permission-denied'
+            ? 'Firebase access was denied. Verify your email, sign out and sign in again, then retry.'
+            : 'Firebase could not load your scan settings (${exception.code}). Please retry.';
+        setState(() => error = message);
+      }
+    } catch (exception, stackTrace) {
+      debugPrint('[scan] Unexpected failure: $exception');
+      debugPrintStack(stackTrace: stackTrace);
       if (mounted) {
         setState(
           () => error = 'The scan could not be completed. Please retry.',
