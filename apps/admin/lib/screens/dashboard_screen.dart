@@ -292,9 +292,9 @@ class _OverviewState extends State<_Overview> {
       final usage = await FirebaseFirestore.instance
           .collection('daily_usage')
           .get();
-      final totalExtractions = usage.docs.fold<int>(0, (sum, document) {
+      final totalExtractions = usage.docs.fold<int>(0, (total, document) {
         final value = document.data()['successful_count'];
-        return sum + (value is num ? value.toInt() : 0);
+        return total + (value is num ? value.toInt() : 0);
       });
       final failures = await FirebaseFirestore.instance
           .collection('api_error_logs')

@@ -25,6 +25,7 @@ class UploadScreen extends ConsumerStatefulWidget {
 
 class _UploadScreenState extends ConsumerState<UploadScreen> {
   PreparedPrescription? draft;
+  late final PrescriptionUploadService _uploadService;
   bool preparing = false;
   bool uploading = false;
   String? error;
@@ -34,6 +35,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
   @override
   void initState() {
     super.initState();
+    _uploadService = ref.read(prescriptionUploadServiceProvider);
     WidgetsBinding.instance.addPostFrameCallback(
       (_) => recoverInterruptedPick(),
     );
@@ -41,10 +43,9 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
 
   @override
   void dispose() {
-    final service = ref.read(prescriptionUploadServiceProvider);
     final currentDraft = draft;
     if (currentDraft != null) {
-      unawaited(service.deleteLocalDraft(currentDraft));
+      unawaited(_uploadService.deleteLocalDraft(currentDraft));
     }
     super.dispose();
   }
@@ -473,11 +474,11 @@ class _BeamPaper extends StatelessWidget {
               const Column(
                 children: [
                   _PaperLine(30, color: Color(0xFF8ED0C6)),
-                  SizedBox(height: 9),
+                  SizedBox(height: 6),
                   _PaperLine(48),
-                  SizedBox(height: 9),
+                  SizedBox(height: 6),
                   _PaperLine(38),
-                  SizedBox(height: 9),
+                  SizedBox(height: 6),
                   _PaperLine(46),
                 ],
               ),
