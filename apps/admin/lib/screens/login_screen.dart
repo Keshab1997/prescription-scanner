@@ -40,20 +40,58 @@ class _LoginScreenState extends State<LoginScreen> {
         password: _password.text,
       );
       final user = credential.user;
-      if (user == null || !await isAuthorizedAdmin(user)) {
+      if (user == null) throw StateError('Firebase returned no user.');
+      await user.reload();
+      final refreshed = FirebaseAuth.instance.currentUser;
+      if (refreshed?.emailVerified != true) {
+        try {
+          await refreshed?.sendEmailVerification();
+        } on FirebaseAuthException {
+          // A recent verification email may already exist or be rate-limited.
+        }
         await FirebaseAuth.instance.signOut();
         if (mounted) {
           setState(() {
-            _error = 'Access denied. Use the verified administrator account.';
+            _error =
+                'Verify the admin email first. A verification link was requested.';
+          });
+        }
+        return;
+      }
+      if (!await isAuthorizedAdmin(refreshed!)) {
+        await FirebaseAuth.instance.signOut();
+        if (mounted) {
+          setState(() {
+            _error = 'Access denied. Use the configured administrator account.';
           });
         }
       }
     } on FirebaseAuthException catch (error) {
-      if (mounted) {
-        setState(() => _error = error.message ?? 'Authentication failed');
-      }
+      if (mounted) setState(() => _error = _friendlyAuthError(error));
     } catch (_) {
       if (mounted) setState(() => _error = 'Could not verify admin access.');
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _sendPasswordReset() async {
+    final email = _email.text.trim();
+    if (email.isEmpty || !email.contains('@')) {
+      setState(() => _error = 'Enter the admin email first.');
+      return;
+    }
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
+      if (mounted) {
+        setState(() => _error = 'Password reset email sent. Check your inbox.');
+      }
+    } on FirebaseAuthException catch (error) {
+      if (mounted) setState(() => _error = _friendlyAuthError(error));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -117,6 +155,11 @@ class _LoginScreenState extends State<LoginScreen> {
                           )
                         : const Text('Sign in'),
                   ),
+                  const SizedBox(height: 8),
+                  TextButton(
+                    onPressed: _busy ? null : _sendPasswordReset,
+                    child: const Text('Forgot password?'),
+                  ),
                 ],
               ),
             ),
@@ -125,4 +168,18 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     );
   }
+}
+
+String _friendlyAuthError(FirebaseAuthException error) {
+  return switch (error.code) {
+    'invalid-credential' ||
+    'wrong-password' ||
+    'user-not-found' => 'The admin email or password is incorrect.',
+    'user-disabled' => 'This administrator account has been disabled.',
+    'too-many-requests' => 'Too many attempts. Wait a moment and try again.',
+    'network-request-failed' => 'Check your internet connection and try again.',
+    'operation-not-allowed' =>
+      'Email/password sign-in is not enabled in Firebase Authentication.',
+    _ => error.message ?? 'Authentication failed.',
+  };
 }

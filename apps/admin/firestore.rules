@@ -16,7 +16,12 @@ service cloud.firestore {
           'admin' in request.auth.token
           && request.auth.token.admin == true
         )
-        || request.auth.token.email == 'Keshabsarkar2018@gmail.com'
+        || (
+          request.auth.token.email is string
+          && request.auth.token.email.matches(
+            '(?i)^keshabsarkar2018@gmail[.]com$'
+          )
+        )
       );
     }
 

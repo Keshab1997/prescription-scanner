@@ -11,5 +11,7 @@ Future<bool> isAuthorizedAdmin(User user) async {
 
   final token = await refreshed.getIdTokenResult(true);
   final hasAdminClaim = token.claims?['admin'] == true;
-  return hasAdminClaim || refreshed.email == fallbackAdminEmail;
+  final matchesConfiguredEmail =
+      refreshed.email?.toLowerCase() == fallbackAdminEmail.toLowerCase();
+  return hasAdminClaim || matchesConfiguredEmail;
 }
