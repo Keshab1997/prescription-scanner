@@ -326,48 +326,92 @@ class _EmptyScanFrameState extends State<_EmptyScanFrame>
     super.dispose();
   }
 
+  static const double _previewHeight = 320;
+  static const double _animationViewportHeight = 132;
+  static const double _contentHeight = 224;
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 320,
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFFF0FBF9), Colors.white],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
+    return SizedBox(
+      key: const ValueKey('empty-scan-preview'),
+      height: _previewHeight,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFFF0FBF9), Colors.white],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+          borderRadius: BorderRadius.circular(25),
+          border: Border.all(color: const Color(0xFFA8C4C0)),
         ),
-        borderRadius: BorderRadius.circular(25),
-        border: Border.all(color: const Color(0xFFA8C4C0)),
-      ),
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            PulseRing(
-              color: AppColors.tealBright,
-              pulses: 1,
-              child: _BeamPaper(beam: _beam),
+        child: Center(
+          child: SizedBox(
+            height: _contentHeight,
+            width: double.infinity,
+            child: Column(
+              children: [
+                // Ripple growth is paint-only and clipped inside this fixed
+                // viewport. It cannot resize this Column or reach the copy.
+                SizedBox(
+                  key: const ValueKey('scan-animation-viewport'),
+                  height: _animationViewportHeight,
+                  width: double.infinity,
+                  child: ClipRect(
+                    child: RepaintBoundary(
+                      child: Center(
+                        child: PulseRing(
+                          color: AppColors.tealBright,
+                          pulses: 1,
+                          child: _BeamPaper(beam: _beam),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                const SizedBox(
+                  key: ValueKey('scan-preview-title'),
+                  height: 24,
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 12),
+                    child: Center(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          'Place the full prescription in frame',
+                          maxLines: 1,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: AppColors.ink,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const SizedBox(
+                  key: ValueKey('scan-preview-subtitle'),
+                  height: 40,
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 30),
+                    child: Center(
+                      child: Text(
+                        'Use bright, even light and keep every corner visible.',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: AppColors.muted),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 34),
-            const Text(
-              'Place the full prescription in frame',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: AppColors.ink,
-                fontSize: 16,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 30),
-              child: Text(
-                'Use bright, even light and keep every corner visible.',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: AppColors.muted),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -383,6 +427,7 @@ class _BeamPaper extends StatelessWidget {
     return AnimatedBuilder(
       animation: beam,
       builder: (context, _) => Container(
+        key: const ValueKey('scan-document'),
         width: 80,
         height: 104,
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
@@ -820,7 +865,8 @@ class _ProcessingScreenState extends ConsumerState<ProcessingScreen>
                                       animation: controller,
                                       builder: (context, _) => Opacity(
                                         opacity:
-                                            (controller.value - i / 3 + 1) % 1.0,
+                                            (controller.value - i / 3 + 1) %
+                                            1.0,
                                         child: const Icon(
                                           Icons.circle,
                                           size: 8,
@@ -942,4 +988,3 @@ class _OrbitingDots extends StatelessWidget {
     );
   }
 }
-
