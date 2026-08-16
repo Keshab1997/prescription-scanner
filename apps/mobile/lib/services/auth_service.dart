@@ -1,9 +1,17 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:prescription_scanner/services/consent_store.dart';
+import 'package:prescription_scanner/services/result_store.dart';
 
 final authServiceProvider = Provider<AuthService>((ref) {
   return AuthService(fb.FirebaseAuth.instance, FirebaseFirestore.instance);
+});
+
+/// Reactive Firebase UID used to invalidate all user-scoped data providers
+/// whenever somebody signs in, signs out or switches account on this device.
+final authUidProvider = StreamProvider<String?>((ref) {
+  return fb.FirebaseAuth.instance.authStateChanges().map((user) => user?.uid);
 });
 
 class AuthService {
@@ -21,8 +29,25 @@ class AuthService {
       email: email.trim(),
       password: password,
     );
-    // Returns true when the session is usable (verified or verification off).
-    return credential.user != null;
+    final user = credential.user;
+    if (user == null) return false;
+    await user.reload();
+    final refreshedUser = auth.currentUser;
+    if (refreshedUser?.emailVerified != true) {
+      try {
+        await refreshedUser?.sendEmailVerification();
+      } on fb.FirebaseAuthException {
+        // A recent verification email may already exist or Firebase may be
+        // rate-limiting resends. Sign-in remains blocked either way.
+      }
+      await auth.signOut();
+      throw fb.FirebaseAuthException(
+        code: 'email-not-verified',
+        message:
+            'Verify your email before signing in. A new verification link was requested.',
+      );
+    }
+    return true;
   }
 
   Future<bool> signUp({
@@ -43,7 +68,8 @@ class AuthService {
       displayName: displayName.trim(),
     );
     await user.sendEmailVerification();
-    return true;
+    await auth.signOut();
+    return false;
   }
 
   Future<void> _ensureProfile({
@@ -185,6 +211,8 @@ class AuthService {
       'requestedAt': FieldValue.serverTimestamp(),
       'status': 'pending',
     });
+    await ResultStore.instance.clearUser(user.uid);
+    await ConsentStore.clearUser(user.uid);
     await user.delete();
     return user.uid;
   }
@@ -205,6 +233,8 @@ String friendlyAuthError(Object error) {
         return 'An account already exists for this email.';
       case 'weak-password':
         return 'Use a stronger password with at least 8 characters.';
+      case 'email-not-verified':
+        return 'Verify your email first. If allowed, a new verification link was sent.';
       case 'too-many-requests':
         return 'Too many attempts. Please wait and try again.';
       case 'requires-recent-login':

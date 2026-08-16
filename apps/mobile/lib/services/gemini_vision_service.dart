@@ -103,10 +103,17 @@ Return a JSON object with these fields:
         statusCode: 401,
       );
     }
+    if (!user.emailVerified) {
+      throw const VisionException(
+        'Verify your email before scanning.',
+        statusCode: 403,
+      );
+    }
     final userId = user.uid;
 
-    // Wait for the key pool to load from Firestore/cache before selecting a key,
-    // so we don't race the async listener and wrongly report "no key".
+    // Start Firestore listeners only after verified authentication, matching
+    // the API-key rules. initialize() is idempotent inside the manager.
+    ApiKeyManager.instance.initialize();
     await ApiKeyManager.instance.ensureReady();
 
     VisionException? lastError;

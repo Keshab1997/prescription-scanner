@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:admin_api_key_manager/admin_api_key_manager.dart';
@@ -22,6 +23,13 @@ Future<void> main() async {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
+    final existingUser = FirebaseAuth.instance.currentUser;
+    if (existingUser != null) {
+      await existingUser.reload();
+      if (FirebaseAuth.instance.currentUser?.emailVerified != true) {
+        await FirebaseAuth.instance.signOut();
+      }
+    }
   } catch (e, st) {
     initErrors.add('Firebase: $e');
     debugPrint('[main] Firebase init failed: $e\n$st');
@@ -74,14 +82,9 @@ Future<void> main() async {
     debugPrint('[main] Gemini fallback seed failed: $e\n$st');
   }
 
-  // ApiKeyManager must be initialized even if Firebase/KeyCache logged errors,
-  // so the app keeps booting instead of stalling on the splash.
-  try {
-    ApiKeyManager.instance.initialize();
-  } catch (e, st) {
-    initErrors.add('ApiKeyManager: $e');
-    debugPrint('[main] ApiKeyManager init failed: $e\n$st');
-  }
+  // ApiKeyManager starts lazily immediately before a verified user scans.
+  // Starting its Firestore listeners here (before authentication) would make
+  // the verified-user Firestore rules reject and permanently close them.
 
   if (initErrors.isNotEmpty) {
     debugPrint(

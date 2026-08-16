@@ -25,7 +25,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       }
 
       final user = fb.FirebaseAuth.instance.currentUser;
-      final signedIn = user != null;
+      final signedIn = user != null && user.emailVerified;
       if (!signedIn && !isAuthRoute) return '/login';
       if (signedIn &&
           (path == '/login' ||

@@ -2,29 +2,19 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
 
+import 'package:firebase_auth/firebase_auth.dart' as fb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:uuid/uuid.dart';
-import 'package:hive_flutter/hive_flutter.dart';
+import 'package:prescription_scanner/services/consent_store.dart';
 import 'package:prescription_scanner/services/gemini_vision_service.dart';
+import 'package:prescription_scanner/services/prescription_repository.dart';
 import 'package:prescription_scanner/services/prescription_upload_service.dart';
 import 'package:prescription_scanner/services/result_store.dart';
 import 'package:prescription_scanner/theme.dart';
 import 'package:prescription_scanner/widgets/ui_animations.dart';
-
-const String _consentBox = 'rx_consent';
-
-Future<bool> _hasLocalAiConsent() async {
-  final box = await Hive.openBox(_consentBox);
-  return box.get('ai_consent_v1', defaultValue: false) as bool;
-}
-
-Future<void> _recordLocalAiConsent() async {
-  final box = await Hive.openBox(_consentBox);
-  await box.put('ai_consent_v1', true);
-}
 
 class UploadScreen extends ConsumerStatefulWidget {
   const UploadScreen({super.key});
@@ -111,7 +101,15 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
       error = null;
     });
     try {
-      final hasConsent = await _hasLocalAiConsent();
+      final ownerUid = fb.FirebaseAuth.instance.currentUser?.uid;
+      if (ownerUid == null) {
+        throw const VisionException(
+          'Please sign in again before scanning.',
+          statusCode: 401,
+        );
+      }
+
+      final hasConsent = await ConsentStore.hasAiConsent(ownerUid);
       if (!hasConsent) {
         if (!mounted) return;
         final accepted = await showDialog<bool>(
@@ -139,13 +137,24 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
           if (mounted) setState(() => uploading = false);
           return;
         }
-        await _recordLocalAiConsent();
+        await ConsentStore.grantAiConsent(ownerUid);
       }
 
       // Supabase-free path: send the local image straight to Gemini.
       final localId = const Uuid().v4();
       final result = await vision.processImage(selected.path, localId: localId);
-      ResultStore.instance.save(result);
+      await ResultStore.instance.save(ownerUid, result);
+
+      // Record quota/usage in the signed-in user's Firestore document. A
+      // metrics failure must not discard an otherwise successful local result.
+      try {
+        await ref.read(prescriptionRepositoryProvider).recordSuccessfulScan();
+      } catch (exception) {
+        debugPrint('[scan] Could not record per-user usage: $exception');
+      }
+      ref.invalidate(quotaProvider);
+      ref.invalidate(recentPrescriptionsProvider);
+      ref.invalidate(prescriptionHistoryProvider);
 
       // Clean up the local draft file now that it has been processed.
       await service.deleteLocalDraft(selected);
@@ -632,7 +641,10 @@ class _ProcessingScreenState extends ConsumerState<ProcessingScreen>
       // The vision call already ran on the upload screen; the result is stored
       // locally. Show it immediately instead of a fixed fake spinner delay.
       await Future<void>.delayed(const Duration(milliseconds: 350));
-      final result = ResultStore.instance.get(widget.prescriptionId);
+      final ownerUid = fb.FirebaseAuth.instance.currentUser?.uid;
+      final result = ownerUid == null
+          ? null
+          : ResultStore.instance.get(ownerUid, widget.prescriptionId);
       if (result == null) {
         if (mounted) {
           setState(

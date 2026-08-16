@@ -55,7 +55,7 @@ class DefaultFirebaseOptions {
   // native splash (logo) never gets removed — the app appears stuck on launch.
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyBUp08GG5QRnX58hQTGalTGjiBhWADKtZg',
-    appId: '1:780785545429:android:d6f22e63048722284eb25c',
+    appId: '1:780785545429:android:43c8668bd33be20a4eb25c',
     messagingSenderId: '780785545429',
     projectId: 'prescription-scanner-admin',
     storageBucket: 'prescription-scanner-admin.firebasestorage.app',

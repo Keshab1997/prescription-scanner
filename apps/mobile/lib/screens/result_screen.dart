@@ -1,8 +1,10 @@
+import 'package:firebase_auth/firebase_auth.dart' as fb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:prescription_scanner/models/extracted_prescription.dart';
+import 'package:prescription_scanner/services/prescription_repository.dart';
 import 'package:prescription_scanner/services/result_store.dart';
 import 'package:prescription_scanner/theme.dart';
 import 'package:prescription_scanner/widgets/ui_animations.dart';
@@ -90,7 +92,11 @@ class ResultScreen extends ConsumerWidget {
     if (confirmed != true || !context.mounted) return;
 
     try {
-      ResultStore.instance.delete(prescriptionId);
+      final ownerUid = fb.FirebaseAuth.instance.currentUser?.uid;
+      if (ownerUid == null) throw StateError('No signed-in user.');
+      await ResultStore.instance.delete(ownerUid, prescriptionId);
+      ref.invalidate(recentPrescriptionsProvider);
+      ref.invalidate(prescriptionHistoryProvider);
       if (context.mounted) context.go('/history');
     } catch (_) {
       if (!context.mounted) return;
@@ -176,12 +182,27 @@ class ResultScreen extends ConsumerWidget {
     );
 
     if (submitted == true) {
-      // Local-only build: feedback is acknowledged but not persisted to a
-      // backend. Wire this to your own endpoint if you add one later.
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Thank you. Your report was noted.')),
-        );
+      try {
+        await ref
+            .read(prescriptionRepositoryProvider)
+            .submitFeedback(
+              prescriptionId: prescriptionId,
+              category: category,
+              details: details.text,
+            );
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Thank you. Your report was saved.')),
+          );
+        }
+      } catch (_) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Could not save the report. Please try again.'),
+            ),
+          );
+        }
       }
     }
     details.dispose();
@@ -193,7 +214,10 @@ class ResultScreen extends ConsumerWidget {
       return const _ResultError(message: 'Prescription ID is missing.');
     }
 
-    final details = ResultStore.instance.get(prescriptionId);
+    final ownerUid = fb.FirebaseAuth.instance.currentUser?.uid;
+    final details = ownerUid == null
+        ? null
+        : ResultStore.instance.get(ownerUid, prescriptionId);
     if (details == null) {
       return const _ResultError(message: 'The result could not be found.');
     }

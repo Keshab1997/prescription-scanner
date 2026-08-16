@@ -2,96 +2,216 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
 
-    // Admin is identified by a configured Firebase-auth email.
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
     function isAdmin() {
-      return request.auth != null
-        && request.auth.token.email == 'Keshabsarkar2018@gmail.com';
+      return isVerifiedUser() && (
+        (
+          'admin' in request.auth.token
+          && request.auth.token.admin == true
+        )
+        || request.auth.token.email == 'Keshabsarkar2018@gmail.com'
+      );
     }
 
-    // A request is from the signed-in mobile user.
     function isSelf(uid) {
-      return request.auth != null && request.auth.uid == uid;
+      return isSignedIn() && request.auth.uid == uid;
     }
 
-    // ---- User profiles ----
-    // Written by the mobile app on signup (auth.uid == doc id). Admins read
-    // all profiles to populate the Users dashboard.
+    function validString(value, minLength, maxLength) {
+      return value is string
+        && value.size() >= minLength
+        && value.size() <= maxLength;
+    }
+
+    // User profile document ID is always the Firebase UID.
     match /profiles/{uid} {
       allow read: if isAdmin() || isSelf(uid);
-      allow create, update: if isSelf(uid)
-        && request.resource.data.keys().hasOnly(
-          ['displayName', 'email', 'role', 'status', 'createdAt', 'updatedAt']
-        )
+
+      allow create: if isSelf(uid)
+        && request.resource.data.keys().hasAll([
+          'displayName', 'email', 'role', 'status', 'createdAt', 'updatedAt'
+        ])
+        && request.resource.data.keys().hasOnly([
+          'displayName', 'email', 'role', 'status', 'createdAt', 'updatedAt'
+        ])
+        && validString(request.resource.data.displayName, 1, 80)
         && request.resource.data.email is string
-        && request.resource.data.displayName is string;
+        && request.resource.data.role == 'user'
+        && request.resource.data.status == 'active'
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+
+      // A user can edit only their display name. Role, status, email and
+      // creation time remain server/admin-controlled and immutable.
+      allow update: if isAdmin() || (
+        isSelf(uid)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'displayName', 'updatedAt'
+        ])
+        && validString(request.resource.data.displayName, 1, 80)
+        && request.resource.data.updatedAt == request.time
+      );
+
       allow delete: if isAdmin();
     }
 
-    // ---- App-wide settings (limits, feature flags) ----
     match /app_settings/{docId} {
-      allow read: if request.auth != null;
+      allow read: if isVerifiedUser();
       allow write: if isAdmin();
     }
 
-    // ---- Per-user daily usage (scan quota) ----
+    // One document per user/day: {uid}-{yyyy-MM-dd}.
     match /daily_usage/{docId} {
-      allow read: if isAdmin() || (request.auth != null
-        && resource.data.user_id == request.auth.uid);
-      allow write: if request.auth != null
-        && request.resource.data.user_id == request.auth.uid;
+      allow read: if isAdmin() || (
+        isVerifiedUser() && resource.data.user_id == request.auth.uid
+      );
+
+      allow create: if isVerifiedUser()
+        && request.resource.data.keys().hasAll([
+          'user_id', 'usage_date', 'request_count', 'successful_count',
+          'failed_count', 'updated_at'
+        ])
+        && request.resource.data.keys().hasOnly([
+          'user_id', 'usage_date', 'request_count', 'successful_count',
+          'failed_count', 'updated_at'
+        ])
+        && request.resource.data.user_id == request.auth.uid
+        && docId == request.auth.uid + '-' + request.resource.data.usage_date
+        && request.resource.data.usage_date is string
+        && request.resource.data.request_count == 1
+        && request.resource.data.successful_count == 1
+        && request.resource.data.failed_count == 0
+        && request.resource.data.updated_at == request.time;
+
+      allow update: if isVerifiedUser()
+        && resource.data.user_id == request.auth.uid
+        && request.resource.data.user_id == resource.data.user_id
+        && request.resource.data.usage_date == resource.data.usage_date
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'request_count', 'successful_count', 'updated_at'
+        ])
+        && request.resource.data.request_count == resource.data.request_count + 1
+        && request.resource.data.successful_count
+          == resource.data.successful_count + 1
+        && request.resource.data.failed_count == resource.data.failed_count
+        && request.resource.data.updated_at == request.time;
+
+      allow delete: if isAdmin();
     }
 
-    // ---- AI consent records (per user) ----
+    // AI consent is local in the privacy-first app. These rules protect any
+    // existing/future server audit records by owner UID.
     match /consent_records/{docId} {
-      allow read: if isAdmin();
-      allow write: if request.auth != null
+      allow read: if isAdmin() || (
+        isVerifiedUser() && resource.data.user_id == request.auth.uid
+      );
+      allow create: if isVerifiedUser()
         && request.resource.data.user_id == request.auth.uid;
-    }
-
-    // ---- Prescription feedback (per user) ----
-    match /prescription_feedback/{docId} {
-      allow read: if isAdmin();
-      allow write: if request.auth != null
-        && request.resource.data.user_id == request.auth.uid;
-    }
-
-    // ---- Account deletion requests ----
-    match /account_deletion_requests/{uid} {
-      allow read: if isAdmin() || isSelf(uid);
-      allow create: if isSelf(uid);
       allow update, delete: if isAdmin();
     }
 
-    // ---- Gemini API key pool ----
-    // Keys are consumed client-side on the mobile app (it calls Gemini
-    // directly), so on-device secrecy is not achievable; we only protect
-    // writes (admin-only) and keep reads open for the mobile app.
+    match /prescription_feedback/{docId} {
+      allow read: if isAdmin() || (
+        isVerifiedUser() && resource.data.user_id == request.auth.uid
+      );
+      allow create: if isVerifiedUser()
+        && request.resource.data.keys().hasAll([
+          'user_id', 'prescription_id', 'category', 'details', 'created_at'
+        ])
+        && request.resource.data.keys().hasOnly([
+          'user_id', 'prescription_id', 'category', 'details', 'created_at'
+        ])
+        && request.resource.data.user_id == request.auth.uid
+        && validString(request.resource.data.prescription_id, 1, 128)
+        && request.resource.data.category in [
+          'incorrect_name', 'incorrect_details', 'missing_medicine',
+          'not_prescription', 'other'
+        ]
+        && (
+          request.resource.data.details == null
+          || validString(request.resource.data.details, 1, 1000)
+        )
+        && request.resource.data.created_at == request.time;
+      allow update, delete: if isAdmin();
+    }
+
+    match /account_deletion_requests/{uid} {
+      allow read: if isAdmin() || isSelf(uid);
+      allow create: if isSelf(uid)
+        && request.resource.data.keys().hasAll([
+          'email', 'requestedAt', 'status'
+        ])
+        && request.resource.data.keys().hasOnly([
+          'email', 'requestedAt', 'status'
+        ])
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.status == 'pending'
+        && request.resource.data.requestedAt == request.time;
+      allow update, delete: if isAdmin();
+    }
+
+    // Temporary compatibility for the current direct-Gemini architecture.
+    // API keys are not user data; move them behind a backend before production.
     match /admin_api_keys/{keyId} {
-      allow read: if true;
+      allow read: if isVerifiedUser();
       allow write: if isAdmin();
     }
 
     match /admin_key_groups/{groupId} {
-      allow read: if true;
+      allow read: if isVerifiedUser();
       allow write: if isAdmin();
     }
 
-    // ---- Key-pool error logs / alerts ----
     match /api_error_logs/{logId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null;
+      allow read: if isAdmin();
+      allow create: if isVerifiedUser()
+        && request.resource.data.keys().hasAll([
+          'keyId', 'keyName', 'userId', 'feature', 'errorType',
+          'statusCode', 'message', 'retried', 'retrySuccess',
+          'timestamp', 'ttlExpireAt'
+        ])
+        && request.resource.data.keys().hasOnly([
+          'keyId', 'keyName', 'userId', 'feature', 'errorType',
+          'statusCode', 'message', 'retried', 'retrySuccess',
+          'timestamp', 'ttlExpireAt'
+        ])
+        && request.resource.data.userId == request.auth.uid
+        && validString(request.resource.data.keyId, 1, 128)
+        && validString(request.resource.data.keyName, 1, 160)
+        && validString(request.resource.data.feature, 1, 80)
+        && request.resource.data.errorType in [
+          'network_error', 'rate_limit', 'auth_error',
+          'server_error', 'unknown'
+        ]
+        && request.resource.data.statusCode is int
+        && request.resource.data.statusCode >= 0
+        && request.resource.data.statusCode <= 599
+        && validString(request.resource.data.message, 1, 500)
+        && request.resource.data.retried is bool
+        && request.resource.data.retrySuccess is bool
+        && request.resource.data.timestamp is timestamp
+        && request.resource.data.ttlExpireAt is timestamp;
+      allow update: if false;
+      allow delete: if isAdmin();
     }
 
     match /admin_alerts/{alertId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null;
+      allow read, write: if isAdmin();
     }
 
-    // ---- Admin contact record ----
     match /admin_contacts/{docId} {
-      allow read: if request.auth != null;
-      allow write: if isAdmin();
+      allow read, write: if isAdmin();
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }

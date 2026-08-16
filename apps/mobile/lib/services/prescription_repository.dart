@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:prescription_scanner/models/extracted_prescription.dart';
+import 'package:prescription_scanner/services/auth_service.dart';
 import 'package:prescription_scanner/services/result_store.dart';
 
 final prescriptionRepositoryProvider = Provider<PrescriptionRepository>((ref) {
@@ -12,20 +13,40 @@ final prescriptionRepositoryProvider = Provider<PrescriptionRepository>((ref) {
 });
 
 final quotaProvider = FutureProvider<ScanQuota>((ref) async {
-  return ref.read(prescriptionRepositoryProvider).loadQuota();
+  final authState = ref.watch(authUidProvider);
+  final ownerUid = authState.hasValue
+      ? authState.value
+      : await ref.watch(authUidProvider.future);
+  if (ownerUid == null) {
+    throw const RepositoryException('Please sign in again.');
+  }
+  return ref.read(prescriptionRepositoryProvider).loadQuota(ownerUid);
 });
 
-/// Recent scans are stored locally in the Hive [ResultStore] (prescription
-/// images and results never leave the device), so this reads from there.
-final recentPrescriptionsProvider =
-    FutureProvider<List<ExtractedPrescription>>((ref) async {
-  return ResultStore.instance.getAll();
-});
+/// Recent scans stay local for privacy but are strictly scoped to the current
+/// Firebase UID. Watching [authUidProvider] prevents stale account data from
+/// surviving a sign-out/account switch in Riverpod's provider cache.
+final recentPrescriptionsProvider = FutureProvider<List<ExtractedPrescription>>(
+  (ref) async {
+    final authState = ref.watch(authUidProvider);
+    final ownerUid = authState.hasValue
+        ? authState.value
+        : await ref.watch(authUidProvider.future);
+    if (ownerUid == null) return const <ExtractedPrescription>[];
+    return ResultStore.instance.getAll(ownerUid);
+  },
+);
 
-final prescriptionHistoryProvider =
-    FutureProvider<List<ExtractedPrescription>>((ref) async {
-  return ResultStore.instance.getAll();
-});
+final prescriptionHistoryProvider = FutureProvider<List<ExtractedPrescription>>(
+  (ref) async {
+    final authState = ref.watch(authUidProvider);
+    final ownerUid = authState.hasValue
+        ? authState.value
+        : await ref.watch(authUidProvider.future);
+    if (ownerUid == null) return const <ExtractedPrescription>[];
+    return ResultStore.instance.getAll(ownerUid);
+  },
+);
 
 class PrescriptionRepository {
   const PrescriptionRepository(this.firestore, this.auth);
@@ -35,12 +56,11 @@ class PrescriptionRepository {
 
   String? get _uid => auth.currentUser?.uid;
 
-  Future<ScanQuota> loadQuota() async {
-    final uid = _uid;
-    if (uid == null) throw const RepositoryException('Please sign in again.');
-
-    final settingsDoc =
-        await firestore.collection('app_settings').doc('1').get();
+  Future<ScanQuota> loadQuota(String ownerUid) async {
+    final settingsDoc = await firestore
+        .collection('app_settings')
+        .doc('1')
+        .get();
     final settings = settingsDoc.data() ?? const <String, dynamic>{};
     final dailyLimit = _asInt(settings['daily_limit']) ?? 3;
     final aiEnabled = settings['ai_enabled'] == true;
@@ -48,8 +68,10 @@ class PrescriptionRepository {
 
     final today = DateTime.now();
     final day = '${today.year}-${_two(today.month)}-${_two(today.day)}';
-    final usageDoc =
-        await firestore.collection('daily_usage').doc('$uid-$day').get();
+    final usageDoc = await firestore
+        .collection('daily_usage')
+        .doc('$ownerUid-$day')
+        .get();
     final used = _asInt(usageDoc.data()?['request_count']) ?? 0;
 
     return ScanQuota(
@@ -60,6 +82,34 @@ class PrescriptionRepository {
       aiEnabled: aiEnabled,
       maintenanceMode: maintenanceMode,
     );
+  }
+
+  Future<void> recordSuccessfulScan() async {
+    final uid = _uid;
+    if (uid == null) throw const RepositoryException('Please sign in again.');
+
+    final now = DateTime.now();
+    final day = '${now.year}-${_two(now.month)}-${_two(now.day)}';
+    final usageRef = firestore.collection('daily_usage').doc('$uid-$day');
+
+    await firestore.runTransaction((transaction) async {
+      final snapshot = await transaction.get(usageRef);
+      final existing = snapshot.data();
+      if (existing != null && existing['user_id'] != uid) {
+        throw const RepositoryException('Invalid usage record owner.');
+      }
+
+      final requestCount = (_asInt(existing?['request_count']) ?? 0) + 1;
+      final successfulCount = (_asInt(existing?['successful_count']) ?? 0) + 1;
+      transaction.set(usageRef, {
+        'user_id': uid,
+        'usage_date': day,
+        'request_count': requestCount,
+        'successful_count': successfulCount,
+        'failed_count': _asInt(existing?['failed_count']) ?? 0,
+        'updated_at': FieldValue.serverTimestamp(),
+      });
+    });
   }
 
   Future<void> submitFeedback({
@@ -90,13 +140,13 @@ class ScanQuota {
   });
 
   factory ScanQuota.fromJson(Map<String, dynamic> json) => ScanQuota(
-        dailyLimit: _asInt(json['daily_limit']) ?? 3,
-        used: _asInt(json['used']) ?? 0,
-        rewardedBonus: _asInt(json['rewarded_bonus']) ?? 0,
-        remaining: _asInt(json['remaining']) ?? 0,
-        aiEnabled: json['ai_enabled'] == true,
-        maintenanceMode: json['maintenance_mode'] == true,
-      );
+    dailyLimit: _asInt(json['daily_limit']) ?? 3,
+    used: _asInt(json['used']) ?? 0,
+    rewardedBonus: _asInt(json['rewarded_bonus']) ?? 0,
+    remaining: _asInt(json['remaining']) ?? 0,
+    aiEnabled: json['ai_enabled'] == true,
+    maintenanceMode: json['maintenance_mode'] == true,
+  );
 
   final int dailyLimit;
   final int used;

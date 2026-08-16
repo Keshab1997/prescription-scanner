@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart' as fb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -26,7 +27,10 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final items = ResultStore.instance.getAll();
+    final ownerUid = fb.FirebaseAuth.instance.currentUser?.uid;
+    final items = ownerUid == null
+        ? const <ExtractedPrescription>[]
+        : ResultStore.instance.getAll(ownerUid);
     return Scaffold(
       body: SafeArea(
         bottom: false,
@@ -85,7 +89,12 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                         filter,
                         setFilter,
                       ),
-                      _FilterChip('processing', 'Processing', filter, setFilter),
+                      _FilterChip(
+                        'processing',
+                        'Processing',
+                        filter,
+                        setFilter,
+                      ),
                       _FilterChip('failed', 'Failed', filter, setFilter),
                     ],
                   ),
@@ -102,9 +111,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                         (entry) => Padding(
                           padding: const EdgeInsets.only(bottom: 10),
                           child: Entrance(
-                            delay: Duration(
-                              milliseconds: 200 + entry.key * 60,
-                            ),
+                            delay: Duration(milliseconds: 200 + entry.key * 60),
                             child: _HistoryItem(
                               item: entry.value,
                               onTap: () => openItem(entry.value),
@@ -198,14 +205,10 @@ class _FilterChip extends StatelessWidget {
         decoration: BoxDecoration(
           gradient: value == selectedValue
               ? AppColors.brandGradient
-              : const LinearGradient(
-                  colors: [Colors.white, Colors.white],
-                ),
+              : const LinearGradient(colors: [Colors.white, Colors.white]),
           borderRadius: BorderRadius.circular(100),
           border: Border.all(
-            color: value == selectedValue
-                ? Colors.transparent
-                : AppColors.line,
+            color: value == selectedValue ? Colors.transparent : AppColors.line,
           ),
           boxShadow: value == selectedValue
               ? [
