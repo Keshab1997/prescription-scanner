@@ -24,9 +24,9 @@ Prescription transcription now calls **Google Gemini directly from the app**
 (no Supabase Edge Function). Gemini API keys live in a Firestore
 `admin_api_keys` collection and are read at runtime via the reused
 [`admin_api_key_manager`](https://github.com/Keshab1997/admin_api_key_manager)
-package — no secret is compiled into the app. Extracted results are stored
-locally in Hive (no Firebase writes for prescription data). Supabase remains
-responsible for **authentication only**.
+package. Extracted results are stored locally in UID-scoped Hive records;
+Firebase Authentication handles sign-in, while Firestore stores profiles,
+settings, per-user usage and feedback.
 
 See [docs/vision_setup.md](docs/vision_setup.md) for the full setup.
 
@@ -52,16 +52,16 @@ GitHub Actions workflow `.github/workflows/mobile_ci.yml` automatically analyzes
 - Phase 0: complete
 - Phase 1: UX approved
 - Phase 2: Flutter foundation created
-- Phase 3: secure schema, private Storage and RLS migration applied
-- Phase 4: Supabase email/password authentication and SMTP configured
-- Phase 5: camera, crop, validation and private upload pipeline completed
-- Phase 6: **Direct Gemini vision** — image is sent straight to Gemini (no Supabase Edge Function); structured result stored locally in Hive.
-- Phase 7: local history, result and deletion completed; feedback/report is acknowledged locally.
+- Phase 3: legacy Supabase schema retained for reference; current runtime is Firebase-based.
+- Phase 4: Firebase email/password authentication with verified-email enforcement.
+- Phase 5: camera, image preparation, validation and local cleanup completed.
+- Phase 6: **Direct Gemini vision** — image is sent straight to Gemini; structured result is stored in per-user local Hive data.
+- Phase 7: per-user local history/deletion plus UID-scoped Firestore usage and feedback completed.
 
 ## Security rules
 
-- Never place Gemini or Supabase secret/service keys in Flutter source.
-- Flutter receives only a Supabase publishable key (auth).
-- Gemini API key is fetched at runtime from Firestore (`admin_api_keys`) via the admin_api_key_manager package.
-- The original prescription image is processed locally and never uploaded to a server; only the structured result is kept (in local Hive).
+- Never place service-account credentials or private keys in Flutter source.
+- Firebase client configuration is public and protected by Authentication, App rules and per-user ownership checks.
+- Gemini API keys are currently fetched at runtime from Firestore (`admin_api_keys`) for direct client calls. This is temporary compatibility, not true secret storage; a production backend proxy is still recommended.
+- The prepared prescription image is sent directly to Google Gemini for transcription and is not stored in this app's cloud database. The local prepared copy is deleted after processing; account-scoped structured results remain on-device in Hive.
 

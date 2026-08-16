@@ -72,8 +72,8 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
       final oldDraft = draft;
       setState(() => draft = prepared);
       if (oldDraft != null) unawaited(service.deleteLocalDraft(oldDraft));
-      // Start AI extraction immediately on selection so the slow on-device
-      // Gemini call begins without a second tap. The explicit "Continue
+      // Start AI extraction immediately on selection so the direct Gemini API
+      // call begins without a second tap. The explicit "Continue
       // securely" button stays available to retry if processing fails.
       unawaited(upload());
     } on ScanValidationException catch (exception) {
@@ -109,6 +109,21 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
         );
       }
 
+      final repository = ref.read(prescriptionRepositoryProvider);
+      final quota = await repository.loadQuota(ownerUid);
+      if (quota.maintenanceMode || !quota.aiEnabled) {
+        throw const VisionException(
+          'AI scanning is temporarily unavailable. Please try again later.',
+          statusCode: 503,
+        );
+      }
+      if (quota.remaining <= 0) {
+        throw const VisionException(
+          'You have used today’s scan limit. Please try again tomorrow.',
+          statusCode: 429,
+        );
+      }
+
       final hasConsent = await ConsentStore.hasAiConsent(ownerUid);
       if (!hasConsent) {
         if (!mounted) return;
@@ -119,7 +134,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
             icon: const Icon(Icons.shield_outlined, color: AppColors.teal),
             title: const Text('AI processing consent'),
             content: const Text(
-              'Your prescription image will be sent securely to KeshabStudios AI to transcribe visible medicine details. The app will not ask the AI to diagnose or recommend treatment. The original image is processed on device and never stored on a server.',
+              'Your prescription image will be sent directly to Google Gemini to transcribe visible medicine details. The app does not upload it to its own cloud storage. A prepared local copy is deleted after processing, while the structured result stays on this device. Google processes the image under its applicable data terms.',
             ),
             actions: [
               TextButton(
@@ -148,7 +163,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
       // Record quota/usage in the signed-in user's Firestore document. A
       // metrics failure must not discard an otherwise successful local result.
       try {
-        await ref.read(prescriptionRepositoryProvider).recordSuccessfulScan();
+        await repository.recordSuccessfulScan();
       } catch (exception) {
         debugPrint('[scan] Could not record per-user usage: $exception');
       }

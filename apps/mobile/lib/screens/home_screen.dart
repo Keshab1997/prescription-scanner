@@ -295,7 +295,7 @@ class _ScanHeroState extends State<_ScanHero>
                     Icon(Icons.auto_awesome, color: Colors.white, size: 15),
                     SizedBox(width: 6),
                     Text(
-                      'KeshabStudios on-device AI',
+                      'KeshabStudios AI transcription',
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 11,

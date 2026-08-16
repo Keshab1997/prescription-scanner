@@ -109,11 +109,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ],
       ),
-      bottomNavigationBar: isNarrow ? _BottomNav(
-        selected: _selected,
-        menu: _menu,
-        onSelect: (label) => setState(() => _selected = label),
-      ) : null,
+      bottomNavigationBar: isNarrow
+          ? _BottomNav(
+              selected: _selected,
+              menu: _menu,
+              onSelect: (label) => setState(() => _selected = label),
+            )
+          : null,
     );
   }
 }
@@ -139,8 +141,10 @@ class _Sidebar extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Prescription Scanner',
-              style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
+          const Text(
+            'Prescription Scanner',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800),
+          ),
           const Text('Admin Console', style: TextStyle(color: Colors.white60)),
           const SizedBox(height: 32),
           for (var i = 0; i < menu.length; i++)
@@ -155,15 +159,19 @@ class _Sidebar extends StatelessWidget {
           ListTile(
             contentPadding: EdgeInsets.zero,
             leading: const Icon(Icons.logout, color: Colors.white60),
-            title: const Text('Sign out',
-                style: TextStyle(color: Colors.white60)),
+            title: const Text(
+              'Sign out',
+              style: TextStyle(color: Colors.white60),
+            ),
             onTap: () => fb.FirebaseAuth.instance.signOut(),
           ),
           if (user?.email != null)
             Padding(
               padding: const EdgeInsets.only(top: 4),
-              child: Text(user!.email!,
-                  style: const TextStyle(color: Colors.white38, fontSize: 12)),
+              child: Text(
+                user!.email!,
+                style: const TextStyle(color: Colors.white38, fontSize: 12),
+              ),
             ),
         ],
       ),
@@ -184,7 +192,9 @@ class _BottomNav extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BottomNavigationBar(
-      currentIndex: menu.indexWhere((e) => e.$1 == selected).clamp(0, menu.length - 1),
+      currentIndex: menu
+          .indexWhere((e) => e.$1 == selected)
+          .clamp(0, menu.length - 1),
       onTap: (i) => onSelect(menu[i].$1),
       type: BottomNavigationBarType.fixed,
       items: [
@@ -196,8 +206,13 @@ class _BottomNav extends StatelessWidget {
 }
 
 class _MenuItem extends StatelessWidget {
-  const _MenuItem(this.label, this.icon, this.selected, this.index,
-      {this.onTap});
+  const _MenuItem(
+    this.label,
+    this.icon,
+    this.selected,
+    this.index, {
+    this.onTap,
+  });
   final String label;
   final IconData icon;
   final bool selected;
@@ -218,10 +233,16 @@ class _MenuItem extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Icon(icon, color: selected ? Colors.white : Colors.white60, size: 19),
+            Icon(
+              icon,
+              color: selected ? Colors.white : Colors.white60,
+              size: 19,
+            ),
             const SizedBox(width: 10),
-            Text(label,
-                style: TextStyle(color: selected ? Colors.white : Colors.white60)),
+            Text(
+              label,
+              style: TextStyle(color: selected ? Colors.white : Colors.white60),
+            ),
             const Spacer(),
             Container(
               width: 20,
@@ -231,11 +252,14 @@ class _MenuItem extends StatelessWidget {
                 color: Colors.white10,
                 borderRadius: BorderRadius.circular(6),
               ),
-              child: Text('${index + 1}',
-                  style: const TextStyle(
-                      color: Colors.white54,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600)),
+              child: Text(
+                '${index + 1}',
+                style: const TextStyle(
+                  color: Colors.white54,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
           ],
         ),
@@ -265,17 +289,20 @@ class _OverviewState extends State<_Overview> {
 
   Future<void> _loadStats() async {
     try {
-      final profiles = await FirebaseFirestore.instance
-          .collection('profiles')
-          .count()
+      final usage = await FirebaseFirestore.instance
+          .collection('daily_usage')
           .get();
+      final totalExtractions = usage.docs.fold<int>(0, (sum, document) {
+        final value = document.data()['successful_count'];
+        return sum + (value is num ? value.toInt() : 0);
+      });
       final failures = await FirebaseFirestore.instance
           .collection('api_error_logs')
           .count()
           .get();
       if (mounted) {
         setState(() {
-          _totalExtractions = profiles.count ?? 0;
+          _totalExtractions = totalExtractions;
           _failedExtractions = failures.count ?? 0;
           _statsLoading = false;
         });
@@ -302,9 +329,10 @@ class _OverviewState extends State<_Overview> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: const [
-                  Text('Operations overview',
-                      style:
-                          TextStyle(fontSize: 24, fontWeight: FontWeight.w800)),
+                  Text(
+                    'Operations overview',
+                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
+                  ),
                   Text('Live metrics from the key pool and extraction logs.'),
                 ],
               ),
@@ -320,9 +348,13 @@ class _OverviewState extends State<_Overview> {
                 children: [
                   _LiveDot(),
                   SizedBox(width: 6),
-                  Text('Live',
-                      style: TextStyle(
-                          color: Color(0xFF0F766E), fontWeight: FontWeight.w600)),
+                  Text(
+                    'Live',
+                    style: TextStyle(
+                      color: Color(0xFF0F766E),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -336,8 +368,9 @@ class _OverviewState extends State<_Overview> {
           builder: (context, snap) {
             if (snap.hasError) {
               return _StateCard(
-                  icon: Icons.error_outline,
-                  message: 'Failed to load keys: ${snap.error}');
+                icon: Icons.error_outline,
+                message: 'Failed to load keys: ${snap.error}',
+              );
             }
             var total = 0, active = 0;
             if (snap.hasData) {
@@ -348,25 +381,41 @@ class _OverviewState extends State<_Overview> {
               }
             }
             final cards = [
-              _MetricCard('Total keys', '$total',
-                  icon: Icons.vpn_key_rounded, loading: !snap.hasData),
-              _MetricCard('Active keys', '$active',
-                  icon: Icons.check_circle_outline, loading: !snap.hasData),
-              _MetricCard('Total AI requests', '$_totalExtractions',
-                  icon: Icons.call_made_rounded, loading: _statsLoading),
-              _MetricCard('Error count', '$_failedExtractions',
-                  icon: Icons.error_outline, loading: _statsLoading),
+              _MetricCard(
+                'Total keys',
+                '$total',
+                icon: Icons.vpn_key_rounded,
+                loading: !snap.hasData,
+              ),
+              _MetricCard(
+                'Active keys',
+                '$active',
+                icon: Icons.check_circle_outline,
+                loading: !snap.hasData,
+              ),
+              _MetricCard(
+                'Total AI requests',
+                '$_totalExtractions',
+                icon: Icons.call_made_rounded,
+                loading: _statsLoading,
+              ),
+              _MetricCard(
+                'Error count',
+                '$_failedExtractions',
+                icon: Icons.error_outline,
+                loading: _statsLoading,
+              ),
             ];
-            return isNarrow
-                ? Column(children: cards)
-                : Row(children: cards);
+            return isNarrow ? Column(children: cards) : Row(children: cards);
           },
         ),
         if (_statsError != null)
           Padding(
             padding: const EdgeInsets.only(top: 8),
-            child: Text('Stats source: $_statsError',
-                style: const TextStyle(color: Colors.redAccent, fontSize: 12)),
+            child: Text(
+              'Stats source: $_statsError',
+              style: const TextStyle(color: Colors.redAccent, fontSize: 12),
+            ),
           ),
         const SizedBox(height: 18),
         Expanded(
@@ -377,9 +426,10 @@ class _OverviewState extends State<_Overview> {
               children: [
                 const Padding(
                   padding: EdgeInsets.all(16),
-                  child: Text('Recent activity',
-                      style:
-                          TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+                  child: Text(
+                    'Recent activity',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                  ),
                 ),
                 const Divider(height: 1),
                 Expanded(child: _RecentActivityFeed()),
@@ -406,8 +456,9 @@ class _RecentActivityFeed extends StatelessWidget {
       builder: (context, snap) {
         if (snap.hasError) {
           return _StateCard(
-              icon: Icons.error_outline,
-              message: 'Failed to load activity: ${snap.error}');
+            icon: Icons.error_outline,
+            message: 'Failed to load activity: ${snap.error}',
+          );
         }
         if (!snap.hasData) {
           return const Center(child: CircularProgressIndicator());
@@ -422,22 +473,31 @@ class _RecentActivityFeed extends StatelessWidget {
         return ListView.separated(
           padding: const EdgeInsets.symmetric(vertical: 8),
           itemCount: docs.length,
-          separatorBuilder: (_, _) => const Divider(height: 1, indent: 16, endIndent: 16),
+          separatorBuilder: (_, _) =>
+              const Divider(height: 1, indent: 16, endIndent: 16),
           itemBuilder: (context, i) {
             final log = ApiErrorLog.fromMap(
-                docs[i].data() as Map<String, dynamic>, docs[i].id);
+              docs[i].data() as Map<String, dynamic>,
+              docs[i].id,
+            );
             final time = _formatTime(log.timestamp);
             return ListTile(
               leading: const CircleAvatar(
                 radius: 16,
                 backgroundColor: Color(0x12B91C1C),
-                child: Icon(Icons.warning_amber_rounded,
-                    size: 16, color: Color(0xFFB91C1C)),
+                child: Icon(
+                  Icons.warning_amber_rounded,
+                  size: 16,
+                  color: Color(0xFFB91C1C),
+                ),
               ),
               title: Text(
                 '${log.keyName.isNotEmpty ? log.keyName : 'Unknown key'}'
                 '${log.feature.isNotEmpty ? ' · ${log.feature}' : ''}',
-                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
               ),
               subtitle: Text(
                 '${log.errorType}${log.statusCode != 0 ? ' (HTTP ${log.statusCode})' : ''}'
@@ -446,8 +506,10 @@ class _RecentActivityFeed extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(fontSize: 12),
               ),
-              trailing: Text(time,
-                  style: const TextStyle(color: Colors.black45, fontSize: 12)),
+              trailing: Text(
+                time,
+                style: const TextStyle(color: Colors.black45, fontSize: 12),
+              ),
             );
           },
         );
@@ -464,9 +526,10 @@ class _LiveDot extends StatefulWidget {
 
 class _LiveDotState extends State<_LiveDot>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _ctrl =
-      AnimationController(vsync: this, duration: const Duration(seconds: 1))
-        ..repeat(reverse: true);
+  late final AnimationController _ctrl = AnimationController(
+    vsync: this,
+    duration: const Duration(seconds: 1),
+  )..repeat(reverse: true);
 
   @override
   void dispose() {
@@ -491,8 +554,7 @@ class _LiveDotState extends State<_LiveDot>
 }
 
 class _MetricCard extends StatelessWidget {
-  const _MetricCard(this.label, this.value,
-      {this.icon, this.loading = false});
+  const _MetricCard(this.label, this.value, {this.icon, this.loading = false});
   final String label;
   final String value;
   final IconData? icon;
@@ -516,8 +578,10 @@ class _MetricCard extends StatelessWidget {
                     const SizedBox(width: 6),
                   ],
                   Expanded(
-                    child: Text(label,
-                        style: const TextStyle(color: Colors.black54)),
+                    child: Text(
+                      label,
+                      style: const TextStyle(color: Colors.black54),
+                    ),
                   ),
                 ],
               ),
@@ -526,12 +590,15 @@ class _MetricCard extends StatelessWidget {
                   ? const SizedBox(
                       height: 26,
                       width: 40,
-                      child:
-                          LinearProgressIndicator(minHeight: 4),
+                      child: LinearProgressIndicator(minHeight: 4),
                     )
-                  : Text(value,
+                  : Text(
+                      value,
                       style: const TextStyle(
-                          fontSize: 24, fontWeight: FontWeight.w800)),
+                        fontSize: 24,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
             ],
           ),
         ),
@@ -555,9 +622,11 @@ class _StateCard extends StatelessWidget {
           children: [
             Icon(icon, size: 36, color: Colors.black38),
             const SizedBox(height: 12),
-            Text(message,
-                textAlign: TextAlign.center,
-                style: const TextStyle(color: Colors.black54)),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.black54),
+            ),
           ],
         ),
       ),

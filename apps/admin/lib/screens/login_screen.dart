@@ -1,5 +1,6 @@
-import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
+import 'package:prescription_scanner_admin/admin_authorization.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -14,20 +15,45 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _busy = false;
   String? _error;
 
+  @override
+  void dispose() {
+    _email.dispose();
+    _password.dispose();
+    super.dispose();
+  }
+
   Future<void> _signIn() async {
+    final email = _email.text.trim();
+    if (email.isEmpty || !email.contains('@') || _password.text.isEmpty) {
+      setState(() => _error = 'Enter the admin email and password.');
+      return;
+    }
+
     setState(() {
       _busy = true;
       _error = null;
     });
     try {
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: _email.text.trim(),
-        password: _password.text.trim(),
+      final credential = await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: email,
+        // Passwords may intentionally start/end with spaces; never trim them.
+        password: _password.text,
       );
-    } on FirebaseAuthException catch (e) {
-      setState(() => _error = e.message ?? 'Authentication failed');
-    } catch (e) {
-      setState(() => _error = e.toString());
+      final user = credential.user;
+      if (user == null || !await isAuthorizedAdmin(user)) {
+        await FirebaseAuth.instance.signOut();
+        if (mounted) {
+          setState(() {
+            _error = 'Access denied. Use the verified administrator account.';
+          });
+        }
+      }
+    } on FirebaseAuthException catch (error) {
+      if (mounted) {
+        setState(() => _error = error.message ?? 'Authentication failed');
+      }
+    } catch (_) {
+      if (mounted) setState(() => _error = 'Could not verify admin access.');
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -51,8 +77,10 @@ class _LoginScreenState extends State<LoginScreen> {
                     style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
                   ),
                   const SizedBox(height: 4),
-                  const Text('Admin sign in',
-                      style: TextStyle(color: Colors.black54)),
+                  const Text(
+                    'Admin sign in',
+                    style: TextStyle(color: Colors.black54),
+                  ),
                   const SizedBox(height: 22),
                   TextField(
                     controller: _email,
@@ -73,8 +101,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 16),
                   if (_error != null) ...[
-                    Text(_error!,
-                        style: const TextStyle(color: Colors.redAccent)),
+                    Text(
+                      _error!,
+                      style: const TextStyle(color: Colors.redAccent),
+                    ),
                     const SizedBox(height: 12),
                   ],
                   FilledButton(

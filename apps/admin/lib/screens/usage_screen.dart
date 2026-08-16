@@ -15,13 +15,15 @@ class UsageScreen extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Usage',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800)),
-        const Text('AI request health from live error logs and extraction failures.'),
-        const SizedBox(height: 24),
-        Expanded(
-          child: _UsageBody(isNarrow: isNarrow),
+        const Text(
+          'Usage',
+          style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
         ),
+        const Text(
+          'AI request health from live error logs and extraction failures.',
+        ),
+        const SizedBox(height: 24),
+        Expanded(child: _UsageBody(isNarrow: isNarrow)),
       ],
     );
   }
@@ -53,8 +55,10 @@ class _UsageBodyState extends State<_UsageBody> {
         }
 
         final logs = snap.data!.docs
-            .map((d) =>
-                ApiErrorLog.fromMap(d.data() as Map<String, dynamic>, d.id))
+            .map(
+              (d) =>
+                  ApiErrorLog.fromMap(d.data() as Map<String, dynamic>, d.id),
+            )
             .toList();
 
         final total = logs.length;
@@ -90,14 +94,19 @@ class _UsageBodyState extends State<_UsageBody> {
           widget.isNarrow
               ? Column(
                   children: stats
-                      .map((s) => Padding(
+                      .map(
+                        (s) => Padding(
                           padding: const EdgeInsets.only(bottom: 12),
-                          child: _StatCard(s)))
-                      .toList())
+                          child: _StatCard(s),
+                        ),
+                      )
+                      .toList(),
+                )
               : Row(
                   children: stats
                       .map((s) => Expanded(child: _StatCard(s)))
-                      .toList()),
+                      .toList(),
+                ),
           const SizedBox(height: 16),
           Expanded(
             child: Row(
@@ -155,9 +164,10 @@ class _StatCard extends StatelessWidget {
           children: [
             Text(stat.label, style: const TextStyle(color: Colors.black54)),
             const SizedBox(height: 10),
-            Text(stat.value,
-                style:
-                    const TextStyle(fontSize: 24, fontWeight: FontWeight.w800)),
+            Text(
+              stat.value,
+              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
+            ),
           ],
         ),
       ),
@@ -177,9 +187,10 @@ class _BreakdownList extends StatelessWidget {
       children: [
         Padding(
           padding: const EdgeInsets.all(16),
-          child: Text(title,
-              style:
-                  const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+          child: Text(
+            title,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+          ),
         ),
         const Divider(height: 1),
         Expanded(
@@ -187,8 +198,10 @@ class _BreakdownList extends StatelessWidget {
               ? const Center(
                   child: Padding(
                     padding: EdgeInsets.all(24),
-                    child: Text('No data yet.',
-                        style: TextStyle(color: Colors.black54)),
+                    child: Text(
+                      'No data yet.',
+                      style: TextStyle(color: Colors.black54),
+                    ),
                   ),
                 )
               : ListView.separated(
@@ -202,15 +215,22 @@ class _BreakdownList extends StatelessWidget {
                       title: Text(e.key, style: const TextStyle(fontSize: 14)),
                       trailing: Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 4),
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF0F766E).withValues(alpha: 0.12),
+                          color: const Color(
+                            0xFF0F766E,
+                          ).withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Text('${e.value}',
-                            style: const TextStyle(
-                                color: Color(0xFF0F766E),
-                                fontWeight: FontWeight.w700)),
+                        child: Text(
+                          '${e.value}',
+                          style: const TextStyle(
+                            color: Color(0xFF0F766E),
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                       ),
                     );
                   },

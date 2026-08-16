@@ -28,8 +28,9 @@ Map<String, dynamic> parsePrescriptionJson(String candidate) {
       if (repaired != null) return repaired;
     }
   }
-  final snippet =
-      candidate.length > 200 ? '${candidate.substring(0, 200)}…' : candidate;
+  final snippet = candidate.length > 200
+      ? '${candidate.substring(0, 200)}…'
+      : candidate;
   throw VisionException(
     'The AI provider returned invalid JSON. Response: $snippet',
     statusCode: 502,

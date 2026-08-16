@@ -625,7 +625,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         context: context,
                         title: 'Privacy & consent',
                         body:
-                            'Your prescription images and results are processed on your device and stored only locally. They are never uploaded to any server, and Gemini is called directly from your device. See the app privacy policy for details.',
+                            'Your prescription image is sent directly to Google Gemini for transcription. The app does not store the image in its own cloud database; the prepared local image is deleted after processing, and structured results remain on this device under your account.',
                       ),
                     ),
                   ),

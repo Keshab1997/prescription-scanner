@@ -250,9 +250,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               onPressed: loading
                                   ? null
                                   : () => context.push('/register'),
-                              child: const Text(
-                                'New here? Create an account',
-                              ),
+                              child: const Text('New here? Create an account'),
                             ),
                           ),
                           const SizedBox(height: 14),
@@ -278,7 +276,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                   SizedBox(width: 10),
                                   Expanded(
                                     child: Text(
-                                      'Your prescription image is processed on device and results stay only on your phone. Nothing is uploaded to a server.',
+                                      'Prescription images are sent directly to Google Gemini for transcription. Structured results stay on this device and are separated by your account.',
                                       style: TextStyle(
                                         color: AppColors.muted,
                                         fontSize: 12,

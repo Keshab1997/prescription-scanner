@@ -944,7 +944,7 @@ class _PrivacyNotice extends StatelessWidget {
         SizedBox(width: 9),
         Expanded(
           child: Text(
-            'The original server image has been deleted. Only this structured result remains.',
+            'The prepared local image has been deleted. Only this account-scoped structured result remains on this device.',
             style: TextStyle(color: AppColors.teal, fontSize: 12),
           ),
         ),

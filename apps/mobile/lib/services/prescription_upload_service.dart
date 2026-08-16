@@ -8,13 +8,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 
-final prescriptionUploadServiceProvider =
-    Provider<PrescriptionUploadService>((ref) {
+final prescriptionUploadServiceProvider = Provider<PrescriptionUploadService>((
+  ref,
+) {
   return PrescriptionUploadService();
 });
 
-/// Image preparation only. The actual AI transcription runs on-device via
-/// [GeminiVisionService]; prescription images are never uploaded to a server.
+/// Image preparation only. [GeminiVisionService] sends the prepared image
+/// directly to Google Gemini; this app does not upload it to its own storage.
 class PrescriptionUploadService {
   PrescriptionUploadService();
 

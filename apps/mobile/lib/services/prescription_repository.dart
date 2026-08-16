@@ -63,7 +63,9 @@ class PrescriptionRepository {
         .get();
     final settings = settingsDoc.data() ?? const <String, dynamic>{};
     final dailyLimit = _asInt(settings['daily_limit']) ?? 3;
-    final aiEnabled = settings['ai_enabled'] == true;
+    final aiEnabled = settings['ai_enabled'] is bool
+        ? settings['ai_enabled'] as bool
+        : true;
     final maintenanceMode = settings['maintenance_mode'] == true;
 
     final today = DateTime.now();

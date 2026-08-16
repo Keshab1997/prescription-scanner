@@ -137,7 +137,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                             SizedBox(width: 9),
                             Expanded(
                               child: Text(
-                                'Successful scans keep only structured results. Original server images are deleted.',
+                                'Prepared images are deleted from this device after processing. Only account-scoped structured results remain locally.',
                                 style: TextStyle(
                                   color: AppColors.muted,
                                   fontSize: 12,

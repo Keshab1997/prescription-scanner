@@ -6,7 +6,7 @@ reused [`admin_api_key_manager`](https://github.com/Keshab1997/admin_api_key_man
 package, which reads them from a Firestore collection at runtime (so no secret
 lives in the Flutter source).
 
-Supabase is still used for **authentication only**.
+Firebase Authentication is used for sign-in, and Firestore stores profiles, settings, per-user usage and feedback. Prescription results remain account-scoped on the device.
 
 ## 1. Firebase (for the key pool)
 
@@ -18,7 +18,7 @@ flutter pub get
 flutterfire configure      # generates lib/firebase_options.dart
 ```
 
-`flutterfire configure` overwrites the placeholder `lib/firebase_options.dart`.
+`flutterfire configure` regenerates `lib/firebase_options.dart`. Commit the updated configuration whenever the Firebase app registration or Android package ID changes.
 
 ## 2. Seed a Gemini key
 
@@ -62,8 +62,10 @@ key is added.
 ## 4. Security
 
 - The Gemini key is fetched at runtime from Firestore, never hard-coded.
-- The original prescription image is processed locally and never uploaded to a
-  server; only the structured result is kept (in local Hive).
+- The prepared prescription image is sent directly to Google Gemini for
+  transcription. This app does not store the image in its own cloud database;
+  the prepared local copy is deleted after processing and the account-scoped
+  structured result remains in local Hive.
 - Firestore rules: allow admin writes to `admin_api_keys`; end users only need
   read (or none — the package reads via the app's own initialized client).
 

@@ -1,13 +1,6 @@
-// GENERATED FILE — REPLACE WITH YOUR OWN.
-//
-// This is a template so the app compiles before you run:
-//   flutterfire configure
-//
-// After `flutterfire configure` finishes it will overwrite this file with your
-// real Firebase project options. Until then the values below are placeholders
-// and Firebase will fail at runtime (not at compile time).
-//
-// See docs/vision_setup.md for the full setup steps.
+// Firebase configuration for the prescription-scanner-admin project.
+// Regenerate with `flutterfire configure` whenever Firebase apps or package
+// identifiers change. See docs/vision_setup.md for the setup details.
 
 import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
 import 'package:flutter/foundation.dart'

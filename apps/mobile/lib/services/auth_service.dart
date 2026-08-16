@@ -211,10 +211,11 @@ class AuthService {
       'requestedAt': FieldValue.serverTimestamp(),
       'status': 'pending',
     });
-    await ResultStore.instance.clearUser(user.uid);
-    await ConsentStore.clearUser(user.uid);
+    final uid = user.uid;
     await user.delete();
-    return user.uid;
+    await ResultStore.instance.clearUser(uid);
+    await ConsentStore.clearUser(uid);
+    return uid;
   }
 }
 

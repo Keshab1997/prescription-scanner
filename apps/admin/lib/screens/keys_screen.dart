@@ -28,8 +28,9 @@ class _KeysScreenState extends State<KeysScreen> {
           .collection('admin_api_keys')
           .where('isActive', isEqualTo: true)
           .get();
-      final keys =
-          snap.docs.map((d) => AdminApiKey.fromMap(d.data(), d.id)).toList();
+      final keys = snap.docs
+          .map((d) => AdminApiKey.fromMap(d.data(), d.id))
+          .toList();
       if (keys.isEmpty) {
         _toast('No active keys to test.');
         return;
@@ -55,7 +56,9 @@ class _KeysScreenState extends State<KeysScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('$ok of ${results.length} active keys healthy (HTTP 200).'),
+                Text(
+                  '$ok of ${results.length} active keys healthy (HTTP 200).',
+                ),
                 const SizedBox(height: 12),
                 for (final e in results.entries)
                   Padding(
@@ -63,7 +66,9 @@ class _KeysScreenState extends State<KeysScreen> {
                     child: Row(
                       children: [
                         Icon(
-                          e.value == 200 ? Icons.check_circle : Icons.error_outline,
+                          e.value == 200
+                              ? Icons.check_circle
+                              : Icons.error_outline,
                           size: 16,
                           color: e.value == 200
                               ? const Color(0xFF0F766E)
@@ -80,8 +85,9 @@ class _KeysScreenState extends State<KeysScreen> {
           ),
           actions: [
             TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Close')),
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Close'),
+            ),
           ],
         ),
       );
@@ -92,8 +98,7 @@ class _KeysScreenState extends State<KeysScreen> {
 
   void _toast(String msg) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(msg)));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
 
   @override
@@ -107,9 +112,10 @@ class _KeysScreenState extends State<KeysScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: const [
-                  Text('AI Configuration',
-                      style:
-                          TextStyle(fontSize: 24, fontWeight: FontWeight.w800)),
+                  Text(
+                    'AI Configuration',
+                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
+                  ),
                   Text('Manage Gemini API keys used by the mobile app.'),
                 ],
               ),
@@ -121,7 +127,10 @@ class _KeysScreenState extends State<KeysScreen> {
                       height: 16,
                       width: 16,
                       child: CircularProgressIndicator(
-                          strokeWidth: 2, color: Colors.white))
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
                   : const Icon(Icons.health_and_safety_outlined),
               label: Text(_testingAll ? 'Testing…' : 'Test all active'),
             ),
@@ -144,10 +153,12 @@ class _KeysScreenState extends State<KeysScreen> {
         const SizedBox(height: 16),
         Expanded(
           child: _tab == 0
-              ? _AddKeyForm(onSaved: () {
-                  _toast('Key added. Switch to Manage to edit it.');
-                  setState(() => _tab = 1);
-                })
+              ? _AddKeyForm(
+                  onSaved: () {
+                    _toast('Key added. Switch to Manage to edit it.');
+                    setState(() => _tab = 1);
+                  },
+                )
               : Card(
                   clipBehavior: Clip.antiAlias,
                   child: const AdminApiKeysScreen(),
@@ -175,10 +186,13 @@ class _TabButton extends StatelessWidget {
           color: selected ? Colors.white : Colors.transparent,
           borderRadius: BorderRadius.circular(10),
         ),
-        child: Text(label,
-            style: TextStyle(
-                fontWeight: FontWeight.w600,
-                color: selected ? const Color(0xFF102F36) : Colors.black54)),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            color: selected ? const Color(0xFF102F36) : Colors.black54,
+          ),
+        ),
       ),
     );
   }
@@ -255,8 +269,11 @@ class _AddKeyFormState extends State<_AddKeyForm> {
     final model = _model.text.trim();
     if (name.isEmpty || key.isEmpty || baseUrl.isEmpty || model.isEmpty) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text('Name, key, base URL and model are required')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Name, key, base URL and model are required'),
+          ),
+        );
       }
       return;
     }
@@ -279,8 +296,9 @@ class _AddKeyFormState extends State<_AddKeyForm> {
       widget.onSaved();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Save failed: $e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Save failed: $e')));
       }
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -311,8 +329,10 @@ class _AddKeyFormState extends State<_AddKeyForm> {
                 onChanged: (v) => _onProviderChanged(v ?? 'google'),
               ),
               const SizedBox(height: 6),
-              Text(preset.hint,
-                  style: const TextStyle(color: Colors.black45, fontSize: 12)),
+              Text(
+                preset.hint,
+                style: const TextStyle(color: Colors.black45, fontSize: 12),
+              ),
               const SizedBox(height: 16),
               TextField(
                 controller: _name,
@@ -371,7 +391,10 @@ class _AddKeyFormState extends State<_AddKeyForm> {
                         height: 16,
                         width: 16,
                         child: CircularProgressIndicator(
-                            strokeWidth: 2, color: Colors.white))
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
                     : const Icon(Icons.save_outlined),
                 label: const Text('Add key'),
               ),

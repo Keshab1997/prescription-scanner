@@ -26,9 +26,10 @@ class _PrescriptionsScreenState extends State<PrescriptionsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: const [
-                  Text('Prescriptions',
-                      style:
-                          TextStyle(fontSize: 24, fontWeight: FontWeight.w800)),
+                  Text(
+                    'Prescriptions',
+                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
+                  ),
                   Text('Extraction records stay on the user\'s device.'),
                 ],
               ),
@@ -61,13 +62,18 @@ class _PrescriptionsScreenState extends State<PrescriptionsScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.shield_outlined,
-                        size: 40, color: Colors.black38),
+                    const Icon(
+                      Icons.shield_outlined,
+                      size: 40,
+                      color: Colors.black38,
+                    ),
                     const SizedBox(height: 14),
                     const Text(
                       'No server-side prescription data',
-                      style:
-                          TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+                      style: TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 16,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Text(
@@ -95,29 +101,29 @@ class _StatChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: Colors.black12),
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(14),
+      border: Border.all(color: Colors.black12),
+    ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w900,
+            color: Color(0xFF0F766E),
+          ),
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              value,
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w900,
-                color: Color(0xFF0F766E),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Text(
-              label,
-              style: const TextStyle(color: Colors.black54, fontSize: 13),
-            ),
-          ],
+        const SizedBox(width: 8),
+        Text(
+          label,
+          style: const TextStyle(color: Colors.black54, fontSize: 13),
         ),
-      );
+      ],
+    ),
+  );
 }

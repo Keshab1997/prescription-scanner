@@ -33,7 +33,7 @@ class _UsersScreenState extends State<UsersScreen> {
           .orderBy('createdAt', descending: true)
           .get();
       final list = snapshot.docs
-          .map((doc) => AppUser.fromMap(doc.data()))
+          .map((doc) => AppUser.fromMap(doc.data(), doc.id))
           .toList();
       if (mounted) {
         setState(() {
@@ -66,9 +66,10 @@ class _UsersScreenState extends State<UsersScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: const [
-                  Text('Users',
-                      style:
-                          TextStyle(fontSize: 24, fontWeight: FontWeight.w800)),
+                  Text(
+                    'Users',
+                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
+                  ),
                   Text('Accounts created from the mobile app.'),
                 ],
               ),
@@ -101,10 +102,7 @@ class _UsersScreenState extends State<UsersScreen> {
           ),
         const SizedBox(height: 16),
         Expanded(
-          child: Card(
-            clipBehavior: Clip.antiAlias,
-            child: _body(),
-          ),
+          child: Card(clipBehavior: Clip.antiAlias, child: _body()),
         ),
       ],
     );
@@ -180,31 +178,31 @@ class _StatChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: Colors.black12),
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(14),
+      border: Border.all(color: Colors.black12),
+    ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w900,
+            color: Color(0xFF0F766E),
+          ),
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              value,
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w900,
-                color: Color(0xFF0F766E),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Text(
-              label,
-              style: const TextStyle(color: Colors.black54, fontSize: 13),
-            ),
-          ],
+        const SizedBox(width: 8),
+        Text(
+          label,
+          style: const TextStyle(color: Colors.black54, fontSize: 13),
         ),
-      );
+      ],
+    ),
+  );
 }
 
 class AppUser {
@@ -224,10 +222,10 @@ class AppUser {
   final String status;
   final DateTime createdAt;
 
-  factory AppUser.fromMap(Map<String, dynamic> m) {
+  factory AppUser.fromMap(Map<String, dynamic> m, String documentId) {
     final created = m['createdAt'];
     return AppUser(
-      id: m['id'] as String? ?? '',
+      id: documentId,
       displayName: m['displayName'] as String? ?? '',
       email: m['email'] as String? ?? '',
       role: m['role'] as String? ?? 'user',
