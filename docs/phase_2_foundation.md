@@ -5,7 +5,7 @@
 - App: Prescription Scanner
 - Developer: Keshab Studios
 - Support: keshabsarkar2018@gmail.com
-- Android package: com.rxscanlabs.prescriptionscanner
+- Android package: com.keshabstudios.prescriptionscanner
 - Launch market: India
 - UI: English
 - AI provider: Gemini

@@ -39,7 +39,7 @@ Open:
 Add this exact URL:
 
 ```text
-com.rxscanlabs.prescriptionscanner://login-callback
+com.keshabstudios.prescriptionscanner://login-callback
 ```
 
 It is used for email verification and password recovery. The Android bootstrap script adds the matching intent filter to `AndroidManifest.xml`.

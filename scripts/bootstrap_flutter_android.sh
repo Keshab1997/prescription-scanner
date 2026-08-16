@@ -3,7 +3,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 APP="$ROOT/apps/mobile"
-PACKAGE="com.rxscanlabs.prescriptionscanner"
+PACKAGE="com.keshabstudios.prescriptionscanner"
 
 if ! command -v flutter >/dev/null 2>&1; then
   echo "Flutter SDK was not found. Install current stable Flutter (3.38.1+) first." >&2
@@ -15,7 +15,7 @@ trap 'rm -rf "$TMP"' EXIT
 
 flutter create \
   --platforms=android \
-  --org com.rxscanlabs \
+  --org com.keshabstudios \
   --project-name prescription_scanner \
   "$TMP/prescription_scanner"
 
@@ -30,12 +30,12 @@ package = sys.argv[2]
 for path in app.rglob('*'):
     if path.is_file() and path.suffix in {'.kt', '.kts', '.gradle', '.xml'}:
         text = path.read_text(encoding='utf-8')
-        text = text.replace('com.rxscanlabs.prescription_scanner', package)
+        text = text.replace('com.keshabstudios.prescription_scanner', package)
         text = text.replace('com.example.prescription_scanner', package)
         path.write_text(text, encoding='utf-8')
 
-old_activity = app / 'android/app/src/main/kotlin/com/rxscanlabs/prescription_scanner/MainActivity.kt'
-new_activity = app / 'android/app/src/main/kotlin/com/rxscanlabs/prescriptionscanner/MainActivity.kt'
+old_activity = app / 'android/app/src/main/kotlin/com/keshabstudios/prescription_scanner/MainActivity.kt'
+new_activity = app / 'android/app/src/main/kotlin/com/keshabstudios/prescriptionscanner/MainActivity.kt'
 if old_activity.exists():
     new_activity.parent.mkdir(parents=True, exist_ok=True)
     old_activity.replace(new_activity)

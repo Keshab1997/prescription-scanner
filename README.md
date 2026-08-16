@@ -2,7 +2,7 @@
 
 Android-first prescription transcription app by **Keshab Studios**.
 
-- App ID: `com.rxscanlabs.prescriptionscanner`
+- App ID: `com.keshabstudios.prescriptionscanner`
 - First market: India
 - First language: English
 - First AI provider: Gemini
@@ -43,7 +43,7 @@ flutter test
 flutter run --dart-define-from-file=.env.local.json
 ```
 
-Use `scripts/bootstrap_flutter_android.sh` only to regenerate missing Android files. It restores package ID `com.rxscanlabs.prescriptionscanner`, permissions, auth callback, AdMob test metadata, and crop activity.
+Use `scripts/bootstrap_flutter_android.sh` only to regenerate missing Android files. It restores package ID `com.keshabstudios.prescriptionscanner`, permissions, auth callback, AdMob test metadata, and crop activity.
 
 GitHub Actions workflow `.github/workflows/mobile_ci.yml` automatically analyzes, tests, and builds a debug APK on every push to `main`.
 

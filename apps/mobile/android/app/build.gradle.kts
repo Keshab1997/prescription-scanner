@@ -7,7 +7,7 @@ plugins {
 }
 
 android {
-    namespace = "com.rxscanlabs.prescriptionscanner"
+    namespace = "com.keshabstudios.prescriptionscanner"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -21,7 +21,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.rxscanlabs.prescriptionscanner"
+        applicationId = "com.keshabstudios.prescriptionscanner"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode

@@ -22,7 +22,7 @@ Current app direction:
 - Backend: **Firebase** (Firebase Auth + Firestore + Firebase Storage-ready)
 - AI provider: Gemini, called **directly on-device** from the mobile app via the Firestore-backed admin API key pool (`admin_api_key_manager`). No server-side AI.
 - Prescription images and results are processed on-device and stored only in local Hive; they never leave the phone.
-- Android package/app ID target: `com.rxscanlabs.prescriptionscanner`
+- Android package/app ID target: `com.keshabstudios.prescriptionscanner`
 
 ## Token-saving workflow
 

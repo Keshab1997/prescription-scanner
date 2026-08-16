@@ -1,6 +1,6 @@
 -- Prescription Scanner — secure initial schema
 -- Developer: Keshab Studios
--- Package: com.rxscanlabs.prescriptionscanner
+-- Package: com.keshabstudios.prescriptionscanner
 -- Run with Supabase migrations or the SQL Editor as the project owner.
 
 begin;

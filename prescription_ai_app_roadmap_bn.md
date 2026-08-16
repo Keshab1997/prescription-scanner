@@ -156,7 +156,7 @@ prescription-ai/
 - **Launch market:** India first
 - **Authentication:** Email + Password for MVP
 - **Original image retention:** Delete automatically after a successful structured result is saved
-- **Confirmed package ID:** `com.rxscanlabs.prescriptionscanner` — Play Console availability confirmed by project owner
+- **Confirmed package ID:** `com.keshabstudios.prescriptionscanner` — Play Console availability confirmed by project owner
 - **Developer/brand name:** Keshab Studios
 - **Support email:** keshabsarkar2018@gmail.com
 

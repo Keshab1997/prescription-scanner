@@ -67,7 +67,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '780785545429',
     projectId: 'prescription-scanner-admin',
     storageBucket: 'prescription-scanner-admin.firebasestorage.app',
-    iosBundleId: 'com.rxscanlabs.prescriptionscanner',
+    iosBundleId: 'com.keshabstudios.prescriptionscanner',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
@@ -76,6 +76,6 @@ class DefaultFirebaseOptions {
     messagingSenderId: '780785545429',
     projectId: 'prescription-scanner-admin',
     storageBucket: 'prescription-scanner-admin.firebasestorage.app',
-    iosBundleId: 'com.rxscanlabs.prescriptionscanner',
+    iosBundleId: 'com.keshabstudios.prescriptionscanner',
   );
 }
