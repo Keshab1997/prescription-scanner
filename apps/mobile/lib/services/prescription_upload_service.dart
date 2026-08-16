@@ -53,18 +53,17 @@ class PrescriptionUploadService {
     final targetPath =
         '${temporaryDirectory.path}/prescription_${DateTime.now().microsecondsSinceEpoch}.jpg';
 
-    // Single-pass compress + downscale. The original (quality 88) is already
-    // small; compressing straight to the final JPEG avoids a second re-encode
-    // (crop was maxWidth 2600 @ q95, then q86 again before). Lowering to q82 /
-    // min 1024 keeps prescription text crisp while cutting bytes ~3x, which
-    // makes the base64 encode, the Gemini upload, and the JSON decode all
-    // faster. The cropper is skipped unless the user wants to reframe.
+    // Single-pass compress + downscale. minWidth/minHeight bound the output
+    // size (the names are misleading; they act as a max). 1600 px keeps
+    // prescription text crisp for Gemini while cutting the base64 payload by
+    // ~5-8x vs the raw camera frame, so the direct upload is much faster. The
+    // cropper is skipped unless the user wants to reframe.
     final compressed = await FlutterImageCompress.compressAndGetFile(
       picked.path,
       targetPath,
       quality: 82,
-      minWidth: 1024,
-      minHeight: 1024,
+      minWidth: 1600,
+      minHeight: 1600,
       format: CompressFormat.jpeg,
       keepExif: false,
     );

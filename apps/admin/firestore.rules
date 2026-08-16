@@ -74,8 +74,10 @@ service cloud.firestore {
 
     // One document per user/day: {uid}-{yyyy-MM-dd}.
     match /daily_usage/{docId} {
+      // resource == null covers a missing doc (first scan of the day), so the
+      // client can fall back to "0 used" without hitting a rule error.
       allow read: if isAdmin() || (
-        isVerifiedUser() && resource.data.user_id == request.auth.uid
+        isVerifiedUser() && (resource == null || resource.data.user_id == request.auth.uid)
       );
 
       allow create: if isVerifiedUser()
