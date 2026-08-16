@@ -1,0 +1,25 @@
+name: Manual Android Test Build
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: manual-android-test-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-test-apk:
+    uses: Keshab1997/flutter-builder/.github/workflows/flutter-build.yml@v1
+    with:
+      working-directory: apps/mobile
+      flutter-channel: stable
+      generate-android-platform: false
+      run-format-check: true
+      run-analyze: true
+      run-tests: true
+      build-apk: true
+      build-aab: false
+      artifact-retention-days: 7
