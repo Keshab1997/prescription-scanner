@@ -76,8 +76,10 @@ class AuthService {
     return snapshot.data();
   }
 
-  /// Updates the user's display name both in Firebase Auth and the Firestore
-  /// profile document (creating it if the signup write was missed).
+  /// Updates the user's display name both in Firebase Auth and Firestore.
+  ///
+  /// Security-sensitive profile fields such as email, role, status and
+  /// createdAt are intentionally left unchanged.
   Future<void> updateProfile({required String displayName}) async {
     final user = auth.currentUser;
     if (user == null) {
@@ -91,14 +93,10 @@ class AuthService {
       throw ArgumentError('Display name cannot be empty.');
     }
     await user.updateDisplayName(trimmed);
-    await firestore.collection('profiles').doc(user.uid).set({
+    await firestore.collection('profiles').doc(user.uid).update({
       'displayName': trimmed,
-      'email': user.email,
-      'role': 'user',
-      'status': 'active',
       'updatedAt': FieldValue.serverTimestamp(),
-      'createdAt': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
+    });
   }
 
   Future<void> sendPasswordReset(String email) async {

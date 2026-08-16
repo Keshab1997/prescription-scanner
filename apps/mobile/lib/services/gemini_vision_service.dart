@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:http/http.dart' as http;
 import 'package:admin_api_key_manager/admin_api_key_manager.dart';
+import 'package:firebase_auth/firebase_auth.dart' as fb;
 
 import 'package:prescription_scanner/models/extracted_prescription.dart';
 import 'package:prescription_scanner/services/prescription_json_repair.dart';
@@ -95,6 +96,14 @@ Return a JSON object with these fields:
       throw const VisionException('The selected image is empty.');
     }
     final base64Image = base64Encode(bytes);
+    final user = fb.FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      throw const VisionException(
+        'Please sign in again before scanning.',
+        statusCode: 401,
+      );
+    }
+    final userId = user.uid;
 
     // Wait for the key pool to load from Firestore/cache before selecting a key,
     // so we don't race the async listener and wrongly report "no key".
@@ -124,7 +133,12 @@ Return a JSON object with these fields:
         );
       } on VisionException catch (e) {
         lastError = e;
-        ApiKeyManager.instance.reportFailure(key, e.statusCode, 'vision', '');
+        ApiKeyManager.instance.reportFailure(
+          key,
+          e.statusCode,
+          'vision',
+          userId,
+        );
         // 401/403 means the key itself is bad — try the next key.
         if (e.statusCode == 401 || e.statusCode == 403) continue;
         // Transient errors: retry with next key too.
