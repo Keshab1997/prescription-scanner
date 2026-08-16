@@ -4,60 +4,78 @@ import 'package:go_router/go_router.dart';
 import 'package:prescription_scanner/theme.dart';
 import 'package:prescription_scanner/widgets/ui_animations.dart';
 
-class AppShell extends StatelessWidget {
+class AppShell extends StatefulWidget {
   const AppShell({required this.currentPath, required this.child, super.key});
 
   final String currentPath;
   final Widget child;
 
   @override
+  State<AppShell> createState() => _AppShellState();
+}
+
+class _AppShellState extends State<AppShell> {
+  bool _backActionScheduled = false;
+
+  void _scheduleBackAction(bool didPop) {
+    if (didPop || _backActionScheduled) return;
+    _backActionScheduled = true;
+
+    // Route changes and dialogs are deferred until PopScope has completely
+    // finished dispatching the system Back event. Mutating the navigator
+    // synchronously here can violate Flutter inherited-element lifecycle
+    // invariants and trigger `_dependents.isEmpty` framework assertions.
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      await _performBackAction();
+      if (mounted) _backActionScheduled = false;
+    });
+  }
+
+  Future<void> _performBackAction() async {
+    // Inside the shell, Back returns to Home. Home itself is the only place
+    // where the user can explicitly confirm closing the app.
+    if (widget.currentPath != '/home') {
+      context.go('/home');
+      return;
+    }
+
+    final leave = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Exit app?'),
+        content: const Text(
+          'Your account will remain signed in for the next time you open the app.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Stay'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Exit'),
+          ),
+        ],
+      ),
+    );
+    if (leave == true && mounted) {
+      await SystemNavigator.pop();
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return PopScope(
       canPop: false,
-      onPopInvokedWithResult: (didPop, _) async {
-        if (didPop) return;
-        // Inside the shell, back should move to Home rather than exit the
-        // app. From Home, confirm before leaving the app entirely.
-        if (currentPath != '/home') {
-          context.go('/home');
-          return;
-        }
-        final leave = await showDialog<bool>(
-          context: context,
-          builder: (dialogContext) => AlertDialog(
-            title: const Text('Exit app?'),
-            content: const Text(
-              'Your account will remain signed in for the next time you open the app.',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(dialogContext, false),
-                child: const Text('Stay'),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.pop(dialogContext, true),
-                child: const Text('Exit'),
-              ),
-            ],
-          ),
-        );
-        if (leave == true && context.mounted) {
-          // The app exits only after explicit confirmation. The Firebase
-          // session is intentionally preserved.
-          await SystemNavigator.pop();
-        }
-      },
+      onPopInvokedWithResult: (didPop, _) => _scheduleBackAction(didPop),
       child: Scaffold(
         extendBody: true,
-        body: child,
+        body: widget.child,
         floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-        floatingActionButton: _ScanFab(
-          onTap: () {
-            context.push('/upload');
-          },
-        ),
+        floatingActionButton: _ScanFab(onTap: () => context.push('/upload')),
         bottomNavigationBar: _FloatingNavBar(
-          currentPath: currentPath,
+          currentPath: widget.currentPath,
           onChanged: (path) => context.go(path),
         ),
       ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:prescription_scanner/widgets/app_back_scope.dart';
+import 'package:prescription_scanner/widgets/app_shell.dart';
 
 void main() {
   GoRouter buildRouter(String initialLocation) => GoRouter(
@@ -32,6 +33,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Home page'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('pushed detail page returns to its previous page', (
@@ -50,5 +52,40 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Home page'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('shell back navigation is deferred and lifecycle-safe', (
+    tester,
+  ) async {
+    final router = GoRouter(
+      initialLocation: '/history',
+      routes: [
+        ShellRoute(
+          builder: (_, state, child) =>
+              AppShell(currentPath: state.uri.path, child: child),
+          routes: [
+            GoRoute(
+              path: '/home',
+              builder: (_, _) => const Center(child: Text('Shell home')),
+            ),
+            GoRoute(
+              path: '/history',
+              builder: (_, _) => const Center(child: Text('Shell history')),
+            ),
+          ],
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
+    await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+    await tester.pump();
+
+    expect(find.text('Shell history'), findsOneWidget);
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+
+    expect(find.text('Shell home'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 }
