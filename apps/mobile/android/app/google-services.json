@@ -7,9 +7,28 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:780785545429:android:d6f22e63048722284eb25c",
+        "mobilesdk_app_id": "1:780785545429:android:43c8668bd33be20a4eb25c",
         "android_client_info": {
           "package_name": "com.keshabstudios.prescriptionscanner"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBUp08GG5QRnX58hQTGalTGjiBhWADKtZg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:780785545429:android:d6f22e63048722284eb25c",
+        "android_client_info": {
+          "package_name": "com.rxscanlabs.prescriptionscanner"
         }
       },
       "oauth_client": [],
