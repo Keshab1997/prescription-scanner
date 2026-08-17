@@ -15,7 +15,16 @@ import 'package:prescription_scanner/services/result_store.dart';
 import 'package:prescription_scanner/theme.dart';
 import 'package:prescription_scanner/widgets/ui_animations.dart';
 
-final resultRevisionProvider = StateProvider<int>((ref) => 0);
+class ResultRevision extends Notifier<int> {
+  @override
+  int build() => 0;
+
+  void bump() => state++;
+}
+
+final resultRevisionProvider = NotifierProvider<ResultRevision, int>(
+  ResultRevision.new,
+);
 
 /// UI language for the patient-friendly summary on the result screen.
 enum ResultLanguage {
@@ -1463,27 +1472,6 @@ class _ResultError extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Extraction result')),
-    body: Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(
-              Icons.error_outline_rounded,
-              color: AppColors.danger,
-              size: 48,
-            ),
-            const SizedBox(height: 12),
-            Text(message, textAlign: TextAlign.center),
-          ],
-        ),
-      ),
-    ),
-  );
-}
-ext) => Scaffold(
     appBar: AppBar(title: const Text('Extraction result')),
     body: Center(
       child: Padding(
