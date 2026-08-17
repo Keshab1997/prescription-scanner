@@ -156,7 +156,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Verification email sent. Check your inbox.'),
+          content: Text(
+            'Verification email sent. Check your inbox — and your Spam/Junk '
+            'folder if it is not there.',
+          ),
         ),
       );
     } catch (e) {

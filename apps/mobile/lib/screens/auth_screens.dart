@@ -76,7 +76,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             icon: const Icon(Icons.mark_email_read_outlined),
             title: const Text('Check your email'),
             content: const Text(
-              'Open the verification link, then return to sign in securely.',
+              'Open the verification link, then return to sign in securely. '
+              'If you do not see the email in your inbox, check your Spam or '
+              'Junk folder and mark it as \"Not spam\".',
             ),
             actions: [
               FilledButton(
@@ -222,7 +224,8 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     return _AuthScaffold(
       title: sent ? 'Check your email' : 'Reset your password',
       subtitle: sent
-          ? 'If an account exists, a secure reset link has been sent.'
+          ? 'If an account exists, a secure reset link has been sent. Check '
+                'your Spam/Junk folder if you cannot find it.'
           : 'We will send a secure password-reset link.',
       child: sent
           ? Column(

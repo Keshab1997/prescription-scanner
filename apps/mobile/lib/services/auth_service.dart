@@ -263,7 +263,7 @@ String friendlyAuthError(Object error) {
       case 'weak-password':
         return 'Use a stronger password with at least 8 characters.';
       case 'email-not-verified':
-        return 'Verify your email first. If allowed, a new verification link was sent.';
+        return 'Verify your email first. If allowed, a new verification link was sent. Check your Spam/Junk folder if you do not see it in your inbox.';
       case 'user-blocked':
         return 'This account has been blocked. Contact support for help.';
       case 'disposable-email-not-allowed':
