@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:prescription_scanner/services/consent_store.dart';
+import 'package:prescription_scanner/services/disposable_email.dart';
 import 'package:prescription_scanner/services/result_store.dart';
 
 final authServiceProvider = Provider<AuthService>((ref) {
@@ -25,6 +26,7 @@ class AuthService {
   Stream<fb.User?> get authChanges => auth.authStateChanges();
 
   Future<bool> signIn({required String email, required String password}) async {
+    _rejectDisposableEmail(email);
     final credential = await auth.signInWithEmailAndPassword(
       email: email.trim(),
       password: password,
@@ -67,6 +69,7 @@ class AuthService {
     required String email,
     required String password,
   }) async {
+    _rejectDisposableEmail(email);
     final credential = await auth.createUserWithEmailAndPassword(
       email: email.trim(),
       password: password,
@@ -231,6 +234,19 @@ class AuthService {
   }
 }
 
+/// Throws a FirebaseAuthException when [email] belongs to a disposable /
+/// temporary mail provider. Used by both sign-up and sign-in so temp-mail
+/// accounts can neither be created nor used.
+void _rejectDisposableEmail(String email) {
+  final message = disposableEmailError(email);
+  if (message != null) {
+    throw fb.FirebaseAuthException(
+      code: 'disposable-email-not-allowed',
+      message: message,
+    );
+  }
+}
+
 String friendlyAuthError(Object error) {
   if (error is fb.FirebaseAuthException) {
     final code = error.code;
@@ -250,6 +266,8 @@ String friendlyAuthError(Object error) {
         return 'Verify your email first. If allowed, a new verification link was sent.';
       case 'user-blocked':
         return 'This account has been blocked. Contact support for help.';
+      case 'disposable-email-not-allowed':
+        return 'Temporary/disposable email addresses are not allowed. Please use a real email address.';
       case 'too-many-requests':
         return 'Too many attempts. Please wait and try again.';
       case 'requires-recent-login':
