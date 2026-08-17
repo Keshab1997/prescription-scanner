@@ -43,7 +43,9 @@ class _HelpScreenState extends ConsumerState<HelpScreen> {
             const SizedBox(height: 8),
             ..._faqItems.map(
               (item) => Entrance(
-                delay: const Duration(milliseconds: 160 + _faqItems.indexOf(item) * 40),
+                delay: const Duration(
+                  milliseconds: 160 + _faqItems.indexOf(item) * 40,
+                ),
                 child: Padding(
                   padding: const EdgeInsets.only(bottom: 8),
                   child: _FaqCard(question: item.question, answer: item.answer),
@@ -67,13 +69,21 @@ class _HelpScreenState extends ConsumerState<HelpScreen> {
                     'prepared local copy is deleted after processing, and only the '
                     'structured result stays on your device in a private, account-scoped '
                     'store.',
-                    style: TextStyle(color: AppColors.muted, fontSize: 13, height: 1.5),
+                    style: TextStyle(
+                      color: AppColors.muted,
+                      fontSize: 13,
+                      height: 1.5,
+                    ),
                   ),
                   SizedBox(height: 10),
                   Text(
                     'Anonymous guest scans use the same privacy model: results are '
                     'stored locally and never uploaded to the cloud.',
-                    style: TextStyle(color: AppColors.muted, fontSize: 13, height: 1.5),
+                    style: TextStyle(
+                      color: AppColors.muted,
+                      fontSize: 13,
+                      height: 1.5,
+                    ),
                   ),
                 ],
               ),
@@ -91,7 +101,10 @@ class _HelpScreenState extends ConsumerState<HelpScreen> {
                 title: 'Send us an email',
                 subtitle: 'We usually respond within 1–2 business days.',
                 buttonText: 'Contact support',
-                onTap: () => _launchEmail(context, subject: 'Prescription Scanner support'),
+                onTap: () => _launchEmail(
+                  context,
+                  subject: 'Prescription Scanner support',
+                ),
               ),
             ),
             const SizedBox(height: 12),
@@ -100,7 +113,8 @@ class _HelpScreenState extends ConsumerState<HelpScreen> {
               child: _ContactCard(
                 icon: Icons.bug_report_outlined,
                 title: 'Report a problem',
-                subtitle: 'Let us know what went wrong so we can improve the app.',
+                subtitle:
+                    'Let us know what went wrong so we can improve the app.',
                 buttonText: 'Report issue',
                 onTap: () => _launchEmail(
                   context,
@@ -121,11 +135,17 @@ class _HelpScreenState extends ConsumerState<HelpScreen> {
                 children: [
                   _AboutRow(label: 'App', value: 'Prescription Scanner'),
                   const Divider(height: 20),
-                  _AboutRow(label: 'App ID', value: 'com.keshabstudios.prescriptionscanner'),
+                  _AboutRow(
+                    label: 'App ID',
+                    value: 'com.keshabstudios.prescriptionscanner',
+                  ),
                   const Divider(height: 20),
                   _AboutRow(label: 'Version', value: appVersion),
                   const Divider(height: 20),
-                  const _AboutRow(label: 'AI', value: 'Google Gemini (direct vision)'),
+                  const _AboutRow(
+                    label: 'AI',
+                    value: 'Google Gemini (direct vision)',
+                  ),
                   const Divider(height: 20),
                   _AboutRow(label: 'Developer', value: 'Keshab Studios'),
                 ],
@@ -155,31 +175,38 @@ class _HelpScreenState extends ConsumerState<HelpScreen> {
 final _faqItems = <_FaqItemData>[
   _FaqItemData(
     question: 'How do I scan a prescription?',
-    answer: 'Tap the large scan button in the centre of the home screen. You can take a photo with your camera or pick an image from your gallery. The app automatically compresses and validates the image, then sends it to Google Gemini for AI-powered transcription. The result appears in seconds.',
+    answer:
+        'Tap the large scan button in the centre of the home screen. You can take a photo with your camera or pick an image from your gallery. The app automatically compresses and validates the image, then sends it to Google Gemini for AI-powered transcription. The result appears in seconds.',
   ),
   _FaqItemData(
     question: 'Can I scan without creating an account?',
-    answer: 'Yes! You can try the app with 1 free scan per day right away — no sign-up needed. Just tap "Try a free scan without signing in" on the login screen or use the scan button on home as a guest.',
+    answer:
+        'Yes! You can try the app with 1 free scan per day right away — no sign-up needed. Just tap "Try a free scan without signing in" on the login screen or use the scan button on home as a guest.',
   ),
   _FaqItemData(
     question: 'How many free scans do I get after signing in?',
-    answer: 'After signing in (and verifying your email), you receive 3 free scans per day. If you first used the guest scan earlier that day, you still have 2 more remaining — so a guest scan + login unlock the full daily allowance.',
+    answer:
+        'After signing in (and verifying your email), you receive 3 free scans per day. If you first used the guest scan earlier that day, you still have 2 more remaining — so a guest scan + login unlock the full daily allowance.',
   ),
   _FaqItemData(
     question: 'I did not receive the verification email. What should I do?',
-    answer: 'First, check your Spam or Junk folder — many email filters accidentally redirect verification messages there. If you find it there, mark it as "Not spam" to ensure future messages reach your inbox. If it is still missing, go to Profile → Verify email to request a new link.',
+    answer:
+        'First, check your Spam or Junk folder — many email filters accidentally redirect verification messages there. If you find it there, mark it as "Not spam" to ensure future messages reach your inbox. If it is still missing, go to Profile → Verify email to request a new link.',
   ),
   _FaqItemData(
     question: 'How does the AI transcription work?',
-    answer: 'The app sends the prescription image directly to Google Gemini (the gemini-2.5-flash model). Gemini returns a structured JSON list of medicines with details like dosage, frequency and duration. The app repairs and displays this result. Your image is never stored on any cloud server — it is processed and then the local copy is deleted.',
+    answer:
+        'The app sends the prescription image directly to Google Gemini (the gemini-2.5-flash model). Gemini returns a structured JSON list of medicines with details like dosage, frequency and duration. The app repairs and displays this result. Your image is never stored on any cloud server — it is processed and then the local copy is deleted.',
   ),
   _FaqItemData(
     question: 'Is my medical data stored in the cloud?',
-    answer: 'No. The prescription image itself is sent to Google Gemini for transcription but is not saved by the app or Gemini beyond the moment of processing. The structured transcription result stays on your device in an encrypted Hive store, scoped to your account (or guest namespace). Only anonymous usage counters (how many scans you used today) are synced to Firestore so the app can enforce daily limits.',
+    answer:
+        'No. The prescription image itself is sent to Google Gemini for transcription but is not saved by the app or Gemini beyond the moment of processing. The structured transcription result stays on your device in an encrypted Hive store, scoped to your account (or guest namespace). Only anonymous usage counters (how many scans you used today) are synced to Firestore so the app can enforce daily limits.',
   ),
   _FaqItemData(
     question: 'How do I delete my scan results?',
-    answer: 'Open the History tab, find the prescription you want to remove, and tap the delete icon. You can also request full account deletion from Profile → Delete account, which removes your auth account and all local data. Guest scans can be cleared by deleting the app data or uninstalling.',
+    answer:
+        'Open the History tab, find the prescription you want to remove, and tap the delete icon. You can also request full account deletion from Profile → Delete account, which removes your auth account and all local data. Guest scans can be cleared by deleting the app data or uninstalling.',
   ),
 ];
 
@@ -271,7 +298,11 @@ class _FaqCardState extends State<_FaqCard>
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.help_outline, size: 20, color: AppColors.teal),
+                      const Icon(
+                        Icons.help_outline,
+                        size: 20,
+                        color: AppColors.teal,
+                      ),
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
@@ -386,12 +417,18 @@ class _ContactCard extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 15,
+                  ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   subtitle,
-                  style: const TextStyle(color: AppColors.muted, fontSize: 12.5),
+                  style: const TextStyle(
+                    color: AppColors.muted,
+                    fontSize: 12.5,
+                  ),
                 ),
               ],
             ),
