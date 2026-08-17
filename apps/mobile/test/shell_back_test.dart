@@ -102,6 +102,15 @@ void main() {
       await tester.tap(guestButton);
       await tester.pump(const Duration(milliseconds: 900));
 
+      // TEMP DEBUG: dump texts after the guest tap.
+      final afterTap = tester
+          .widgetList<Text>(find.byType(Text))
+          .map((t) => t.data)
+          .whereType<String>()
+          .where((d) => d.isNotEmpty)
+          .toList();
+      expect(afterTap, isEmpty, reason: 'DEBUG-AFTER-TAP');
+
       expect(find.text('Ready to scan?'), findsOneWidget);
 
       // Go to the History tab.
