@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:firebase_auth_platform_interface/firebase_auth_platform_interface.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_core_platform_interface/firebase_core_platform_interface.dart';
-import 'package:flutter/material.dart' show Size;
+import 'package:flutter/material.dart' show Size, Text;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -109,6 +109,17 @@ void main() {
       // Go to the History tab.
       await tester.tap(find.text('History'));
       await _settle(tester);
+
+      // TEMP DEBUG
+      final texts = tester
+          .widgetList<Text>(find.byType(Text))
+          .map((t) => t.data)
+          .whereType<String>()
+          .where((d) => d.isNotEmpty)
+          .take(14)
+          .toList();
+      expect(texts, isEmpty, reason: 'AFTER-HISTORY-TAP');
+
       expect(find.text('Ready to scan?'), findsNothing);
 
       // Press the system back button — must return home, not exit.
