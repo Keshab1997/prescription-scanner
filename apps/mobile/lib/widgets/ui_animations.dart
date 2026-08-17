@@ -30,9 +30,16 @@ class Entrance extends StatelessWidget {
       child: child,
       builder: (context, value, child) => Opacity(
         opacity: value,
-        child: Transform.translate(
-          offset: Offset(0, distance * (1 - value)),
-          child: child,
+        // Isolate the painted subtree in its own layer so Opacity composites
+        // via a save layer instead of pushing inherited opacity down into
+        // clipped/decorated children. On Vulkan/Impeller, the latter triggers
+        // "SetInheritedOpacity should never be called when Contents::
+        // CanAcceptOpacity returns false" and can blank the tab.
+        child: RepaintBoundary(
+          child: Transform.translate(
+            offset: Offset(0, distance * (1 - value)),
+            child: child,
+          ),
         ),
       ),
     );

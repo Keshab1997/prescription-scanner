@@ -96,72 +96,79 @@ class _AnimatedLaunchSplashState extends State<AnimatedLaunchSplash>
         builder: (context, _) {
           return Opacity(
             opacity: _exitOpacity.value,
-            child: DecoratedBox(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Color(0xFFF4FBFA),
-                    Color(0xFFE9F6F5),
-                    Color(0xFFF2F3FF),
-                  ],
+            // Isolate the gradient subtree in its own layer so Opacity
+            // composites via a save layer instead of pushing inherited opacity
+            // into the DecoratedBox. On Vulkan/Impeller this otherwise triggers
+            // "SetInheritedOpacity should never be called when Contents::
+            // CanAcceptOpacity returns false".
+            child: RepaintBoundary(
+              child: DecoratedBox(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Color(0xFFF4FBFA),
+                      Color(0xFFE9F6F5),
+                      Color(0xFFF2F3FF),
+                    ],
+                  ),
                 ),
-              ),
-              child: SafeArea(
-                child: Center(
-                  child: Semantics(
-                    label: 'Prescription Scanner is opening',
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Transform.translate(
-                          offset: Offset(0, _logoLift.value),
-                          child: Transform.scale(
-                            scale: _logoScale.value,
-                            child: Opacity(
-                              opacity: _logoOpacity.value,
-                              child: _AnimatedLogo(
-                                beamPosition: _beamPosition.value,
-                                beamVisible:
-                                    _controller.value >= 0.25 &&
-                                    _controller.value <= 0.78,
+                child: SafeArea(
+                  child: Center(
+                    child: Semantics(
+                      label: 'Prescription Scanner is opening',
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Transform.translate(
+                            offset: Offset(0, _logoLift.value),
+                            child: Transform.scale(
+                              scale: _logoScale.value,
+                              child: Opacity(
+                                opacity: _logoOpacity.value,
+                                child: _AnimatedLogo(
+                                  beamPosition: _beamPosition.value,
+                                  beamVisible:
+                                      _controller.value >= 0.25 &&
+                                      _controller.value <= 0.78,
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                        const SizedBox(height: 28),
-                        Opacity(
-                          opacity: _copyOpacity.value,
-                          child: Transform.translate(
-                            offset: Offset(0, 8 * (1 - _copyOpacity.value)),
-                            child: const Column(
-                              children: [
-                                Text(
-                                  'Prescription Scanner',
-                                  style: TextStyle(
-                                    color: Color(0xFF123A45),
-                                    fontSize: 25,
-                                    height: 1.1,
-                                    fontWeight: FontWeight.w900,
-                                    letterSpacing: -0.7,
+                          const SizedBox(height: 28),
+                          Opacity(
+                            opacity: _copyOpacity.value,
+                            child: Transform.translate(
+                              offset: Offset(0, 8 * (1 - _copyOpacity.value)),
+                              child: const Column(
+                                children: [
+                                  Text(
+                                    'Prescription Scanner',
+                                    style: TextStyle(
+                                      color: Color(0xFF123A45),
+                                      fontSize: 25,
+                                      height: 1.1,
+                                      fontWeight: FontWeight.w900,
+                                      letterSpacing: -0.7,
+                                    ),
                                   ),
-                                ),
-                                SizedBox(height: 8),
-                                Text(
-                                  'Clear medicine details, made simple',
-                                  style: TextStyle(
-                                    color: Color(0xFF64808A),
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w600,
-                                    letterSpacing: 0.1,
+                                  SizedBox(height: 8),
+                                  Text(
+                                    'Clear medicine details, made simple',
+                                    style: TextStyle(
+                                      color: Color(0xFF64808A),
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                      letterSpacing: 0.1,
+                                    ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
