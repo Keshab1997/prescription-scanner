@@ -179,13 +179,17 @@ service cloud.firestore {
 
     // Temporary compatibility for the current direct-Gemini architecture.
     // API keys are not user data; move them behind a backend before production.
+    // Anonymous guests may read the pool too so free scans work without an
+    // account. NOTE: this makes the key pool readable by anyone who knows the
+    // project ID (the client already fetches keys on-device); rotate keys or
+    // move behind a backend proxy for production.
     match /admin_api_keys/{keyId} {
-      allow read: if isAdmin() || isActiveUser();
+      allow read: if isAdmin() || isActiveUser() || !isSignedIn();
       allow write: if isAdmin();
     }
 
     match /admin_key_groups/{groupId} {
-      allow read: if isAdmin() || isActiveUser();
+      allow read: if isAdmin() || isActiveUser() || !isSignedIn();
       allow write: if isAdmin();
     }
 
