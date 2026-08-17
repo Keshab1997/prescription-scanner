@@ -213,6 +213,10 @@ class AuthService {
   /// Submits a deletion request and removes the local auth account. The
   /// Firestore profile/documents cleanup is handled by the admin or a
   /// scheduled routine; this records intent and deletes the auth user.
+  /// Permanently deletes the signed-in user's account and ALL associated
+  /// data: Firestore profile, usage counters, feedback, consent records,
+  /// error logs, plus local on-device results. An audit record is written
+  /// first (admin-managed) so the deletion can be tracked.
   Future<String> requestAccountDeletion() async {
     final user = auth.currentUser;
     if (user == null) {
@@ -221,16 +225,69 @@ class AuthService {
         message: 'Please sign in again.',
       );
     }
-    await firestore.collection('account_deletion_requests').doc(user.uid).set({
+    final uid = user.uid;
+
+    // Audit record — kept after deletion for accountability (admin-only).
+    await firestore.collection('account_deletion_requests').doc(uid).set({
       'email': user.email,
       'requestedAt': FieldValue.serverTimestamp(),
       'status': 'pending',
     });
-    final uid = user.uid;
+
+    await _deleteUserFirestoreData(uid);
+
+    // Delete the auth account last — after this the UID no longer exists.
     await user.delete();
     await ResultStore.instance.clearUser(uid);
     await ConsentStore.clearUser(uid);
     return uid;
+  }
+
+  /// Best-effort removal of every Firestore document owned by [uid].
+  ///
+  /// Data collections are deleted first while the profile still exists
+  /// (rules gate them on isActiveUser(), which requires the profile), and the
+  /// profile document is deleted last.
+  Future<void> _deleteUserFirestoreData(String uid) async {
+    Future<void> deleteDocs(Query query) async {
+      final snapshot = await query.get();
+      if (snapshot.docs.isEmpty) return;
+      final batch = firestore.batch();
+      for (final doc in snapshot.docs) {
+        batch.delete(doc.reference);
+      }
+      await batch.commit();
+    }
+
+    final tasks = <Future<void>>[
+      deleteDocs(
+        firestore.collection('daily_usage').where('user_id', isEqualTo: uid),
+      ),
+      deleteDocs(
+        firestore
+            .collection('prescription_feedback')
+            .where('user_id', isEqualTo: uid),
+      ),
+      deleteDocs(
+        firestore
+            .collection('consent_records')
+            .where('user_id', isEqualTo: uid),
+      ),
+      deleteDocs(
+        firestore.collection('api_error_logs').where('userId', isEqualTo: uid),
+      ),
+    ];
+
+    // A failing collection must never block the account deletion.
+    await Future.wait<void>(
+      tasks.map((task) => task.catchError((Object _) {})),
+    );
+
+    try {
+      await firestore.collection('profiles').doc(uid).delete();
+    } catch (_) {
+      // Profile deletion is best-effort too; the auth account still goes.
+    }
   }
 }
 

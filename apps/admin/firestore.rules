@@ -74,7 +74,8 @@ service cloud.firestore {
         && request.resource.data.updatedAt == request.time
       );
 
-      allow delete: if isAdmin();
+      // A user can delete their own profile as part of account deletion.
+      allow delete: if isAdmin() || isSelf(uid);
     }
 
     match /app_settings/{docId} {
@@ -123,7 +124,10 @@ service cloud.firestore {
         && request.resource.data.failed_count == resource.data.failed_count
         && request.resource.data.updated_at == request.time;
 
-      allow delete: if isAdmin();
+      // Users may delete their own usage rows when deleting their account.
+      allow delete: if isAdmin() || (
+        isActiveUser() && resource.data.user_id == request.auth.uid
+      );
     }
 
     // AI consent is local in the privacy-first app. These rules protect any
@@ -134,7 +138,10 @@ service cloud.firestore {
       );
       allow create: if isActiveUser()
         && request.resource.data.user_id == request.auth.uid;
-      allow update, delete: if isAdmin();
+      // Users may delete their own consent rows when deleting their account.
+      allow update, delete: if isAdmin() || (
+        isActiveUser() && resource.data.user_id == request.auth.uid
+      );
     }
 
     match /prescription_feedback/{docId} {
@@ -159,7 +166,10 @@ service cloud.firestore {
           || validString(request.resource.data.details, 1, 1000)
         )
         && request.resource.data.created_at == request.time;
-      allow update, delete: if isAdmin();
+      // Users may delete their own feedback when deleting their account.
+      allow update, delete: if isAdmin() || (
+        isActiveUser() && resource.data.user_id == request.auth.uid
+      );
     }
 
     match /account_deletion_requests/{uid} {
@@ -194,7 +204,9 @@ service cloud.firestore {
     }
 
     match /api_error_logs/{logId} {
-      allow read: if isAdmin();
+      allow read: if isAdmin() || (
+        isActiveUser() && resource.data.userId == request.auth.uid
+      );
       allow create: if isActiveUser()
         && request.resource.data.keys().hasAll([
           'keyId', 'keyName', 'userId', 'feature', 'errorType',
@@ -223,7 +235,10 @@ service cloud.firestore {
         && request.resource.data.timestamp is timestamp
         && request.resource.data.ttlExpireAt is timestamp;
       allow update: if false;
-      allow delete: if isAdmin();
+      // Users may delete their own error log rows during account deletion.
+      allow delete: if isAdmin() || (
+        isActiveUser() && resource.data.userId == request.auth.uid
+      );
     }
 
     match /admin_audit_logs/{logId} {

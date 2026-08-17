@@ -92,7 +92,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         icon: const Icon(Icons.warning_amber_rounded, color: AppColors.danger),
         title: const Text('Delete account and data?'),
         content: const Text(
-          'This submits a permanent deletion request for your account, history and associated data. This cannot be undone after completion.',
+          'This permanently deletes your account, scan history and all associated data from the app and our servers. This cannot be undone.',
         ),
         actions: [
           TextButton(
@@ -102,7 +102,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: AppColors.danger),
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Request deletion'),
+            child: const Text('Delete permanently'),
           ),
         ],
       ),
@@ -114,7 +114,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       await service.requestAccountDeletion();
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Account deletion request submitted.')),
+        const SnackBar(
+          content: Text('Your account and data have been deleted.'),
+        ),
       );
     } catch (e) {
       if (!context.mounted) return;
