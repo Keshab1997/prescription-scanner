@@ -5,7 +5,6 @@ import 'package:firebase_auth_platform_interface/firebase_auth_platform_interfac
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_core_platform_interface/firebase_core_platform_interface.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter/widgets.dart' show Text;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:prescription_scanner/app.dart';
@@ -88,29 +87,22 @@ void main() {
   testWidgets(
     'back from a shell tab (history) returns to home instead of exiting',
     (tester) async {
+      // Tall viewport so the whole login screen (including the guest button)
+      // is on screen without scrolling.
+      tester.view.physicalSize = const Size(412 * 3, 1000 * 3);
+      tester.view.devicePixelRatio = 3;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
       await tester.pumpWidget(
         const ProviderScope(child: PrescriptionScannerApp()),
       );
       // Wait past the branded launch splash and the login screen entrance.
       await tester.pump(const Duration(milliseconds: 2600));
 
-      // Enter as guest → home. The button sits below the fold on small
-      // screens, so scroll it into view first.
-      final guestButton = find.text('Try a free scan without signing in');
-      await tester.ensureVisible(guestButton);
-      await tester.pump(const Duration(milliseconds: 300));
-      await tester.tap(guestButton);
+      // Enter as guest → home.
+      await tester.tap(find.text('Try a free scan without signing in'));
       await tester.pump(const Duration(milliseconds: 900));
-
-      // TEMP DEBUG: dump texts after the guest tap.
-      final afterTap = tester
-          .widgetList<Text>(find.byType(Text))
-          .map((t) => t.data)
-          .whereType<String>()
-          .where((d) => d.isNotEmpty)
-          .toList();
-      expect(afterTap, isEmpty, reason: 'DEBUG-AFTER-TAP');
-
       expect(find.text('Ready to scan?'), findsOneWidget);
 
       // Go to the History tab.
@@ -122,15 +114,8 @@ void main() {
       await tester.binding.handlePopRoute();
       await tester.pump(const Duration(milliseconds: 900));
 
-      // TEMP DEBUG: dump visible texts (intentionally failing assertion).
-      final texts = tester
-          .widgetList<Text>(find.byType(Text))
-          .map((t) => t.data)
-          .whereType<String>()
-          .where((d) => d.isNotEmpty)
-          .take(14)
-          .toList();
-      expect(texts, isEmpty, reason: 'DEBUG-DUMP');
+      expect(find.text('Ready to scan?'), findsOneWidget);
+      expect(tester.takeException(), isNull);
     },
   );
 }
