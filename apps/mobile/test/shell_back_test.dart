@@ -101,41 +101,31 @@ void main() {
       // Wait past the branded launch splash and the login screen entrance.
       await tester.pump(const Duration(milliseconds: 2600));
 
-      // Enter as guest → home (invoke the button callback directly to rule
-      // out hit-testing issues).
-      final guestButton = find.ancestor(
-        of: find.text('Try a free scan without signing in'),
-        matching: find.bySubtype<TextButton>(),
-      );
-      tester.widget<TextButton>(guestButton).onPressed!();
-      // Multiple pumps so go_router's asynchronous navigation completes.
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 200));
-      await tester.pump(const Duration(milliseconds: 700));
-
-      // TEMP DEBUG
-      final exc = tester.takeException();
-      final texts = tester
-          .widgetList<Text>(find.byType(Text))
-          .map((t) => t.data)
-          .whereType<String>()
-          .where((d) => d.isNotEmpty)
-          .toList();
-      expect(texts, isEmpty, reason: 'AFTER-GUEST-ONPRESSED; exception=$exc');
-
+      // Enter as guest → home.
+      await tester.tap(find.text('Try a free scan without signing in'));
+      await _settle(tester);
       expect(find.text('Ready to scan?'), findsOneWidget);
 
       // Go to the History tab.
       await tester.tap(find.text('History'));
-      await tester.pump(const Duration(milliseconds: 900));
+      await _settle(tester);
       expect(find.text('Ready to scan?'), findsNothing);
 
       // Press the system back button — must return home, not exit.
       await tester.binding.handlePopRoute();
-      await tester.pump(const Duration(milliseconds: 900));
+      await _settle(tester);
 
       expect(find.text('Ready to scan?'), findsOneWidget);
       expect(tester.takeException(), isNull);
     },
   );
+}
+
+/// Pumps several frames so go_router's asynchronous navigation completes
+/// (the home screen has looping animations, so pumpAndSettle would never
+/// settle).
+Future<void> _settle(WidgetTester tester) async {
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 300));
+  await tester.pump(const Duration(milliseconds: 600));
 }
