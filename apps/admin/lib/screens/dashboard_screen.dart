@@ -192,12 +192,7 @@ class _BottomNav extends StatelessWidget {
 }
 
 class _MenuItem extends StatelessWidget {
-  const _MenuItem(
-    this.label,
-    this.icon,
-    this.selected, {
-    this.onTap,
-  });
+  const _MenuItem(this.label, this.icon, this.selected, {this.onTap});
   final String label;
   final IconData icon;
   final bool selected;
