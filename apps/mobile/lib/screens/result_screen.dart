@@ -280,11 +280,51 @@ class ResultScreen extends ConsumerWidget {
                     'The app did not guess unclear handwriting. Try a brighter, closer image.',
               )
             else ...[
-              Text(
-                '${details.medicines.length} medicine${details.medicines.length == 1 ? '' : 's'} found',
-                style: Theme.of(context).textTheme.titleLarge,
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      details.medicines.length == 1
+                          ? 'Medicine found'
+                          : 'Medicines found',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 13,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.tealSoft,
+                      borderRadius: BorderRadius.circular(100),
+                      border: Border.all(
+                        color: AppColors.tealBright.withValues(alpha: 0.35),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.medication_rounded,
+                          size: 15,
+                          color: AppColors.teal,
+                        ),
+                        const SizedBox(width: 5),
+                        Text(
+                          '${details.medicines.length}',
+                          style: const TextStyle(
+                            color: AppColors.teal,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 15,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 12),
               _PatientSummary(
                 details: details,
                 language: ref.watch(resultLanguageProvider),
@@ -310,13 +350,29 @@ class ResultScreen extends ConsumerWidget {
             const SizedBox(height: 18),
             OutlinedButton.icon(
               onPressed: () => reportIssue(context, ref),
-              icon: const Icon(Icons.flag_outlined),
+              icon: const Icon(Icons.flag_outlined, size: 18),
               label: const Text('Report an extraction issue'),
             ),
             const SizedBox(height: 10),
             FilledButton(
               onPressed: () => context.go('/home'),
-              child: const Text('Done'),
+              style: FilledButton.styleFrom(
+                backgroundColor: Colors.transparent,
+              ),
+              child: Ink(
+                decoration: BoxDecoration(
+                  gradient: AppColors.brandGradient,
+                  borderRadius: BorderRadius.circular(17),
+                ),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.check_circle_outline_rounded, size: 20),
+                    SizedBox(width: 8),
+                    Text('Done'),
+                  ],
+                ),
+              ),
             ),
             const SizedBox(height: 18),
             const Text(
@@ -443,36 +499,58 @@ class _PatientSummary extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: AppColors.indigoSoft,
-        borderRadius: BorderRadius.circular(16),
+        gradient: const LinearGradient(
+          colors: [AppColors.indigoSoft, Color(0xFFF4F2FF)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(color: const Color(0xFFD9E3FF)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              const Icon(
-                Icons.record_voice_over_rounded,
-                color: AppColors.indigo,
-                size: 18,
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.fromLTRB(14, 12, 14, 11),
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [AppColors.indigoBright, AppColors.indigo],
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  _headerText(language),
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w900,
-                    color: AppColors.indigo,
+            ),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.record_voice_over_rounded,
+                  color: Colors.white,
+                  size: 16,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    _headerText(language),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                      fontSize: 13,
+                      height: 1.35,
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-          const SizedBox(height: 10),
-          ...lines,
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: lines,
+            ),
+          ),
         ],
       ),
     );
@@ -582,23 +660,48 @@ class _MedicineCard extends StatelessWidget {
     final confidence = (medicine.confidence * 100).round();
     final friendly = language.pickSummary(medicine);
 
+    final tagChips = <Widget>[
+      if (medicine.strength != null)
+        _TagChip(
+          icon: Icons.straighten_rounded,
+          label: medicine.strength!,
+          color: AppColors.indigo,
+          background: AppColors.indigoSoft,
+        ),
+      if (medicine.dosage != null)
+        _TagChip(
+          icon: Icons.science_rounded,
+          label: medicine.dosage!,
+          color: AppColors.teal,
+          background: AppColors.tealSoft,
+        ),
+      if (medicine.frequency != null)
+        _TagChip(
+          icon: Icons.repeat_rounded,
+          label: medicine.frequency!,
+          color: const Color(0xFFB45309),
+          background: AppColors.amberSoft,
+        ),
+    ];
+
     return Card(
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: () => _showMedicineDetail(context, medicine, language),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+          padding: const EdgeInsets.all(14),
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                width: 38,
-                height: 38,
+                width: 42,
+                height: 42,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   color: medicine.needsReview
                       ? AppColors.amberSoft
                       : AppColors.tealSoft,
-                  borderRadius: BorderRadius.circular(11),
+                  borderRadius: BorderRadius.circular(13),
                 ),
                 child: Text(
                   medicine.position.toString().padLeft(2, '0'),
@@ -607,6 +710,7 @@ class _MedicineCard extends StatelessWidget {
                         ? const Color(0xFFA56100)
                         : AppColors.teal,
                     fontWeight: FontWeight.w900,
+                    fontSize: 15,
                   ),
                 ),
               ),
@@ -617,18 +721,32 @@ class _MedicineCard extends StatelessWidget {
                   children: [
                     Text(
                       medicine.name,
-                      style: const TextStyle(fontWeight: FontWeight.w900),
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      friendly,
                       style: const TextStyle(
-                        color: AppColors.muted,
-                        fontSize: 12,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 15,
                       ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
                     ),
+                    if (friendly != medicine.name) ...[
+                      const SizedBox(height: 3),
+                      Text(
+                        friendly,
+                        style: const TextStyle(
+                          color: AppColors.muted,
+                          fontSize: 12,
+                          height: 1.35,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                    if (tagChips.isNotEmpty) ...[
+                      const SizedBox(height: 9),
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
+                        children: tagChips,
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -636,20 +754,33 @@ class _MedicineCard extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Text(
-                    '$confidence%',
-                    style: TextStyle(
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 7,
+                      vertical: 3,
+                    ),
+                    decoration: BoxDecoration(
                       color: medicine.needsReview
-                          ? const Color(0xFFA56100)
-                          : AppColors.success,
-                      fontWeight: FontWeight.w900,
+                          ? AppColors.amberSoft
+                          : AppColors.tealSoft,
+                      borderRadius: BorderRadius.circular(100),
+                    ),
+                    child: Text(
+                      '$confidence%',
+                      style: TextStyle(
+                        color: medicine.needsReview
+                            ? const Color(0xFFA56100)
+                            : AppColors.success,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 12,
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: 8),
                   const Icon(
                     Icons.chevron_right_rounded,
                     color: AppColors.muted,
-                    size: 16,
+                    size: 18,
                   ),
                 ],
               ),
@@ -659,6 +790,43 @@ class _MedicineCard extends StatelessWidget {
       ),
     );
   }
+}
+
+class _TagChip extends StatelessWidget {
+  const _TagChip({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.background,
+  });
+  final IconData icon;
+  final String label;
+  final Color color;
+  final Color background;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+    decoration: BoxDecoration(
+      color: background,
+      borderRadius: BorderRadius.circular(100),
+    ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 12, color: color),
+        const SizedBox(width: 4),
+        Text(
+          label,
+          style: TextStyle(
+            color: color,
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ],
+    ),
+  );
 }
 
 void _showMedicineDetail(

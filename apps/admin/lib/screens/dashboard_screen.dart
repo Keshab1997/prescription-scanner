@@ -43,25 +43,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   bool _handleKey(KeyEvent event) {
     if (event is! KeyDownEvent) return false;
-    // Digits 1–6 jump to the matching sidebar item.
-    final digitKeys = {
-      LogicalKeyboardKey.digit1: 0,
-      LogicalKeyboardKey.numpad1: 0,
-      LogicalKeyboardKey.digit2: 1,
-      LogicalKeyboardKey.numpad2: 1,
-      LogicalKeyboardKey.digit3: 2,
-      LogicalKeyboardKey.numpad3: 2,
-      LogicalKeyboardKey.digit4: 3,
-      LogicalKeyboardKey.numpad4: 3,
-      LogicalKeyboardKey.digit5: 4,
-      LogicalKeyboardKey.numpad5: 4,
-      LogicalKeyboardKey.digit6: 5,
-      LogicalKeyboardKey.numpad6: 5,
-    };
-    final idx = digitKeys[event.logicalKey];
-    if (idx != null && idx < _menu.length) {
-      setState(() => _selected = _menu[idx].$1);
-      return true;
+    // Never intercept keys while the user is typing in a text field.
+    final primaryFocus = FocusManager.instance.primaryFocus;
+    if (primaryFocus?.context != null &&
+        primaryFocus!.context!.findAncestorWidgetOfExactType<EditableText>() !=
+            null) {
+      return false;
     }
     if (event.logicalKey == LogicalKeyboardKey.escape) {
       setState(() => _selected = 'Dashboard');
@@ -152,7 +139,6 @@ class _Sidebar extends StatelessWidget {
               menu[i].$1,
               menu[i].$2,
               selected == menu[i].$1,
-              i,
               onTap: () => onSelect(menu[i].$1),
             ),
           const Spacer(),
@@ -209,14 +195,12 @@ class _MenuItem extends StatelessWidget {
   const _MenuItem(
     this.label,
     this.icon,
-    this.selected,
-    this.index, {
+    this.selected, {
     this.onTap,
   });
   final String label;
   final IconData icon;
   final bool selected;
-  final int index;
   final VoidCallback? onTap;
 
   @override
@@ -242,24 +226,6 @@ class _MenuItem extends StatelessWidget {
             Text(
               label,
               style: TextStyle(color: selected ? Colors.white : Colors.white60),
-            ),
-            const Spacer(),
-            Container(
-              width: 20,
-              height: 20,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: Colors.white10,
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Text(
-                '${index + 1}',
-                style: const TextStyle(
-                  color: Colors.white54,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
             ),
           ],
         ),
