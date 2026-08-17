@@ -24,6 +24,7 @@
 ## ✨ Key features
 
 - 📸 **Camera-first scanning** — capture or pick a prescription photo, with automatic image compression and validation.
+- 🆓 **Free guest scans** — try **1 free scan per day** without an account, then sign in to unlock **2 more free scans** (3/day in total).
 - 🧠 **Direct Gemini vision** — the prepared image is sent straight to Google Gemini (`gemini-2.5-flash`); no backend proxy involved.
 - 📋 **Structured results** — AI output is parsed and repaired into a consistent JSON medicine list (medicine, dosage, frequency, duration, notes).
 - 💾 **On-device history** — results are stored locally in **Hive**, scoped to the signed-in user's UID; delete anytime.

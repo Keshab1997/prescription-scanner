@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:prescription_scanner/models/extracted_prescription.dart';
+import 'package:prescription_scanner/services/prescription_repository.dart';
 import 'package:prescription_scanner/services/result_store.dart';
 import 'package:prescription_scanner/theme.dart';
 import 'package:prescription_scanner/widgets/ui_animations.dart';
@@ -27,10 +28,8 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final ownerUid = fb.FirebaseAuth.instance.currentUser?.uid;
-    final items = ownerUid == null
-        ? const <ExtractedPrescription>[]
-        : ResultStore.instance.getAll(ownerUid);
+    final ownerUid = fb.FirebaseAuth.instance.currentUser?.uid ?? guestOwnerUid;
+    final items = ResultStore.instance.getAll(ownerUid);
     return Scaffold(
       body: SafeArea(
         bottom: false,

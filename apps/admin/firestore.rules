@@ -78,7 +78,9 @@ service cloud.firestore {
     }
 
     match /app_settings/{docId} {
-      allow read: if isAdmin() || isActiveUser();
+      // Public runtime config (daily limit, AI switch, maintenance mode).
+      // Anonymous guests read it too so free scans honour the same switches.
+      allow read: if isAdmin() || isActiveUser() || !isSignedIn();
       allow write: if isAdmin();
     }
 

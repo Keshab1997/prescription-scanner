@@ -253,6 +253,22 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               child: const Text('New here? Create an account'),
                             ),
                           ),
+                          const SizedBox(height: 4),
+                          Entrance(
+                            delay: const Duration(milliseconds: 600),
+                            child: TextButton.icon(
+                              onPressed: loading
+                                  ? null
+                                  : () => context.go('/home'),
+                              icon: const Icon(
+                                Icons.document_scanner_outlined,
+                                size: 18,
+                              ),
+                              label: const Text(
+                                'Try a free scan without signing in',
+                              ),
+                            ),
+                          ),
                           const SizedBox(height: 14),
                           Entrance(
                             delay: const Duration(milliseconds: 620),

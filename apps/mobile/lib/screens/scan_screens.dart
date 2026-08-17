@@ -103,25 +103,24 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
       error = null;
     });
     try {
-      var currentUser = fb.FirebaseAuth.instance.currentUser;
-      if (currentUser == null) {
-        throw const VisionException(
-          'Please sign in again before scanning.',
-          statusCode: 401,
-        );
+      // Anonymous guests are allowed a small number of free scans per day;
+      // signed-in users keep the (larger) account allowance. Guests still
+      // verify email only after creating an account.
+      final currentUser = fb.FirebaseAuth.instance.currentUser;
+      final ownerUid = currentUser?.uid ?? guestOwnerUid;
+      if (currentUser != null) {
+        await currentUser.reload();
+        final refreshedUser = fb.FirebaseAuth.instance.currentUser;
+        if (refreshedUser == null || !refreshedUser.emailVerified) {
+          throw const VisionException(
+            'Verify your email, then sign out and sign in again before scanning.',
+            statusCode: 403,
+          );
+        }
+        // Refresh the ID token so Firestore receives the latest email_verified
+        // claim immediately after the user clicks the verification link.
+        await refreshedUser.getIdToken(true);
       }
-      await currentUser.reload();
-      currentUser = fb.FirebaseAuth.instance.currentUser;
-      if (currentUser == null || !currentUser.emailVerified) {
-        throw const VisionException(
-          'Verify your email, then sign out and sign in again before scanning.',
-          statusCode: 403,
-        );
-      }
-      // Refresh the ID token so Firestore receives the latest email_verified
-      // claim immediately after the user clicks the verification link.
-      await currentUser.getIdToken(true);
-      final ownerUid = currentUser.uid;
 
       final repository = ref.read(prescriptionRepositoryProvider);
       final quota = await repository.loadQuota(ownerUid);
@@ -132,6 +131,36 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
         );
       }
       if (quota.remaining <= 0) {
+        if (quota.isGuest && mounted) {
+          // Free guest scan used up: invite the user to sign in for more.
+          final signIn = await showDialog<bool>(
+            context: context,
+            barrierDismissible: false,
+            builder: (dialogContext) => AlertDialog(
+              icon: const Icon(Icons.lock_open_rounded, color: AppColors.teal),
+              title: const Text('Free scan used up'),
+              content: const Text(
+                'You have used your free scan for today. Sign in to unlock 2 more free scans.',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext, false),
+                  child: const Text('Not now'),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.pop(dialogContext, true),
+                  child: const Text('Sign in'),
+                ),
+              ],
+            ),
+          );
+          if (signIn == true) {
+            if (mounted) context.go('/login');
+            return;
+          }
+          if (mounted) setState(() => uploading = false);
+          return;
+        }
         throw const VisionException(
           'You have used today’s scan limit. Please try again tomorrow.',
           statusCode: 429,
@@ -174,10 +203,10 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
       final result = await vision.processImage(selected.path, localId: localId);
       await ResultStore.instance.save(ownerUid, result);
 
-      // Record quota/usage in the signed-in user's Firestore document. A
-      // metrics failure must not discard an otherwise successful local result.
+      // Record quota/usage (Firestore for signed-in users, local Hive for
+      // guests). A metrics failure must not discard a successful result.
       try {
-        await repository.recordSuccessfulScan();
+        await repository.recordSuccessfulScan(ownerUid: ownerUid);
       } catch (exception) {
         debugPrint('[scan] Could not record per-user usage: $exception');
       }
@@ -681,10 +710,9 @@ class _ProcessingScreenState extends ConsumerState<ProcessingScreen>
       // The vision call already ran on the upload screen; the result is stored
       // locally. Show it immediately instead of a fixed fake spinner delay.
       await Future<void>.delayed(const Duration(milliseconds: 350));
-      final ownerUid = fb.FirebaseAuth.instance.currentUser?.uid;
-      final result = ownerUid == null
-          ? null
-          : ResultStore.instance.get(ownerUid, widget.prescriptionId);
+      final ownerUid =
+          fb.FirebaseAuth.instance.currentUser?.uid ?? guestOwnerUid;
+      final result = ResultStore.instance.get(ownerUid, widget.prescriptionId);
       if (result == null) {
         if (mounted) {
           setState(

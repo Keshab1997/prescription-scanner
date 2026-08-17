@@ -34,7 +34,7 @@ class _AppShellState extends State<AppShell> {
       builder: (dialogContext) => AlertDialog(
         title: const Text('Exit app?'),
         content: const Text(
-          'Your account will remain signed in for the next time you open the app.',
+          'Everything stays saved on this device for your next visit.',
         ),
         actions: [
           TextButton(

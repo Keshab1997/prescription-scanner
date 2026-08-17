@@ -14,7 +14,8 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(authServiceProvider).currentUser;
-    final displayName = user?.displayName?.trim();
+    final signedIn = user != null && user.emailVerified;
+    final displayName = signedIn ? user?.displayName?.trim() : null;
     final nameParts =
         displayName
             ?.split(RegExp(r'\s+'))
@@ -34,7 +35,8 @@ class HomeScreen extends ConsumerWidget {
             Entrance(
               child: _HomeHeader(
                 firstName: firstName,
-                initials: _initials(displayName),
+                initials: signedIn ? _initials(displayName) : 'G',
+                signedIn: signedIn,
               ),
             ),
             const SizedBox(height: 24),
@@ -61,6 +63,14 @@ class HomeScreen extends ConsumerWidget {
                 child: _QuotaCard(quota: value),
               ),
             ),
+            if (!signedIn && (quota.value?.used ?? 0) >= 1)
+              Entrance(
+                delay: const Duration(milliseconds: 220),
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 12),
+                  child: _GuestLoginBanner(onLogin: () => context.go('/login')),
+                ),
+              ),
             const SizedBox(height: 24),
             Entrance(
               delay: const Duration(milliseconds: 240),
@@ -153,10 +163,15 @@ class HomeScreen extends ConsumerWidget {
 }
 
 class _HomeHeader extends StatelessWidget {
-  const _HomeHeader({required this.firstName, required this.initials});
+  const _HomeHeader({
+    required this.firstName,
+    required this.initials,
+    required this.signedIn,
+  });
 
   final String? firstName;
   final String initials;
+  final bool signedIn;
 
   @override
   Widget build(BuildContext context) {
@@ -191,7 +206,7 @@ class _HomeHeader extends StatelessWidget {
           ),
         ),
         ScaleTap(
-          onTap: () => context.go('/profile'),
+          onTap: () => context.go(signedIn ? '/profile' : '/login'),
           pressedScale: 0.92,
           borderRadius: BorderRadius.circular(16),
           child: Container(
@@ -518,9 +533,12 @@ class _QuotaCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  unavailable
-                      ? 'AI temporarily unavailable'
-                      : '${quota.remaining} scans remaining',
+                  switch ((unavailable, quota.isGuest, quota.remaining > 0)) {
+                    (true, _, _) => 'AI temporarily unavailable',
+                    (false, true, true) => 'Free scan available',
+                    (false, true, false) => 'Free scan used',
+                    _ => '${quota.remaining} scans remaining',
+                  },
                   style: const TextStyle(
                     fontWeight: FontWeight.w800,
                     color: Colors.white,
@@ -530,9 +548,12 @@ class _QuotaCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  unavailable
-                      ? 'Please try again later'
-                      : '${quota.used} used today · resets daily',
+                  switch ((unavailable, quota.isGuest, quota.remaining > 0)) {
+                    (true, _, _) => 'Please try again later',
+                    (false, true, true) => 'Sign in for 2 more free scans',
+                    (false, true, false) => 'Sign in to unlock 2 more today',
+                    _ => '${quota.used} used today · resets daily',
+                  },
                   style: TextStyle(
                     color: Colors.white.withValues(alpha: 0.85),
                     fontSize: 13,
@@ -734,4 +755,57 @@ class _EmptyRecent extends StatelessWidget {
       ),
     ),
   );
+}
+
+class _GuestLoginBanner extends StatelessWidget {
+  const _GuestLoginBanner({required this.onLogin});
+
+  final VoidCallback onLogin;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [AppColors.tealSoft, Colors.white],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.line),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.person_add_alt_1_rounded, color: AppColors.teal),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: const [
+                Text(
+                  'Unlock more free scans',
+                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
+                ),
+                SizedBox(height: 2),
+                Text(
+                  'Log in to get 2 more free scans today.',
+                  style: TextStyle(color: AppColors.muted, fontSize: 12.5),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          FilledButton(
+            onPressed: onLogin,
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.teal,
+              padding: const EdgeInsets.symmetric(horizontal: 18),
+            ),
+            child: const Text('Log in'),
+          ),
+        ],
+      ),
+    );
+  }
 }

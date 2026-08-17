@@ -92,8 +92,8 @@ class ResultScreen extends ConsumerWidget {
     if (confirmed != true || !context.mounted) return;
 
     try {
-      final ownerUid = fb.FirebaseAuth.instance.currentUser?.uid;
-      if (ownerUid == null) throw StateError('No signed-in user.');
+      final ownerUid =
+          fb.FirebaseAuth.instance.currentUser?.uid ?? guestOwnerUid;
       await ResultStore.instance.delete(ownerUid, prescriptionId);
       ref.invalidate(recentPrescriptionsProvider);
       ref.invalidate(prescriptionHistoryProvider);
@@ -214,10 +214,8 @@ class ResultScreen extends ConsumerWidget {
       return const _ResultError(message: 'Prescription ID is missing.');
     }
 
-    final ownerUid = fb.FirebaseAuth.instance.currentUser?.uid;
-    final details = ownerUid == null
-        ? null
-        : ResultStore.instance.get(ownerUid, prescriptionId);
+    final ownerUid = fb.FirebaseAuth.instance.currentUser?.uid ?? guestOwnerUid;
+    final details = ResultStore.instance.get(ownerUid, prescriptionId);
     if (details == null) {
       return const _ResultError(message: 'The result could not be found.');
     }
@@ -741,11 +739,7 @@ class _MedicineCard extends StatelessWidget {
                     ],
                     if (tagChips.isNotEmpty) ...[
                       const SizedBox(height: 9),
-                      Wrap(
-                        spacing: 6,
-                        runSpacing: 6,
-                        children: tagChips,
-                      ),
+                      Wrap(spacing: 6, runSpacing: 6, children: tagChips),
                     ],
                   ],
                 ),

@@ -26,7 +26,21 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 
       final user = fb.FirebaseAuth.instance.currentUser;
       final signedIn = user != null && user.emailVerified;
-      if (!signedIn && !isAuthRoute) return '/login';
+
+      // Anonymous guests may scan and view their on-device results/history
+      // without an account. Account-only areas (profile, settings) still
+      // redirect to the login screen.
+      const guestAllowedPaths = {
+        '/home',
+        '/history',
+        '/upload',
+        '/processing',
+        '/result',
+      };
+      if (!signedIn && !isAuthRoute) {
+        if (guestAllowedPaths.contains(path)) return null;
+        return '/login';
+      }
       if (signedIn &&
           (path == '/login' ||
               path == '/register' ||
