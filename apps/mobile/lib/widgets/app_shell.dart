@@ -182,9 +182,9 @@ class _NavItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Expanded(
-      child: ScaleTap(
+      child: GestureDetector(
         onTap: onTap,
-        pressedScale: 0.92,
+        behavior: HitTestBehavior.opaque,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 260),
           curve: Curves.easeOutCubic,
