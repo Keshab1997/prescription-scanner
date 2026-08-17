@@ -17,7 +17,7 @@
 ## 🚨 Supabase removed
 
 > ✅ **Supabase সম্পূর্ণ বাদ দেওয়া হয়েছে।** অ্যাপটি এখন সম্পূর্ণ **Firebase-ভিত্তিক** চলে — কোনো Supabase client, Edge Function বা ডেটাবেস ব্যবহার হয় না।  
-> The app no longer uses Supabase. All runtime code is Firebase-based. The `supabase/` folder in this repository is **legacy archive only** (kept for reference, not used at runtime) and can be safely deleted.
+> The app no longer uses Supabase. All runtime code is Firebase-based, and the legacy `supabase/` folder and `docs/supabase_*` files have been **removed from this repository**.
 
 ---
 
