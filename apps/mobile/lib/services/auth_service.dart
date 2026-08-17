@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:prescription_scanner/services/consent_store.dart';
+import 'package:prescription_scanner/services/analytics_service.dart';
 import 'package:prescription_scanner/services/disposable_email.dart';
 import 'package:prescription_scanner/services/result_store.dart';
 
@@ -61,6 +64,7 @@ class AuthService {
         message: 'This account has been blocked by an administrator.',
       );
     }
+    unawaited(AnalyticsService.logLogin());
     return true;
   }
 
@@ -82,6 +86,7 @@ class AuthService {
       email: email.trim(),
       displayName: displayName.trim(),
     );
+    unawaited(AnalyticsService.logSignUp());
     await user.sendEmailVerification();
     await auth.signOut();
     return false;
@@ -240,6 +245,7 @@ class AuthService {
     await user.delete();
     await ResultStore.instance.clearUser(uid);
     await ConsentStore.clearUser(uid);
+    unawaited(AnalyticsService.logAccountDeleted());
     return uid;
   }
 

@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:uuid/uuid.dart';
+import 'package:prescription_scanner/services/analytics_service.dart';
 import 'package:prescription_scanner/services/consent_store.dart';
 import 'package:prescription_scanner/services/gemini_vision_service.dart';
 import 'package:prescription_scanner/services/prescription_repository.dart';
@@ -108,6 +109,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
       // verify email only after creating an account.
       final currentUser = fb.FirebaseAuth.instance.currentUser;
       final ownerUid = currentUser?.uid ?? guestOwnerUid;
+      unawaited(AnalyticsService.logScanStarted(guest: currentUser == null));
       if (currentUser != null) {
         await currentUser.reload();
         final refreshedUser = fb.FirebaseAuth.instance.currentUser;
@@ -202,6 +204,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
       final localId = const Uuid().v4();
       final result = await vision.processImage(selected.path, localId: localId);
       await ResultStore.instance.save(ownerUid, result);
+      unawaited(AnalyticsService.logScanSucceeded(guest: currentUser == null));
 
       // Record quota/usage (Firestore for signed-in users, local Hive for
       // guests). A metrics failure must not discard a successful result.
@@ -222,6 +225,9 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
         '/processing?prescriptionId=${Uri.encodeComponent(result.id)}',
       );
     } on VisionException catch (exception) {
+      unawaited(
+        AnalyticsService.logScanFailed(reason: exception.statusCode.toString()),
+      );
       if (mounted) setState(() => error = exception.message);
     } on FirebaseException catch (exception, stackTrace) {
       debugPrint('[scan] Firebase ${exception.code}: ${exception.message}');
