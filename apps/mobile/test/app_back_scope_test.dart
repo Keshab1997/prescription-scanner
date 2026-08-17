@@ -174,6 +174,41 @@ void main() {
     expect(find.text('HOME PAGE'), findsOneWidget);
   });
 
+  testWidgets('back from a tapped shell tab returns to home', (tester) async {
+    final router = GoRouter(
+      initialLocation: '/home',
+      routes: [
+        ShellRoute(
+          builder: (_, state, child) =>
+              AppShell(currentPath: state.uri.path, child: child),
+          routes: [
+            GoRoute(
+              path: '/home',
+              builder: (_, _) => const Center(child: Text('HOME PAGE')),
+            ),
+            GoRoute(
+              path: '/history',
+              builder: (_, _) => const Center(child: Text('HISTORY PAGE')),
+            ),
+          ],
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
+    await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+    await tester.pump();
+
+    await tester.tap(find.text('History'));
+    await tester.pumpAndSettle();
+    expect(find.text('HISTORY PAGE'), findsOneWidget);
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+
+    expect(find.text('HOME PAGE'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('shell route onExit guards must not block tab navigation', (
     tester,
   ) async {

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -63,14 +65,24 @@ class _AppShellState extends State<AppShell> {
   Widget build(BuildContext context) {
     return BackButtonListener(
       onBackButtonPressed: _onBackButtonPressed,
-      child: Scaffold(
-        extendBody: true,
-        body: widget.child,
-        floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-        floatingActionButton: _ScanFab(onTap: () => context.push('/upload')),
-        bottomNavigationBar: _FloatingNavBar(
-          currentPath: widget.currentPath,
-          onChanged: (path) => context.go(path),
+      child: PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, _) {
+          if (didPop) return;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) unawaited(_onBackButtonPressed());
+          });
+        },
+        child: Scaffold(
+          extendBody: true,
+          body: widget.child,
+          floatingActionButtonLocation:
+              FloatingActionButtonLocation.centerDocked,
+          floatingActionButton: _ScanFab(onTap: () => context.push('/upload')),
+          bottomNavigationBar: _FloatingNavBar(
+            currentPath: widget.currentPath,
+            onChanged: (path) => context.go(path),
+          ),
         ),
       ),
     );
