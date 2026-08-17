@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:firebase_auth_platform_interface/firebase_auth_platform_interface.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_core_platform_interface/firebase_core_platform_interface.dart';
-import 'package:flutter/widgets.dart' show Size;
+import 'package:flutter/widgets.dart' show Size, Text;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -104,6 +104,16 @@ void main() {
       // Enter as guest → home.
       await tester.tap(find.text('Try a free scan without signing in'));
       await tester.pump(const Duration(milliseconds: 900));
+
+      // TEMP DEBUG
+      final texts = tester
+          .widgetList<Text>(find.byType(Text))
+          .map((t) => t.data)
+          .whereType<String>()
+          .where((d) => d.isNotEmpty)
+          .toList();
+      expect(texts, isEmpty, reason: 'AFTER-GUEST-TAP');
+
       expect(find.text('Ready to scan?'), findsOneWidget);
 
       // Go to the History tab.
