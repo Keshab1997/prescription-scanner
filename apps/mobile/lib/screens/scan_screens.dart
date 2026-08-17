@@ -166,65 +166,24 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
     );
   }
 
-  Future<bool> _confirmCameraPermission() async {
-    final allowed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        icon: const Icon(Icons.photo_camera_outlined, color: AppColors.teal),
-        title: const Text(LegalCopy.cameraRationaleTitle),
-        content: const Text(LegalCopy.cameraRationale),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Not now'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('Allow camera'),
-          ),
-        ],
-      ),
-    );
-    if (allowed != true) return false;
-    return MediaPermissions.ensureCamera();
-  }
-
-  Future<bool> _confirmGalleryPermission() async {
-    final allowed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        icon: const Icon(Icons.photo_library_outlined, color: AppColors.teal),
-        title: const Text('Photos access'),
-        content: const Text(
-          'Gallery is used only to pick a prescription photo you already have. The app does not browse your whole library in the background.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Not now'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('Allow photos'),
-          ),
-        ],
-      ),
-    );
-    if (allowed != true) return false;
-    return MediaPermissions.ensureGallery();
-  }
-
   Future<void> selectImage(ImageSource source) async {
     final consentReady =
         aiConsentGranted || await _ensureAiConsentBeforeScan(showError: true);
     if (!consentReady || !mounted) return;
-    if (source == ImageSource.camera) {
-      final cameraOk = await _confirmCameraPermission();
-      if (!cameraOk || !mounted) return;
-    } else if (source == ImageSource.gallery) {
-      final galleryOk = await _confirmGalleryPermission();
-      if (!galleryOk || !mounted) return;
+    // Already-granted permissions skip the OS dialog. Ask only if still denied.
+    final allowed = source == ImageSource.camera
+        ? await MediaPermissions.ensureCamera()
+        : await MediaPermissions.ensureGallery();
+    if (!allowed) {
+      if (mounted) {
+        setState(
+          () => error =
+              'Camera or photos permission is off. Enable it in system settings to scan.',
+        );
+      }
+      return;
     }
+    if (!mounted) return;
 
     final service = ref.read(prescriptionUploadServiceProvider);
     setState(() {
