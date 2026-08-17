@@ -1,11 +1,14 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:firebase_auth_platform_interface/firebase_auth_platform_interface.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_core_platform_interface/firebase_core_platform_interface.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:prescription_scanner/app.dart';
+import 'package:prescription_scanner/services/result_store.dart';
 
 class _MockFirebaseAppPlatform extends FirebaseAppPlatform {
   _MockFirebaseAppPlatform(super.name, super.options);
@@ -64,10 +67,21 @@ class _MockAuthPlatform extends FirebaseAuthPlatform {
 }
 
 void main() {
+  late Directory tempDir;
+
   setUpAll(() async {
     FirebasePlatform.instance = _MockFirebasePlatform();
     await Firebase.initializeApp();
     FirebaseAuthPlatform.instance = _MockAuthPlatform();
+
+    tempDir = await Directory.systemTemp.createTemp('hive_shell_back_test');
+    Hive.init(tempDir.path);
+    await ResultStore.init();
+  });
+
+  tearDownAll(() async {
+    await Hive.close();
+    if (tempDir.existsSync()) tempDir.deleteSync(recursive: true);
   });
 
   testWidgets(
@@ -79,21 +93,25 @@ void main() {
       // Wait past the branded launch splash and the login screen entrance.
       await tester.pump(const Duration(milliseconds: 2600));
 
-      // Enter as guest → home.
-      await tester.tap(find.text('Try a free scan without signing in'));
-      await tester.pump(const Duration(milliseconds: 800));
+      // Enter as guest → home. The button sits below the fold on small
+      // screens, so scroll it into view first.
+      final guestButton = find.text('Try a free scan without signing in');
+      await tester.ensureVisible(guestButton);
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.tap(guestButton);
+      await tester.pump(const Duration(milliseconds: 900));
+
       expect(find.text('Ready to scan?'), findsOneWidget);
 
-      // Go to History tab.
+      // Go to the History tab.
       await tester.tap(find.text('History'));
-      await tester.pump(const Duration(milliseconds: 800));
+      await tester.pump(const Duration(milliseconds: 900));
       expect(find.text('Ready to scan?'), findsNothing);
 
-      // Press the system back button.
+      // Press the system back button — must return home, not exit.
       await tester.binding.handlePopRoute();
-      await tester.pump(const Duration(milliseconds: 800));
+      await tester.pump(const Duration(milliseconds: 900));
 
-      // Must be back on home — NOT exited.
       expect(find.text('Ready to scan?'), findsOneWidget);
       expect(tester.takeException(), isNull);
     },
