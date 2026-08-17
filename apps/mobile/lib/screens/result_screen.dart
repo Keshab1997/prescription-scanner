@@ -273,7 +273,7 @@ class ResultScreen extends ConsumerWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (sheetContext) => _MedicineEditSheet(
+      builder: (sheetContext) => MedicineEditSheet(
         name: name,
         strength: strength,
         dosage: dosage,
