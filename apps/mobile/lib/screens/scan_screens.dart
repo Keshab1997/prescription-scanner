@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
 
+import 'package:admin_api_key_manager/admin_api_key_manager.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fb;
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
@@ -29,18 +30,28 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
   PreparedPrescription? draft;
   late final PrescriptionUploadService _uploadService;
   bool preparing = false;
-  bool uploading = false;
+  bool scanning = false;
+  bool checkingConsent = false;
+  bool aiConsentGranted = false;
   String? error;
 
-  bool get busy => preparing || uploading;
+  bool get busy => preparing || scanning || checkingConsent;
+  bool get _showProgressOverlay => preparing || scanning;
+  bool get _canScan => !busy && aiConsentGranted;
+  String get _progressTitle => preparing ? 'Preparing image…' : 'Scanning with AI…';
+  String get _progressMessage => preparing
+      ? 'Creating a clear, optimized local copy before AI transcription.'
+      : 'Sending the prepared image to Google Gemini for transcription.';
 
   @override
   void initState() {
     super.initState();
     _uploadService = ref.read(prescriptionUploadServiceProvider);
-    WidgetsBinding.instance.addPostFrameCallback(
-      (_) => recoverInterruptedPick(),
-    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      recoverInterruptedPick();
+      unawaited(_warmUpScanDependencies());
+      unawaited(_ensureAiConsentBeforeScan());
+    });
   }
 
   @override
@@ -63,7 +74,90 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
     }
   }
 
+  String get _ownerUid => fb.FirebaseAuth.instance.currentUser?.uid ?? guestOwnerUid;
+
+  Future<void> _warmUpScanDependencies() async {
+    try {
+      final currentUser = fb.FirebaseAuth.instance.currentUser;
+      if (currentUser != null) {
+        await currentUser.reload();
+        final refreshedUser = fb.FirebaseAuth.instance.currentUser;
+        if (refreshedUser?.emailVerified == true) {
+          await refreshedUser!.getIdToken(true);
+        }
+      }
+      final ownerUid = fb.FirebaseAuth.instance.currentUser?.uid ?? guestOwnerUid;
+      unawaited(ref.read(prescriptionRepositoryProvider).loadQuota(ownerUid));
+      ApiKeyManager.instance.initialize();
+      unawaited(ApiKeyManager.instance.ensureReady());
+    } catch (exception) {
+      debugPrint('[scan] Warm-up skipped: $exception');
+    }
+  }
+
+  Future<bool> _ensureAiConsentBeforeScan({bool showError = false}) async {
+    if (checkingConsent) return aiConsentGranted;
+    setState(() => checkingConsent = true);
+    try {
+      final ownerUid = _ownerUid;
+      final hasConsent = await ConsentStore.hasAiConsent(ownerUid);
+      if (hasConsent) {
+        if (mounted) setState(() => aiConsentGranted = true);
+        return true;
+      }
+      if (!mounted) return false;
+      final accepted = await _showAiConsentDialog();
+      if (accepted != true) {
+        if (mounted && showError) {
+          setState(
+            () => error =
+                'Please allow AI transcription consent before scanning an image.',
+          );
+        }
+        return false;
+      }
+      await ConsentStore.grantAiConsent(ownerUid);
+      if (mounted) {
+        setState(() {
+          aiConsentGranted = true;
+          error = null;
+        });
+      }
+      return true;
+    } finally {
+      if (mounted) setState(() => checkingConsent = false);
+    }
+  }
+
+  Future<bool?> _showAiConsentDialog() {
+    return showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        icon: const Icon(Icons.shield_outlined, color: AppColors.teal),
+        title: const Text('AI processing consent'),
+        content: const Text(
+          'Your prescription image will be sent for AI transcription to extract visible medicine details. The app does not upload it to its own cloud storage. The prepared local copy is deleted after processing, and the structured result stays on this device.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Not now'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('I understand and continue'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> selectImage(ImageSource source) async {
+    final consentReady =
+        aiConsentGranted || await _ensureAiConsentBeforeScan(showError: true);
+    if (!consentReady || !mounted) return;
+
     final service = ref.read(prescriptionUploadServiceProvider);
     setState(() {
       preparing = true;
@@ -76,8 +170,8 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
       setState(() => draft = prepared);
       if (oldDraft != null) unawaited(service.deleteLocalDraft(oldDraft));
       // Start AI extraction immediately on selection so the direct Gemini API
-      // call begins without a second tap. The explicit "Continue
-      // securely" button stays available to retry if processing fails.
+      // call begins without a second tap. The explicit retry button stays
+      // available if processing fails.
       unawaited(upload());
     } on ScanValidationException catch (exception) {
       if (mounted) setState(() => error = exception.message);
@@ -100,7 +194,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
     if (selected == null) return;
 
     setState(() {
-      uploading = true;
+      scanning = true;
       error = null;
     });
     try {
@@ -160,7 +254,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
             if (mounted) context.go('/login');
             return;
           }
-          if (mounted) setState(() => uploading = false);
+          if (mounted) setState(() => scanning = false);
           return;
         }
         throw const VisionException(
@@ -169,36 +263,9 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
         );
       }
 
-      final hasConsent = await ConsentStore.hasAiConsent(ownerUid);
-      if (!hasConsent) {
-        if (!mounted) return;
-        final accepted = await showDialog<bool>(
-          context: context,
-          barrierDismissible: false,
-          builder: (context) => AlertDialog(
-            icon: const Icon(Icons.shield_outlined, color: AppColors.teal),
-            title: const Text('AI processing consent'),
-            content: const Text(
-              'Your prescription image will be sent for AI transcription to extract visible medicine details. The app does not upload it to its own cloud storage. The prepared local copy is deleted after processing, and the structured result stays on this device.',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('Not now'),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: const Text('I understand and continue'),
-              ),
-            ],
-          ),
-        );
-        if (accepted != true) {
-          if (mounted) setState(() => uploading = false);
-          return;
-        }
-        await ConsentStore.grantAiConsent(ownerUid);
-      }
+      final consentReady =
+          aiConsentGranted || await _ensureAiConsentBeforeScan(showError: true);
+      if (!consentReady) return;
 
       // Supabase-free path: send the local image straight to Gemini.
       final localId = const Uuid().v4();
@@ -247,7 +314,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
         );
       }
     } finally {
-      if (mounted) setState(() => uploading = false);
+      if (mounted) setState(() => scanning = false);
     }
   }
 
@@ -270,114 +337,158 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
           ],
         ),
       ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+      body: Stack(
         children: [
-          AnimatedSwitcher(
-            duration: const Duration(milliseconds: 220),
-            child: draft == null
-                ? const _EmptyScanFrame(key: ValueKey('empty'))
-                : _SelectedScanFrame(
-                    key: const ValueKey('selected'),
-                    draft: draft!,
-                  ),
-          ),
-          const SizedBox(height: 14),
-          Row(
+          ListView(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
             children: [
-              Expanded(
-                child: FilledButton.icon(
-                  onPressed: busy
-                      ? null
-                      : () => selectImage(ImageSource.camera),
-                  icon: const Icon(Icons.camera_alt_outlined),
-                  label: const Text('Take photo'),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: busy
-                      ? null
-                      : () => selectImage(ImageSource.gallery),
-                  icon: const Icon(Icons.photo_library_outlined),
-                  label: const Text('Gallery'),
-                ),
-              ),
-            ],
-          ),
-          if (preparing) ...[
-            const SizedBox(height: 14),
-            const LinearProgressIndicator(),
-            const SizedBox(height: 7),
-            const Text(
-              'Preparing a private, optimized copy…',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: AppColors.muted, fontSize: 12),
-            ),
-          ],
-          if (error != null) ...[
-            const SizedBox(height: 14),
-            Container(
-              padding: const EdgeInsets.all(13),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFEEEEF),
-                borderRadius: BorderRadius.circular(13),
-              ),
-              child: Row(
-                children: [
-                  const Icon(
-                    Icons.error_outline_rounded,
-                    color: AppColors.danger,
-                  ),
-                  const SizedBox(width: 9),
-                  Expanded(
-                    child: Text(
-                      error!,
-                      style: const TextStyle(
-                        color: AppColors.danger,
-                        fontSize: 12,
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 220),
+                child: draft == null
+                    ? const _EmptyScanFrame(key: ValueKey('empty'))
+                    : _SelectedScanFrame(
+                        key: const ValueKey('selected'),
+                        draft: draft!,
                       ),
+              ),
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  Expanded(
+                    child: FilledButton.icon(
+                      onPressed: busy
+                          ? null
+                          : () => selectImage(ImageSource.camera),
+                      icon: const Icon(Icons.camera_alt_outlined),
+                      label: const Text('Take photo'),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: busy
+                          ? null
+                          : () => selectImage(ImageSource.gallery),
+                      icon: const Icon(Icons.photo_library_outlined),
+                      label: const Text('Gallery'),
                     ),
                   ),
                 ],
               ),
-            ),
-          ],
-          if (draft != null) ...[
-            const SizedBox(height: 14),
-            FilledButton.icon(
-              onPressed: busy ? null : upload,
-              icon: uploading
-                  ? const SizedBox.square(
-                      dimension: 19,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.cloud_upload_outlined),
-              label: Text(
-                uploading ? 'Uploading securely…' : 'Continue securely',
-              ),
-            ),
-          ],
-          const SizedBox(height: 18),
-          const Card(
-            child: Padding(
-              padding: EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'For a clearer result',
-                    style: TextStyle(fontWeight: FontWeight.w900),
+              if (preparing) ...[
+                const SizedBox(height: 14),
+                const LinearProgressIndicator(),
+                const SizedBox(height: 7),
+                const Text(
+                  'Preparing image…',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: AppColors.muted, fontSize: 12),
+                ),
+              ],
+              if (error != null) ...[
+                const SizedBox(height: 14),
+                Container(
+                  padding: const EdgeInsets.all(13),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFEEEEF),
+                    borderRadius: BorderRadius.circular(13),
                   ),
-                  SizedBox(height: 12),
-                  _Tip('1', 'Keep the paper flat and avoid shadows.'),
-                  _Tip('2', 'Upload one prescription page at a time.'),
-                  _Tip('3', 'Do not crop medicine names or instructions.'),
-                ],
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.error_outline_rounded,
+                        color: AppColors.danger,
+                      ),
+                      const SizedBox(width: 9),
+                      Expanded(
+                        child: Text(
+                          error!,
+                          style: const TextStyle(
+                            color: AppColors.danger,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+              if (draft != null) ...[
+                const SizedBox(height: 14),
+                FilledButton.icon(
+                  onPressed: busy ? null : upload,
+                  icon: scanning
+                      ? const SizedBox.square(
+                          dimension: 19,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.auto_awesome_outlined),
+                  label: Text(
+                    scanning ? 'Scanning with AI…' : 'Retry scan',
+                  ),
+                ),
+              ],
+              const SizedBox(height: 18),
+              const Card(
+                child: Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'For a clearer result',
+                        style: TextStyle(fontWeight: FontWeight.w900),
+                      ),
+                      SizedBox(height: 12),
+                      _Tip('1', 'Keep the paper flat and avoid shadows.'),
+                      _Tip('2', 'Upload one prescription page at a time.'),
+                      _Tip('3', 'Do not crop medicine names or instructions.'),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          if (_showProgressOverlay)
+            Positioned.fill(
+              child: Container(
+                color: Colors.black.withValues(alpha: 0.45),
+                child: Center(
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 32),
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).scaffoldBackgroundColor,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const CircularProgressIndicator(),
+                        const SizedBox(height: 20),
+                        Text(
+                          _progressTitle,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 16,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          _progressMessage,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: AppColors.muted,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ),
             ),
-          ),
         ],
       ),
     );

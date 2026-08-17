@@ -61,9 +61,9 @@ class PrescriptionUploadService {
     final compressed = await FlutterImageCompress.compressAndGetFile(
       picked.path,
       targetPath,
-      quality: 82,
-      minWidth: 1600,
-      minHeight: 1600,
+      quality: 76,
+      minWidth: 1440,
+      minHeight: 1440,
       format: CompressFormat.jpeg,
       keepExif: false,
     );
