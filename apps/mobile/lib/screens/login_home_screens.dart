@@ -292,7 +292,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                   SizedBox(width: 10),
                                   Expanded(
                                     child: Text(
-                                      'Prescription images are sent directly to Google Gemini for transcription. Structured results stay on this device and are separated by your account.',
+                                      'Prescription images are sent directly for AI-powered transcription. The structured result stays on this device, separated by your account.',
                                       style: TextStyle(
                                         color: AppColors.muted,
                                         fontSize: 12,

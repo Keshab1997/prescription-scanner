@@ -64,7 +64,7 @@ class _HelpScreenState extends ConsumerState<HelpScreen> {
                 icon: Icons.shield_outlined,
                 children: const [
                   Text(
-                    'Your prescription image is sent directly to Google Gemini for '
+                    'Your prescription image is sent directly for AI-powered '
                     'transcription only. It is not stored in any cloud database — the '
                     'prepared local copy is deleted after processing, and only the '
                     'structured result stays on your device in a private, account-scoped '
@@ -144,7 +144,7 @@ class _HelpScreenState extends ConsumerState<HelpScreen> {
                   const Divider(height: 20),
                   const _AboutRow(
                     label: 'AI',
-                    value: 'Google Gemini (direct vision)',
+                    value: 'Direct AI vision',
                   ),
                   const Divider(height: 20),
                   _AboutRow(label: 'Developer', value: 'Keshab Studios'),
@@ -176,7 +176,7 @@ final _faqItems = <_FaqItemData>[
   _FaqItemData(
     question: 'How do I scan a prescription?',
     answer:
-        'Tap the large scan button in the centre of the home screen. You can take a photo with your camera or pick an image from your gallery. The app automatically compresses and validates the image, then sends it to Google Gemini for AI-powered transcription. The result appears in seconds.',
+        'Tap the large scan button in the centre of the home screen. You can take a photo with your camera or pick an image from your gallery. The app automatically compresses and validates the image, then sends it for AI-powered transcription. The result appears in seconds.',
   ),
   _FaqItemData(
     question: 'Can I scan without creating an account?',
@@ -196,12 +196,12 @@ final _faqItems = <_FaqItemData>[
   _FaqItemData(
     question: 'How does the AI transcription work?',
     answer:
-        'The app sends the prescription image directly to Google Gemini (the gemini-2.5-flash model). Gemini returns a structured JSON list of medicines with details like dosage, frequency and duration. The app repairs and displays this result. Your image is never stored on any cloud server — it is processed and then the local copy is deleted.',
+        'The app sends the prescription image directly to our AI engine which returns a structured list of medicines with details like dosage, frequency and duration. The app then repairs and displays this result. Your image is never stored on any cloud server — it is processed and then the local copy is deleted.',
   ),
   _FaqItemData(
     question: 'Is my medical data stored in the cloud?',
     answer:
-        'No. The prescription image itself is sent to Google Gemini for transcription but is not saved by the app or Gemini beyond the moment of processing. The structured transcription result stays on your device in an encrypted Hive store, scoped to your account (or guest namespace). Only anonymous usage counters (how many scans you used today) are synced to Firestore so the app can enforce daily limits.',
+        'No. The prescription image itself is sent for AI transcription but is not saved by the app beyond the moment of processing. The structured transcription result stays on your device in an encrypted Hive store, scoped to your account (or guest namespace). Only anonymous usage counters (how many scans you used today) are synced to Firestore so the app can enforce daily limits.',
   ),
   _FaqItemData(
     question: 'How do I delete my scan results?',

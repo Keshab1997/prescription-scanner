@@ -122,7 +122,7 @@ Return a JSON object with these fields:
       final key = ApiKeyManager.instance.getNextKey();
       if (key == null) {
         throw VisionException(
-          lastError?.message ?? 'No Gemini API key is configured.',
+          lastError?.message ?? 'No AI key is configured.',
         );
       }
       attempts++;

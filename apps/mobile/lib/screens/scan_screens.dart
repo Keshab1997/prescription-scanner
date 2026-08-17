@@ -177,7 +177,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
             icon: const Icon(Icons.shield_outlined, color: AppColors.teal),
             title: const Text('AI processing consent'),
             content: const Text(
-              'Your prescription image will be sent directly to Google Gemini to transcribe visible medicine details. The app does not upload it to its own cloud storage. A prepared local copy is deleted after processing, while the structured result stays on this device. Google processes the image under its applicable data terms.',
+              'Your prescription image will be sent for AI transcription to extract visible medicine details. The app does not upload it to its own cloud storage. The prepared local copy is deleted after processing, and the structured result stays on this device.',
             ),
             actions: [
               TextButton(
