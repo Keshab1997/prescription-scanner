@@ -221,7 +221,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
       await service.deleteLocalDraft(selected);
       draft = null;
       if (!mounted) return;
-      context.push(
+      context.go(
         '/processing?prescriptionId=${Uri.encodeComponent(result.id)}',
       );
     } on VisionException catch (exception) {

@@ -139,6 +139,10 @@ void main() {
               builder: (_, _) => const Center(child: Text('HISTORY PAGE')),
             ),
             GoRoute(
+              path: '/help',
+              builder: (_, _) => const Center(child: Text('HELP PAGE')),
+            ),
+            GoRoute(
               path: '/profile',
               builder: (_, _) => const Center(child: Text('PROFILE PAGE')),
             ),
@@ -153,14 +157,55 @@ void main() {
 
     expect(find.text('HOME PAGE'), findsOneWidget);
 
-    // Tap the History tab.
     await tester.tap(find.text('History'));
     await tester.pumpAndSettle();
     expect(find.text('HISTORY PAGE'), findsOneWidget);
 
-    // Tap the Profile tab.
+    await tester.tap(find.text('Help'));
+    await tester.pumpAndSettle();
+    expect(find.text('HELP PAGE'), findsOneWidget);
+
     await tester.tap(find.text('Profile'));
     await tester.pumpAndSettle();
     expect(find.text('PROFILE PAGE'), findsOneWidget);
+
+    await tester.tap(find.text('Home'));
+    await tester.pumpAndSettle();
+    expect(find.text('HOME PAGE'), findsOneWidget);
+  });
+
+  testWidgets('shell route onExit guards must not block tab navigation', (
+    tester,
+  ) async {
+    final router = GoRouter(
+      initialLocation: '/home',
+      routes: [
+        ShellRoute(
+          builder: (_, state, child) =>
+              AppShell(currentPath: state.uri.path, child: child),
+          routes: [
+            GoRoute(
+              path: '/home',
+              onExit: (_, _) => false,
+              builder: (_, _) => const Center(child: Text('HOME PAGE')),
+            ),
+            GoRoute(
+              path: '/history',
+              onExit: (_, _) => false,
+              builder: (_, _) => const Center(child: Text('HISTORY PAGE')),
+            ),
+          ],
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
+    await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+    await tester.pump();
+
+    await tester.tap(find.text('History'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('HOME PAGE'), findsOneWidget);
+    expect(find.text('HISTORY PAGE'), findsNothing);
   });
 }
