@@ -5,6 +5,7 @@ import 'package:firebase_auth_platform_interface/firebase_auth_platform_interfac
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_core_platform_interface/firebase_core_platform_interface.dart';
 import 'package:flutter/material.dart' show Size;
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -110,8 +111,10 @@ void main() {
       // Navigate to the History tab via the router (nav-bar taps are not
       // reliable inside this widget test).
       final router = GoRouter.of(tester.element(find.text('Ready to scan?')));
+      debugPrint('LOCATION-BEFORE: ${router.location}');
       router.go('/history');
       await _settle(tester);
+      debugPrint('LOCATION-AFTER: ${router.location}');
       expect(find.text('Ready to scan?'), findsNothing);
 
       // Press the system back button — must return home, not exit.
