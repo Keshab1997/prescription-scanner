@@ -105,7 +105,7 @@ void main() {
       // out hit-testing issues).
       final guestButton = find.ancestor(
         of: find.text('Try a free scan without signing in'),
-        matching: find.byType(TextButton),
+        matching: find.bySubtype<TextButton>(),
       );
       tester.widget<TextButton>(guestButton).onPressed!();
       await tester.pump(const Duration(milliseconds: 900));
