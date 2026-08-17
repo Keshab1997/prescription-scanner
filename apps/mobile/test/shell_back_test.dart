@@ -5,7 +5,6 @@ import 'package:firebase_auth_platform_interface/firebase_auth_platform_interfac
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_core_platform_interface/firebase_core_platform_interface.dart';
 import 'package:flutter/material.dart' show Size;
-import 'package:flutter/material.dart' show Size, Text;
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
