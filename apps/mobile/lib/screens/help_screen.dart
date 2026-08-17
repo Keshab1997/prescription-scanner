@@ -142,10 +142,7 @@ class _HelpScreenState extends ConsumerState<HelpScreen> {
                   const Divider(height: 20),
                   _AboutRow(label: 'Version', value: appVersion),
                   const Divider(height: 20),
-                  const _AboutRow(
-                    label: 'AI',
-                    value: 'Direct AI vision',
-                  ),
+                  const _AboutRow(label: 'AI', value: 'Direct AI vision'),
                   const Divider(height: 20),
                   _AboutRow(label: 'Developer', value: 'Keshab Studios'),
                 ],

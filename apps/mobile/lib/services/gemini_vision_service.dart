@@ -121,9 +121,7 @@ Return a JSON object with these fields:
     while (attempts < 5) {
       final key = ApiKeyManager.instance.getNextKey();
       if (key == null) {
-        throw VisionException(
-          lastError?.message ?? 'No AI key is configured.',
-        );
+        throw VisionException(lastError?.message ?? 'No AI key is configured.');
       }
       attempts++;
       try {
