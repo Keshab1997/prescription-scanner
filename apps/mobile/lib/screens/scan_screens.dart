@@ -12,6 +12,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:uuid/uuid.dart';
 import 'package:prescription_scanner/legal/legal_copy.dart';
 import 'package:prescription_scanner/services/analytics_service.dart';
+import 'package:prescription_scanner/services/network_status.dart';
 import 'package:prescription_scanner/services/consent_store.dart';
 import 'package:prescription_scanner/services/gemini_vision_service.dart';
 import 'package:prescription_scanner/services/prescription_repository.dart';
@@ -418,30 +419,10 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
               ],
               if (error != null) ...[
                 const SizedBox(height: 14),
-                Container(
-                  padding: const EdgeInsets.all(13),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFEEEEF),
-                    borderRadius: BorderRadius.circular(13),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.error_outline_rounded,
-                        color: AppColors.danger,
-                      ),
-                      const SizedBox(width: 9),
-                      Expanded(
-                        child: Text(
-                          error!,
-                          style: const TextStyle(
-                            color: AppColors.danger,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+                _ScanFailureCard(
+                  message: error!,
+                  onRetry: draft == null || busy ? null : upload,
+                  onRescan: busy ? null : () => selectImage(ImageSource.camera),
                 ),
               ],
               if (draft != null) ...[
@@ -811,6 +792,80 @@ class _Tip extends StatelessWidget {
               text,
               style: const TextStyle(color: AppColors.muted, fontSize: 13),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ScanFailureCard extends StatelessWidget {
+  const _ScanFailureCard({
+    required this.message,
+    this.onRetry,
+    this.onRescan,
+  });
+
+  final String message;
+  final VoidCallback? onRetry;
+  final VoidCallback? onRescan;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFEEEEF),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(Icons.error_outline_rounded, color: AppColors.danger),
+              const SizedBox(width: 9),
+              Expanded(
+                child: Text(
+                  message,
+                  style: const TextStyle(color: AppColors.danger, fontSize: 13),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          const Text(
+            'How to photograph',
+            style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            '• Use bright, even light and avoid shadows.\n'
+            '• Keep the paper flat; include every corner.\n'
+            '• One page at a time — do not crop medicine names.\n'
+            '• If you are offline, open History instead. Scanning needs internet.',
+            style: TextStyle(color: AppColors.ink, fontSize: 12, height: 1.45),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              if (onRetry != null)
+                Expanded(
+                  child: FilledButton(
+                    onPressed: onRetry,
+                    child: const Text('Retry scan'),
+                  ),
+                ),
+              if (onRetry != null && onRescan != null) const SizedBox(width: 8),
+              if (onRescan != null)
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: onRescan,
+                    child: const Text('New photo'),
+                  ),
+                ),
+            ],
           ),
         ],
       ),

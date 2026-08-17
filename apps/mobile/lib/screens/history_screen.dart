@@ -52,6 +52,11 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                       'History',
                       style: Theme.of(context).textTheme.headlineSmall,
                     ),
+                    const SizedBox(height: 6),
+                    const Text(
+                      'Saved on this device — available offline. Scanning needs internet.',
+                      style: TextStyle(color: AppColors.muted, fontSize: 12),
+                    ),
                   ],
                 ),
               ),

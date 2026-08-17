@@ -12,6 +12,7 @@ import 'package:admin_api_key_manager/admin_api_key_manager.dart';
 import 'package:prescription_scanner/app.dart';
 import 'package:prescription_scanner/config.dart';
 import 'package:prescription_scanner/firebase_options.dart';
+import 'package:prescription_scanner/services/app_prefs.dart';
 import 'package:prescription_scanner/services/result_store.dart';
 
 Future<void> main() async {
@@ -78,6 +79,13 @@ Future<void> main() async {
   } catch (e, st) {
     initErrors.add('ResultStore: $e');
     debugPrint('[main] ResultStore init failed: $e\n$st');
+  }
+
+  try {
+    await AppPrefs.init();
+  } catch (e, st) {
+    initErrors.add('AppPrefs: $e');
+    debugPrint('[main] AppPrefs init failed: $e\\n$st');
   }
 
   // Optional build-time Gemini key fallback (see docs/vision_setup.md).

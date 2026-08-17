@@ -58,9 +58,20 @@ final resultLanguageProvider =
 
 class ResultLanguageNotifier extends Notifier<ResultLanguage> {
   @override
-  ResultLanguage build() => ResultLanguage.bn;
+  ResultLanguage build() {
+    if (!AppPrefs.isReady) return ResultLanguage.bn;
+    return ResultLanguage.values.firstWhere(
+      (value) => value.name == AppPrefs.languageCode,
+      orElse: () => ResultLanguage.bn,
+    );
+  }
 
-  void set(ResultLanguage language) => state = language;
+  void set(ResultLanguage language) {
+    state = language;
+    if (AppPrefs.isReady) {
+      unawaited(AppPrefs.setLanguageCode(language.name));
+    }
+  }
 }
 
 class ResultScreen extends ConsumerWidget {
@@ -208,13 +219,169 @@ class ResultScreen extends ConsumerWidget {
     details.dispose();
   }
 
+  String _ownerUid() =>
+      fb.FirebaseAuth.instance.currentUser?.uid ?? guestOwnerUid;
+
+  Future<void> _copyText(BuildContext context, ExtractedPrescription details) async {
+    await Clipboard.setData(ClipboardData(text: prescriptionShareText(details)));
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Medicine list copied as text.')),
+      );
+    }
+  }
+
+  Future<void> _shareText(ExtractedPrescription details) {
+    return Share.share(prescriptionShareText(details));
+  }
+
+  Future<void> _editMedicine(
+    BuildContext context,
+    WidgetRef ref,
+    ExtractedPrescription details,
+    int index,
+  ) async {
+    final current = details.medicines[index];
+    final name = TextEditingController(text: current.name);
+    final strength = TextEditingController(text: current.strength ?? '');
+    final dosage = TextEditingController(text: current.dosage ?? '');
+    final frequency = TextEditingController(text: current.frequency ?? '');
+    final duration = TextEditingController(text: current.duration ?? '');
+    final route = TextEditingController(text: current.route ?? '');
+    final instructions = TextEditingController(text: current.instructions ?? '');
+    final saved = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (sheetContext) => Padding(
+        padding: EdgeInsets.fromLTRB(
+          20,
+          8,
+          20,
+          MediaQuery.viewInsetsOf(sheetContext).bottom + 24,
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                'Edit transcribed details',
+                style: Theme.of(sheetContext).textTheme.titleLarge,
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                'Correct only what you can see on the original paper. This is still not medical advice.',
+                style: TextStyle(color: AppColors.muted, fontSize: 12),
+              ),
+              const SizedBox(height: 14),
+              TextField(
+                controller: name,
+                decoration: const InputDecoration(labelText: 'Medicine name'),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: strength,
+                decoration: const InputDecoration(labelText: 'Strength'),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: dosage,
+                decoration: const InputDecoration(labelText: 'Dosage'),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: frequency,
+                decoration: const InputDecoration(labelText: 'How often'),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: duration,
+                decoration: const InputDecoration(labelText: 'Duration'),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: route,
+                decoration: const InputDecoration(labelText: 'Route'),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: instructions,
+                decoration: const InputDecoration(labelText: 'Instructions'),
+              ),
+              const SizedBox(height: 16),
+              FilledButton(
+                onPressed: () => Navigator.pop(sheetContext, true),
+                child: const Text('Save changes'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (saved != true) {
+      name.dispose();
+      strength.dispose();
+      dosage.dispose();
+      frequency.dispose();
+      duration.dispose();
+      route.dispose();
+      instructions.dispose();
+      return;
+    }
+    String? clean(TextEditingController c) {
+      final text = c.text.trim();
+      return text.isEmpty ? null : text;
+    }
+
+    final updated = Medicine(
+      name: name.text.trim().isEmpty ? current.name : name.text.trim(),
+      normalizedName: current.normalizedName,
+      strength: clean(strength),
+      dosage: clean(dosage),
+      frequency: clean(frequency),
+      duration: clean(duration),
+      route: clean(route),
+      instructions: clean(instructions),
+      summaryEn: current.summaryEn,
+      summaryBn: current.summaryBn,
+      summaryHi: current.summaryHi,
+      purposeEn: current.purposeEn,
+      purposeBn: current.purposeBn,
+      purposeHi: current.purposeHi,
+      confidence: current.confidence,
+      needsReview: false,
+      position: current.position,
+      userEdited: true,
+    );
+    final medicines = [...details.medicines];
+    medicines[index] = updated;
+    final next = details.copyWith(medicines: medicines);
+    await ResultStore.instance.save(_ownerUid(), next);
+    ref.read(resultRevisionProvider.notifier).state++;
+    ref.invalidate(recentPrescriptionsProvider);
+    ref.invalidate(prescriptionHistoryProvider);
+    name.dispose();
+    strength.dispose();
+    dosage.dispose();
+    frequency.dispose();
+    duration.dispose();
+    route.dispose();
+    instructions.dispose();
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Saved on this device.')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(resultRevisionProvider);
     if (prescriptionId.isEmpty) {
       return const _ResultError(message: 'Prescription ID is missing.');
     }
 
-    final ownerUid = fb.FirebaseAuth.instance.currentUser?.uid ?? guestOwnerUid;
+    final ownerUid = _ownerUid();
     final details = ResultStore.instance.get(ownerUid, prescriptionId);
     if (details == null) {
       return const _ResultError(message: 'The result could not be found.');
@@ -228,8 +395,18 @@ class ResultScreen extends ConsumerWidget {
           PopupMenuButton<String>(
             onSelected: (value) {
               if (value == 'delete') deleteHistory(context, ref);
+              if (value == 'copy') _copyText(context, details);
+              if (value == 'share') _shareText(details);
             },
             itemBuilder: (_) => const [
+              PopupMenuItem(
+                value: 'copy',
+                child: Text('Copy as text'),
+              ),
+              PopupMenuItem(
+                value: 'share',
+                child: Text('Share as text'),
+              ),
               PopupMenuItem(
                 value: 'delete',
                 child: Row(
@@ -336,6 +513,12 @@ class ResultScreen extends ConsumerWidget {
                     child: _MedicineCard(
                       medicine: entry.value,
                       language: ref.watch(resultLanguageProvider),
+                      onEdit: () => _editMedicine(
+                        context,
+                        ref,
+                        details,
+                        entry.key,
+                      ),
                     ),
                   ),
                 ),
@@ -451,6 +634,7 @@ class _PatientSummary extends StatelessWidget {
     for (var i = 0; i < details.medicines.length; i++) {
       final medicine = details.medicines[i];
       lines.add(
+        Padding    lines.add(
         Padding(
           padding: const EdgeInsets.only(bottom: 8),
           child: Row(
@@ -649,9 +833,14 @@ class _QualityHeader extends StatelessWidget {
 }
 
 class _MedicineCard extends StatelessWidget {
-  const _MedicineCard({required this.medicine, required this.language});
+  const _MedicineCard({
+    required this.medicine,
+    required this.language,
+    this.onEdit,
+  });
   final Medicine medicine;
   final ResultLanguage language;
+  final VoidCallback? onEdit;
 
   @override
   Widget build(BuildContext context) {
@@ -685,7 +874,12 @@ class _MedicineCard extends StatelessWidget {
     return Card(
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: () => _showMedicineDetail(context, medicine, language),
+        onTap: () => _showMedicineDetail(
+          context,
+          medicine,
+          language,
+          onEdit: onEdit,
+        ),
         child: Padding(
           padding: const EdgeInsets.all(14),
           child: Row(
@@ -724,6 +918,17 @@ class _MedicineCard extends StatelessWidget {
                         fontSize: 15,
                       ),
                     ),
+                    if (medicine.userEdited) ...[
+                      const SizedBox(height: 3),
+                      const Text(
+                        'Edited by you',
+                        style: TextStyle(
+                          color: AppColors.teal,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
                     if (friendly != medicine.name) ...[
                       const SizedBox(height: 3),
                       Text(
@@ -975,6 +1180,17 @@ class _MedicineDetailSheet extends StatelessWidget {
                 itemBuilder: (context, i) => _DetailRowCard(row: rows[i]),
               ),
             ),
+            if (onEdit != null) ...[
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: () {
+                  Navigator.pop(context);
+                  onEdit!();
+                },
+                icon: const Icon(Icons.edit_outlined, size: 18),
+                label: const Text('Edit this item'),
+              ),
+            ],
             const SizedBox(height: 10),
             const Text(
               'AI transcription only — not medical advice. Verify with a doctor or pharmacist.',
@@ -1208,6 +1424,27 @@ class _ResultError extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(title: const Text('Extraction result')),
+    body: Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.error_outline_rounded,
+              color: AppColors.danger,
+              size: 48,
+            ),
+            const SizedBox(height: 12),
+            Text(message, textAlign: TextAlign.center),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+ext) => Scaffold(
     appBar: AppBar(title: const Text('Extraction result')),
     body: Center(
       child: Padding(

@@ -115,6 +115,7 @@ class Medicine {
     required this.confidence,
     required this.needsReview,
     this.position = 0,
+    this.userEdited = false,
   });
 
   factory Medicine.fromJson(Map<String, dynamic> json) => Medicine(
@@ -135,6 +136,7 @@ class Medicine {
     confidence: (json['confidence'] is num ? json['confidence'] : 0).toDouble(),
     needsReview: json['needs_review'] == true,
     position: json['position'] is int ? json['position'] as int : 0,
+    userEdited: json['user_edited'] == true,
   );
 
   final String name;
@@ -154,6 +156,39 @@ class Medicine {
   final double confidence;
   final bool needsReview;
   final int position;
+  final bool userEdited;
+
+  Medicine copyWith({
+    String? name,
+    String? normalizedName,
+    String? strength,
+    String? dosage,
+    String? frequency,
+    String? route,
+    String? duration,
+    String? instructions,
+    bool? needsReview,
+    bool? userEdited,
+  }) => Medicine(
+    name: name ?? this.name,
+    normalizedName: normalizedName ?? this.normalizedName,
+    strength: strength ?? this.strength,
+    dosage: dosage ?? this.dosage,
+    frequency: frequency ?? this.frequency,
+    route: route ?? this.route,
+    duration: duration ?? this.duration,
+    instructions: instructions ?? this.instructions,
+    summaryEn: summaryEn,
+    summaryBn: summaryBn,
+    summaryHi: summaryHi,
+    purposeEn: purposeEn,
+    purposeBn: purposeBn,
+    purposeHi: purposeHi,
+    confidence: confidence,
+    needsReview: needsReview ?? this.needsReview,
+    position: position,
+    userEdited: userEdited ?? this.userEdited,
+  );
 
   Map<String, dynamic> toJson() => {
     'name': name,
@@ -173,6 +208,7 @@ class Medicine {
     'confidence': confidence,
     'needs_review': needsReview,
     'position': position,
+    'user_edited': userEdited,
   };
 }
 

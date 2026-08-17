@@ -1,8 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:prescription_scanner/legal/legal_copy.dart';
+import 'package:prescription_scanner/screens/result_screen.dart';
+import 'package:prescription_scanner/services/app_prefs.dart';
 import 'package:prescription_scanner/models/extracted_prescription.dart';
 import 'package:prescription_scanner/services/ads_service.dart';
 import 'package:prescription_scanner/services/auth_service.dart';
@@ -34,6 +38,7 @@ class HomeScreen extends ConsumerWidget {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(20, 20, 20, 120),
           children: [
+            const _FirstLanguageGate(),
             Entrance(
               child: _HomeHeader(
                 firstName: firstName,
@@ -155,6 +160,52 @@ class HomeScreen extends ConsumerWidget {
         .map((part) => part[0].toUpperCase())
         .join();
   }
+}
+
+class _FirstLanguageGate extends ConsumerStatefulWidget {
+  const _FirstLanguageGate();
+
+  @override
+  ConsumerState<_FirstLanguageGate> createState() => _FirstLanguageGateState();
+}
+
+class _FirstLanguageGateState extends ConsumerState<_FirstLanguageGate> {
+  static bool _askedThisSession = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(_maybeAsk());
+    });
+  }
+
+  Future<void> _maybeAsk() async {
+    if (!mounted || _askedThisSession) return;
+    if (!AppPrefs.isReady || AppPrefs.hasChosenLanguage) return;
+    _askedThisSession = true;
+    final chosen = await showDialog<ResultLanguage>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Choose summary language'),
+        content: const Text(
+          'Medicine summaries can be shown in English, বাংলা or हिन्दी. You can change this later on a result.',
+        ),
+        actions: [
+          for (final language in ResultLanguage.values)
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, language),
+              child: Text(language.label),
+            ),
+        ],
+      ),
+    );
+    if (chosen == null || !mounted) return;
+    ref.read(resultLanguageProvider.notifier).set(chosen);
+  }
+
+  @override
+  Widget build(BuildContext context) => const SizedBox.shrink();
 }
 
 class _HomeHeader extends StatelessWidget {
