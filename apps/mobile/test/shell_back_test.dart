@@ -5,6 +5,7 @@ import 'package:firebase_auth_platform_interface/firebase_auth_platform_interfac
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_core_platform_interface/firebase_core_platform_interface.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:prescription_scanner/app.dart';
@@ -111,6 +112,15 @@ void main() {
       // Press the system back button — must return home, not exit.
       await tester.binding.handlePopRoute();
       await tester.pump(const Duration(milliseconds: 900));
+
+      // Debug: what is actually on screen after the back press?
+      final texts = tester
+          .widgetList<Text>(find.byType(Text))
+          .map((t) => t.data)
+          .where((d) => d != null && d!.isNotEmpty)
+          .take(12)
+          .toList();
+      debugPrint('AFTER BACK — visible texts: $texts');
 
       expect(find.text('Ready to scan?'), findsOneWidget);
       expect(tester.takeException(), isNull);
