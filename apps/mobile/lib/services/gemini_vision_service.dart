@@ -8,6 +8,7 @@ import 'package:firebase_auth/firebase_auth.dart' as fb;
 
 import 'package:prescription_scanner/models/extracted_prescription.dart';
 import 'package:prescription_scanner/services/prescription_json_repair.dart';
+import 'package:prescription_scanner/services/prescription_repository.dart';
 
 /// Direct, Supabase-free Gemini vision service.
 ///
@@ -96,20 +97,18 @@ Return a JSON object with these fields:
       throw const VisionException('The selected image is empty.');
     }
     final base64Image = base64Encode(bytes);
+    // Anonymous guests scan under the guest namespace without an account.
+    // Signed-in users must still have a verified email. The API-key pool
+    // (admin_api_keys) is readable without auth, so the key manager works for
+    // guests too.
     final user = fb.FirebaseAuth.instance.currentUser;
-    if (user == null) {
-      throw const VisionException(
-        'Please sign in again before scanning.',
-        statusCode: 401,
-      );
-    }
-    if (!user.emailVerified) {
+    if (user != null && !user.emailVerified) {
       throw const VisionException(
         'Verify your email before scanning.',
         statusCode: 403,
       );
     }
-    final userId = user.uid;
+    final userId = user?.uid ?? guestOwnerUid;
 
     // Start Firestore listeners only after verified authentication, matching
     // the API-key rules. initialize() is idempotent inside the manager.
