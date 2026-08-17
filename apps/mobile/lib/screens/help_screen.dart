@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:prescription_scanner/theme.dart';
+import 'package:prescription_scanner/widgets/about_card.dart';
 import 'package:prescription_scanner/widgets/ui_animations.dart';
 
 class HelpScreen extends ConsumerStatefulWidget {
@@ -14,7 +15,6 @@ class HelpScreen extends ConsumerStatefulWidget {
 class _HelpScreenState extends ConsumerState<HelpScreen> {
   @override
   Widget build(BuildContext context) {
-    final appVersion = '1.0.0'; // from pubspec — kept simple
     return Scaffold(
       body: SafeArea(
         bottom: false,
@@ -130,23 +130,7 @@ class _HelpScreenState extends ConsumerState<HelpScreen> {
             const SizedBox(height: 8),
             Entrance(
               delay: const Duration(milliseconds: 640),
-              child: _InfoCard(
-                icon: Icons.info_outline_rounded,
-                children: [
-                  _AboutRow(label: 'App', value: 'Prescription Scanner'),
-                  const Divider(height: 20),
-                  _AboutRow(
-                    label: 'App ID',
-                    value: 'com.keshabstudios.prescriptionscanner',
-                  ),
-                  const Divider(height: 20),
-                  _AboutRow(label: 'Version', value: appVersion),
-                  const Divider(height: 20),
-                  const _AboutRow(label: 'AI', value: 'Direct AI vision'),
-                  const Divider(height: 20),
-                  _AboutRow(label: 'Developer', value: 'Keshab Studios'),
-                ],
-              ),
+              child: const AboutCard(),
             ),
             const SizedBox(height: 30),
           ],
@@ -442,38 +426,6 @@ class _ContactCard extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _AboutRow extends StatelessWidget {
-  const _AboutRow({required this.label, required this.value});
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(
-          width: 80,
-          child: Text(
-            label,
-            style: const TextStyle(
-              color: AppColors.muted,
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-        Expanded(
-          child: Text(
-            value,
-            style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w500),
-          ),
-        ),
-      ],
     );
   }
 }

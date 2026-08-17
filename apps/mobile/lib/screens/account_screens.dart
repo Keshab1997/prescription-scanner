@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:prescription_scanner/services/auth_service.dart';
 import 'package:prescription_scanner/services/prescription_repository.dart';
 import 'package:prescription_scanner/theme.dart';
+import 'package:prescription_scanner/widgets/about_card.dart';
 import 'package:prescription_scanner/widgets/ui_animations.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
@@ -680,6 +681,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       danger: true,
                       onTap: () => requestDeletion(context, ref),
                     ),
+                  ),
+                  const SizedBox(height: 24),
+                  const _SectionTitle('About'),
+                  const SizedBox(height: 10),
+                  Entrance(
+                    delay: const Duration(milliseconds: 600),
+                    child: const AboutCard(),
                   ),
                   const SizedBox(height: 20),
                   const Center(
