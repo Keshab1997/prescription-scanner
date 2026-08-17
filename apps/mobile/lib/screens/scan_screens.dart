@@ -124,6 +124,9 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
         });
       }
       return true;
+    } catch (exception) {
+      debugPrint('[scan] Consent check skipped: $exception');
+      return aiConsentGranted;
     } finally {
       if (mounted) setState(() => checkingConsent = false);
     }

@@ -67,8 +67,7 @@ abstract final class AdsService {
     await MobileAds.instance.updateRequestConfiguration(
       RequestConfiguration(
         testDeviceIds: AppConfig.adMobTestDeviceIds,
-        tagForChildDirectedTreatment: TagForChildDirectedTreatment.no,
-        tagForUnderAgeOfConsent: TagForUnderAgeOfConsent.no,
+        ageRestrictedTreatment: AgeRestrictedTreatment.unspecified,
         maxAdContentRating: MaxAdContentRating.pg,
       ),
     );
