@@ -13,6 +13,7 @@ import 'package:prescription_scanner/services/prescription_repository.dart';
 import 'package:prescription_scanner/services/prescription_share_text.dart';
 import 'package:prescription_scanner/services/result_store.dart';
 import 'package:prescription_scanner/theme.dart';
+import 'package:prescription_scanner/widgets/medicine_edit_sheet.dart';
 import 'package:prescription_scanner/widgets/ui_animations.dart';
 
 class ResultRevision extends Notifier<int> {
@@ -271,70 +272,15 @@ class ResultScreen extends ConsumerWidget {
     final saved = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
-      showDragHandle: true,
-      builder: (sheetContext) => Padding(
-        padding: EdgeInsets.fromLTRB(
-          20,
-          8,
-          20,
-          MediaQuery.viewInsetsOf(sheetContext).bottom + 24,
-        ),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                'Edit transcribed details',
-                style: Theme.of(sheetContext).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 6),
-              const Text(
-                'Correct only what you can see on the original paper. This is still not medical advice.',
-                style: TextStyle(color: AppColors.muted, fontSize: 12),
-              ),
-              const SizedBox(height: 14),
-              TextField(
-                controller: name,
-                decoration: const InputDecoration(labelText: 'Medicine name'),
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: strength,
-                decoration: const InputDecoration(labelText: 'Strength'),
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: dosage,
-                decoration: const InputDecoration(labelText: 'Dosage'),
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: frequency,
-                decoration: const InputDecoration(labelText: 'How often'),
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: duration,
-                decoration: const InputDecoration(labelText: 'Duration'),
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: route,
-                decoration: const InputDecoration(labelText: 'Route'),
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: instructions,
-                decoration: const InputDecoration(labelText: 'Instructions'),
-              ),
-              const SizedBox(height: 16),
-              FilledButton(
-                onPressed: () => Navigator.pop(sheetContext, true),
-                child: const Text('Save changes'),
-              ),
-            ],
-          ),
-        ),
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) => _MedicineEditSheet(
+        name: name,
+        strength: strength,
+        dosage: dosage,
+        frequency: frequency,
+        duration: duration,
+        route: route,
+        instructions: instructions,
       ),
     );
     if (saved != true) {
