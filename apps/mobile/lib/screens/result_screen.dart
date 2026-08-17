@@ -1,13 +1,21 @@
+import 'dart:async';
+
 import 'package:firebase_auth/firebase_auth.dart' as fb;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:prescription_scanner/models/extracted_prescription.dart';
+import 'package:prescription_scanner/services/app_prefs.dart';
 import 'package:prescription_scanner/services/prescription_repository.dart';
+import 'package:prescription_scanner/services/prescription_share_text.dart';
 import 'package:prescription_scanner/services/result_store.dart';
 import 'package:prescription_scanner/theme.dart';
 import 'package:prescription_scanner/widgets/ui_animations.dart';
+
+final resultRevisionProvider = StateProvider<int>((ref) => 0);
 
 /// UI language for the patient-friendly summary on the result screen.
 enum ResultLanguage {
@@ -531,6 +539,26 @@ class ResultScreen extends ConsumerWidget {
               _OtherVisibleDetails(details: details),
             ],
             const SizedBox(height: 18),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => _copyText(context, details),
+                    icon: const Icon(Icons.copy_rounded, size: 18),
+                    label: const Text('Copy'),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => _shareText(details),
+                    icon: const Icon(Icons.ios_share_rounded, size: 18),
+                    label: const Text('Share'),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
             OutlinedButton.icon(
               onPressed: () => reportIssue(context, ref),
               icon: const Icon(Icons.flag_outlined, size: 18),
@@ -636,7 +664,6 @@ class _PatientSummary extends StatelessWidget {
     for (var i = 0; i < details.medicines.length; i++) {
       final medicine = details.medicines[i];
       lines.add(
-        Padding    lines.add(
         Padding(
           padding: const EdgeInsets.only(bottom: 8),
           child: Row(
@@ -1033,20 +1060,30 @@ class _TagChip extends StatelessWidget {
 void _showMedicineDetail(
   BuildContext context,
   Medicine m,
-  ResultLanguage lang,
-) {
+  ResultLanguage lang, {
+  VoidCallback? onEdit,
+}) {
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
-    builder: (context) => _MedicineDetailSheet(medicine: m, language: lang),
+    builder: (context) => _MedicineDetailSheet(
+      medicine: m,
+      language: lang,
+      onEdit: onEdit,
+    ),
   );
 }
 
 class _MedicineDetailSheet extends StatelessWidget {
-  const _MedicineDetailSheet({required this.medicine, required this.language});
+  const _MedicineDetailSheet({
+    required this.medicine,
+    required this.language,
+    this.onEdit,
+  });
   final Medicine medicine;
   final ResultLanguage language;
+  final VoidCallback? onEdit;
 
   @override
   Widget build(BuildContext context) {

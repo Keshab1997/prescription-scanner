@@ -230,6 +230,12 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
       error = null;
     });
     try {
+      if (!await NetworkStatus.isOnline()) {
+        throw const VisionException(
+          'You appear to be offline. History still works. Connect to the internet to scan.',
+          statusCode: 0,
+        );
+      }
       // Anonymous guests are allowed a small number of free scans per day;
       // signed-in users keep the (larger) account allowance. Guests still
       // verify email only after creating an account.
