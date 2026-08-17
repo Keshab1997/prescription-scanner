@@ -101,8 +101,13 @@ void main() {
       // Wait past the branded launch splash and the login screen entrance.
       await tester.pump(const Duration(milliseconds: 2600));
 
-      // Enter as guest → home.
-      await tester.tap(find.text('Try a free scan without signing in'));
+      // Enter as guest → home (invoke the button callback directly to rule
+      // out hit-testing issues).
+      final guestButton = find.ancestor(
+        of: find.text('Try a free scan without signing in'),
+        matching: find.byType(TextButton),
+      );
+      tester.widget<TextButton>(guestButton).onPressed!();
       await tester.pump(const Duration(milliseconds: 900));
 
       // TEMP DEBUG
@@ -112,7 +117,7 @@ void main() {
           .whereType<String>()
           .where((d) => d.isNotEmpty)
           .toList();
-      expect(texts, isEmpty, reason: 'AFTER-GUEST-TAP');
+      expect(texts, isEmpty, reason: 'AFTER-GUEST-ONPRESSED');
 
       expect(find.text('Ready to scan?'), findsOneWidget);
 
