@@ -108,16 +108,20 @@ void main() {
         matching: find.bySubtype<TextButton>(),
       );
       tester.widget<TextButton>(guestButton).onPressed!();
-      await tester.pump(const Duration(milliseconds: 900));
+      // Multiple pumps so go_router's asynchronous navigation completes.
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+      await tester.pump(const Duration(milliseconds: 700));
 
       // TEMP DEBUG
+      final exc = tester.takeException();
       final texts = tester
           .widgetList<Text>(find.byType(Text))
           .map((t) => t.data)
           .whereType<String>()
           .where((d) => d.isNotEmpty)
           .toList();
-      expect(texts, isEmpty, reason: 'AFTER-GUEST-ONPRESSED');
+      expect(texts, isEmpty, reason: 'AFTER-GUEST-ONPRESSED; exception=$exc');
 
       expect(find.text('Ready to scan?'), findsOneWidget);
 
