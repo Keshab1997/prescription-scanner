@@ -33,6 +33,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       const guestAllowedPaths = {
         '/home',
         '/history',
+        '/help',
         '/upload',
         '/processing',
         '/result',
@@ -78,6 +79,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         routes: [
           GoRoute(path: '/home', builder: (_, _) => const HomeScreen()),
           GoRoute(path: '/history', builder: (_, _) => const HistoryScreen()),
+          GoRoute(path: '/help', builder: (_, _) => const HelpScreen()),
           GoRoute(path: '/profile', builder: (_, _) => const ProfileScreen()),
         ],
       ),

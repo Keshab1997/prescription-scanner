@@ -145,10 +145,8 @@ class _FloatingNavBar extends StatelessWidget {
               _NavItem(
                 label: 'Help',
                 icon: Icons.help_outline_rounded,
-                selected: false,
-                onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Help centre is coming next.')),
-                ),
+                selected: _is('/help'),
+                onTap: () => onChanged('/help'),
               ),
               _NavItem(
                 label: 'Profile',
