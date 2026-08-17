@@ -110,8 +110,8 @@ Return a JSON object with these fields:
     }
     final userId = user?.uid ?? guestOwnerUid;
 
-    // Start Firestore listeners only after verified authentication, matching
-    // the API-key rules. initialize() is idempotent inside the manager.
+    // Start the Firestore-backed key pool. initialize() is idempotent inside
+    // the manager; reads are allowed for guests by the Firestore rules.
     ApiKeyManager.instance.initialize();
     await ApiKeyManager.instance.ensureReady();
 
