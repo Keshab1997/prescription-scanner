@@ -121,4 +121,46 @@ void main() {
     expect(find.text('Shell home'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('bottom nav tab tap navigates within the shell', (tester) async {
+    final router = GoRouter(
+      initialLocation: '/home',
+      routes: [
+        ShellRoute(
+          builder: (_, state, child) =>
+              AppShell(currentPath: state.uri.path, child: child),
+          routes: [
+            GoRoute(
+              path: '/home',
+              builder: (_, _) => const Center(child: Text('HOME PAGE')),
+            ),
+            GoRoute(
+              path: '/history',
+              builder: (_, _) => const Center(child: Text('HISTORY PAGE')),
+            ),
+            GoRoute(
+              path: '/profile',
+              builder: (_, _) => const Center(child: Text('PROFILE PAGE')),
+            ),
+          ],
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
+    await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect(find.text('HOME PAGE'), findsOneWidget);
+
+    // Tap the History tab.
+    await tester.tap(find.text('History'));
+    await tester.pumpAndSettle();
+    expect(find.text('HISTORY PAGE'), findsOneWidget);
+
+    // Tap the Profile tab.
+    await tester.tap(find.text('Profile'));
+    await tester.pumpAndSettle();
+    expect(find.text('PROFILE PAGE'), findsOneWidget);
+  });
 }
