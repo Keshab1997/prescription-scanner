@@ -56,6 +56,27 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     routes: [
       GoRoute(path: '/login', builder: (_, _) => const LoginScreen()),
       GoRoute(
+        path: '/privacy',
+        builder: (_, _) => const AppBackScope(
+          fallbackLocation: '/login',
+          child: PrivacyPolicyScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/terms',
+        builder: (_, _) => const AppBackScope(
+          fallbackLocation: '/login',
+          child: TermsScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/disclaimer',
+        builder: (_, _) => const AppBackScope(
+          fallbackLocation: '/login',
+          child: MedicalDisclaimerScreen(),
+        ),
+      ),
+      GoRoute(
         path: '/register',
         builder: (_, _) => const AppBackScope(
           fallbackLocation: '/login',
