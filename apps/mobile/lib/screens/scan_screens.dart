@@ -75,7 +75,13 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
     }
   }
 
-  String get _ownerUid => fb.FirebaseAuth.instance.currentUser?.uid ?? guestOwnerUid;
+  String get _ownerUid {
+    try {
+      return fb.FirebaseAuth.instance.currentUser?.uid ?? guestOwnerUid;
+    } catch (_) {
+      return guestOwnerUid;
+    }
+  }
 
   Future<void> _warmUpScanDependencies() async {
     try {
