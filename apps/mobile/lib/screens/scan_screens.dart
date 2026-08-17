@@ -38,7 +38,6 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
 
   bool get busy => preparing || scanning || checkingConsent;
   bool get _showProgressOverlay => preparing || scanning;
-  bool get _canScan => !busy && aiConsentGranted;
   String get _progressTitle => preparing ? 'Preparing image…' : 'Scanning with AI…';
   String get _progressMessage => preparing
       ? 'Creating a clear, optimized local copy before AI transcription.'

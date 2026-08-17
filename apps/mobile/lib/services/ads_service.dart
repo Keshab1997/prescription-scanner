@@ -98,9 +98,11 @@ class _AdaptiveAdBannerState extends State<AdaptiveAdBanner> {
     await AdsService.start();
     if (!mounted || !AdsService.adsReady) return;
     final width = MediaQuery.sizeOf(context).width.truncate();
+    final size =
+        await AdSize.getLargeAnchoredAdaptiveBannerAdSize(width) ??
+        AdSize.banner;
     final ad = BannerAd(
-      size: AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(width) ??
-          AdSize.banner,
+      size: size,
       adUnitId: AppConfig.bannerAdUnitId,
       listener: BannerAdListener(
         onAdLoaded: (ad) {

@@ -154,9 +154,45 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             onChanged: (value) => setState(() => accepted = value ?? false),
             contentPadding: EdgeInsets.zero,
             controlAffinity: ListTileControlAffinity.leading,
-            title: const Text(
-              'I accept the Privacy Policy, Terms and AI-processing disclosure.',
-              style: TextStyle(fontSize: 12, height: 1.4),
+            title: Text.rich(
+              TextSpan(
+                style: const TextStyle(fontSize: 12, height: 1.4),
+                children: [
+                  const TextSpan(text: 'I accept the '),
+                  WidgetSpan(
+                    alignment: PlaceholderAlignment.baseline,
+                    baseline: TextBaseline.alphabetic,
+                    child: GestureDetector(
+                      onTap: () => context.push('/privacy'),
+                      child: const Text(
+                        'Privacy Policy',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.teal,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const TextSpan(text: ', '),
+                  WidgetSpan(
+                    alignment: PlaceholderAlignment.baseline,
+                    baseline: TextBaseline.alphabetic,
+                    child: GestureDetector(
+                      onTap: () => context.push('/terms'),
+                      child: const Text(
+                        'Terms',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.teal,
+                        ),
+                      ),
+                    ),
+                  ),
+                  TextSpan(text: ' and that ${LegalCopy.medicalShort}'),
+                ],
+              ),
             ),
           ),
           if (error != null) _AuthError(error!),

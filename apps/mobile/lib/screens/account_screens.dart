@@ -590,13 +590,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       }
     }
     if (!context.mounted) return;
+    final guestNote = q?.isGuest == true
+        ? LegalCopy.guestLimitBody
+        : LegalCopy.signedInLimitBody;
     await _showInfoDialog(
       context: context,
-      title: 'Scan limits & rewards',
+      title: q?.isGuest == true ? LegalCopy.guestLimitTitle : 'Scan limits',
       body: q == null
-          ? 'Scan limits are set by the app administrator. Check back later.'
-          : 'You have ${q.remaining} of ${q.dailyLimit} scans remaining today. '
-                'Used ${q.used} so far. Limits reset daily and are configured by the administrator.',
+          ? 'Scan limits are set by the app administrator. Check back later.\n\n$guestNote'
+          : 'You have ${q.remaining} of ${q.dailyLimit} scans remaining today '
+                '(${q.used} used). Limits reset daily.\n\n$guestNote',
     );
   }
 
@@ -1137,18 +1140,6 @@ class _ProfileRow extends StatelessWidget {
                 if (onTap != null)
                   const Icon(
                     Icons.chevron_right_rounded,
-                    color: AppColors.muted,
-                    size: 22,
-                  ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-ded,
                     color: AppColors.muted,
                     size: 22,
                   ),
