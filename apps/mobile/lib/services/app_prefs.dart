@@ -36,4 +36,12 @@ abstract final class AppPrefs {
     await _store.put(_languageKey, code);
     await _store.put(_chosenKey, true);
   }
+
+  static bool get hasAskedMediaPermissions =>
+      _box?.get(_mediaAskedKey, defaultValue: false) == true;
+
+  static Future<void> markMediaPermissionsAsked() async {
+    if (!isReady) return;
+    await _store.put(_mediaAskedKey, true);
+  }
 }
