@@ -22,37 +22,41 @@ class _AppShellState extends State<AppShell> {
     // This keeps route mutation out of PopScope's element-deactivation phase.
     if (_handlingBack) return true;
     _handlingBack = true;
+    try {
+      if (widget.currentPath != '/home') {
+        // History / Help / Profile all go back to the home tab.
+        context.go('/home');
+        return true;
+      }
 
-    if (widget.currentPath != '/home') {
-      context.go('/home');
-      if (mounted) _handlingBack = false;
-      return true;
-    }
-
-    final leave = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Exit app?'),
-        content: const Text(
-          'Everything stays saved on this device for your next visit.',
+      final leave = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('Exit app?'),
+          content: const Text(
+            'Everything stays saved on this device for your next visit.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Stay'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: const Text('Exit'),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Stay'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('Exit'),
-          ),
-        ],
-      ),
-    );
-    if (leave == true && mounted) {
-      await SystemNavigator.pop();
+      );
+      if (leave == true && mounted) {
+        await SystemNavigator.pop();
+      }
+      return true;
+    } finally {
+      // Always clear the guard so a single back press can never leave the
+      // handler in a stuck state that swallows future back presses.
+      if (mounted) _handlingBack = false;
     }
-    if (mounted) _handlingBack = false;
-    return true;
   }
 
   @override

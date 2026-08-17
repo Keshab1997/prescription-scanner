@@ -76,6 +76,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ShellRoute(
         builder: (_, state, child) =>
             AppShell(currentPath: state.uri.path, child: child),
+        // Safety net: a back press must never pop the shell route itself,
+        // which would leave the app with no route and exit it. Returning
+        // false cancels the pop; the AppShell back handler navigates
+        // non-home tabs back to /home (and shows the exit dialog on /home).
+        onExit: (_, _) => false,
         routes: [
           GoRoute(path: '/home', builder: (_, _) => const HomeScreen()),
           GoRoute(path: '/history', builder: (_, _) => const HistoryScreen()),
