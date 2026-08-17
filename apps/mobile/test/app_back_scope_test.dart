@@ -174,7 +174,7 @@ void main() {
     expect(find.text('HOME PAGE'), findsOneWidget);
   });
 
-  testWidgets('back from a tapped shell tab returns to home', (tester) async {
+  testWidgets('back from shell tabs returns to home', (tester) async {
     final router = GoRouter(
       initialLocation: '/home',
       routes: [
@@ -190,6 +190,14 @@ void main() {
               path: '/history',
               builder: (_, _) => const Center(child: Text('HISTORY PAGE')),
             ),
+            GoRoute(
+              path: '/help',
+              builder: (_, _) => const Center(child: Text('HELP PAGE')),
+            ),
+            GoRoute(
+              path: '/profile',
+              builder: (_, _) => const Center(child: Text('PROFILE PAGE')),
+            ),
           ],
         ),
       ],
@@ -198,15 +206,17 @@ void main() {
     await tester.pumpWidget(MaterialApp.router(routerConfig: router));
     await tester.pump();
 
-    await tester.tap(find.text('History'));
-    await tester.pumpAndSettle();
-    expect(find.text('HISTORY PAGE'), findsOneWidget);
+    for (final tab in ['History', 'Help', 'Profile']) {
+      await tester.tap(find.text(tab));
+      await tester.pumpAndSettle();
+      expect(find.text('${tab.toUpperCase()} PAGE'), findsOneWidget);
 
-    await tester.binding.handlePopRoute();
-    await tester.pumpAndSettle();
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
 
-    expect(find.text('HOME PAGE'), findsOneWidget);
-    expect(tester.takeException(), isNull);
+      expect(find.text('HOME PAGE'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    }
   });
 
   testWidgets('shell route onExit guards must not block tab navigation', (

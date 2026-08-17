@@ -16,12 +16,30 @@ class AppShell extends StatefulWidget {
   State<AppShell> createState() => _AppShellState();
 }
 
-class _AppShellState extends State<AppShell> {
+class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   bool _handlingBack = false;
 
-  Future<bool> _onBackButtonPressed() async {
-    // BackButtonListener consumes the event before Navigator starts a pop.
-    // This keeps route mutation out of PopScope's element-deactivation phase.
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  Future<bool> didPopRoute() => _handleBackNavigation();
+
+  Future<bool> _onBackButtonPressed() => _handleBackNavigation();
+
+  Future<bool> _handleBackNavigation() async {
+    // BackButtonListener consumes most events before Navigator starts a pop.
+    // didPopRoute covers physical Android back when router dispatch reaches the
+    // platform route observer before the shell listener.
     if (_handlingBack) return true;
     _handlingBack = true;
     try {

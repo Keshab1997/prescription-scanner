@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:prescription_scanner/router.dart';
 import 'package:prescription_scanner/screens/splash_screen.dart';
@@ -16,6 +17,12 @@ class _PrescriptionScannerAppState
     extends ConsumerState<PrescriptionScannerApp> {
   bool _showLaunchSplash = true;
 
+  @override
+  void initState() {
+    super.initState();
+    SystemNavigator.setFrameworkHandlesBack(true);
+  }
+
   void _finishLaunchSplash() {
     if (!mounted || !_showLaunchSplash) return;
     setState(() => _showLaunchSplash = false);
@@ -28,6 +35,10 @@ class _PrescriptionScannerAppState
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       routerConfig: ref.watch(appRouterProvider),
+      onNavigationNotification: (_) {
+        SystemNavigator.setFrameworkHandlesBack(true);
+        return true;
+      },
       builder: (context, child) {
         return Stack(
           fit: StackFit.expand,
