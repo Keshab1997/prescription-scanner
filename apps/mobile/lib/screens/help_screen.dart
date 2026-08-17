@@ -304,20 +304,26 @@ class _FaqCardState extends State<_FaqCard>
                       ),
                     ],
                   ),
-                  SizeTransition(
-                    sizeFactor: _expandAnimation,
-                    axisAlignment: -1,
-                    child: Padding(
-                      padding: const EdgeInsets.only(top: 12, left: 30),
-                      child: Text(
-                        widget.answer,
-                        style: const TextStyle(
-                          color: AppColors.muted,
-                          fontSize: 13.5,
-                          height: 1.5,
-                        ),
-                      ),
-                    ),
+                  AnimatedSize(
+                    duration: const Duration(milliseconds: 260),
+                    curve: Curves.easeOutCubic,
+                    // Anchors the growing answer to the top. Uses 'alignment'
+                    // (available on every Flutter version) instead of the
+                    // deprecated SizeTransition.axisAlignment.
+                    alignment: Alignment.topCenter,
+                    child: _expanded
+                        ? Padding(
+                            padding: const EdgeInsets.only(top: 12, left: 30),
+                            child: Text(
+                              widget.answer,
+                              style: const TextStyle(
+                                color: AppColors.muted,
+                                fontSize: 13.5,
+                                height: 1.5,
+                              ),
+                            ),
+                          )
+                        : const SizedBox(width: double.infinity),
                   ),
                 ],
               ),
