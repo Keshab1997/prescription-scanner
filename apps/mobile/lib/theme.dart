@@ -243,10 +243,14 @@ abstract final class AppTheme {
         ),
       ),
       pageTransitionsTheme: const PageTransitionsTheme(
+        // Fade-forward on all platforms for consistency. Avoids the platform-
+        // specific CupertinoPageTransitionsBuilder which was removed in later
+        // Flutter releases; the build workflow (flutter-builder) tracks the
+        // latest stable channel where it no longer exists.
         builders: {
           TargetPlatform.android: FadeForwardsPageTransitionsBuilder(),
-          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
-          TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.iOS: FadeForwardsPageTransitionsBuilder(),
+          TargetPlatform.macOS: FadeForwardsPageTransitionsBuilder(),
         },
       ),
     );
