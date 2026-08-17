@@ -78,7 +78,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             content: const Text(
               'Open the verification link, then return to sign in securely. '
               'If you do not see the email in your inbox, check your Spam or '
-              'Junk folder and mark it as \"Not spam\".',
+              'Junk folder and mark it as "Not spam".',
             ),
             actions: [
               FilledButton(
