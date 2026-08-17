@@ -43,7 +43,7 @@ class _HelpScreenState extends ConsumerState<HelpScreen> {
             const SizedBox(height: 8),
             ..._faqItems.map(
               (item) => Entrance(
-                delay: const Duration(
+                delay: Duration(
                   milliseconds: 160 + _faqItems.indexOf(item) * 40,
                 ),
                 child: Padding(
