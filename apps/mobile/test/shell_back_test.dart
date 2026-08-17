@@ -6,6 +6,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_core_platform_interface/firebase_core_platform_interface.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/foundation.dart' show debugPrint;
+import 'package:flutter/widgets.dart' show Text;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:prescription_scanner/app.dart';
@@ -117,7 +118,8 @@ void main() {
       final texts = tester
           .widgetList<Text>(find.byType(Text))
           .map((t) => t.data)
-          .where((d) => d != null && d!.isNotEmpty)
+          .whereType<String>()
+          .where((d) => d.isNotEmpty)
           .take(12)
           .toList();
       debugPrint('AFTER BACK — visible texts: $texts');
