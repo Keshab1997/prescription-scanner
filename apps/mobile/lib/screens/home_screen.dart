@@ -15,7 +15,7 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(authServiceProvider).currentUser;
     final signedIn = user != null && user.emailVerified;
-    final displayName = signedIn ? user?.displayName?.trim() : null;
+    final displayName = signedIn ? user.displayName?.trim() : null;
     final nameParts =
         displayName
             ?.split(RegExp(r'\s+'))

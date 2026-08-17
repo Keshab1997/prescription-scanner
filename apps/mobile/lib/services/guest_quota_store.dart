@@ -19,7 +19,7 @@ abstract final class GuestQuotaStore {
   }
 
   static String _dayKey(DateTime now) {
-    final two = (int n) => n.toString().padLeft(2, '0');
+    String two(int n) => n.toString().padLeft(2, '0');
     return '${now.year}-${two(now.month)}-${two(now.day)}';
   }
 
