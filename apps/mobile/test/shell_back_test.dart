@@ -113,7 +113,7 @@ void main() {
       await tester.binding.handlePopRoute();
       await tester.pump(const Duration(milliseconds: 900));
 
-      // Debug: include what is actually on screen in the failure message.
+      // TEMP DEBUG: dump visible texts (intentionally failing assertion).
       final texts = tester
           .widgetList<Text>(find.byType(Text))
           .map((t) => t.data)
@@ -121,13 +121,7 @@ void main() {
           .where((d) => d.isNotEmpty)
           .take(14)
           .toList();
-
-      expect(
-        find.text('Ready to scan?'),
-        findsOneWidget,
-        reason: 'After back press, visible texts: $texts',
-      );
-      expect(tester.takeException(), isNull);
+      expect(texts, isEmpty, reason: 'DEBUG-DUMP');
     },
   );
 }
