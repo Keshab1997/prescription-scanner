@@ -5,6 +5,7 @@ abstract final class AppPrefs {
   static const _boxName = 'ks_prefs_v1';
   static const _languageKey = 'result_language';
   static const _chosenKey = 'language_chosen';
+  static const _mediaAskedKey = 'media_permissions_asked';
   static Box? _box;
 
   static Future<void> init() async {

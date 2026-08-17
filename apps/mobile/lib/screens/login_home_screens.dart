@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:prescription_scanner/legal/legal_copy.dart';
 import 'package:prescription_scanner/services/auth_service.dart';
 import 'package:prescription_scanner/theme.dart';
+import 'package:prescription_scanner/widgets/media_permission_gate.dart';
 import 'package:prescription_scanner/widgets/ui_animations.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -51,8 +52,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: AuroraBackdrop(
-        child: SafeArea(
+      body: Stack(
+        children: [
+          const MediaPermissionGate(),
+          AuroraBackdrop(
+            child: SafeArea(
           child: Center(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(22),
@@ -335,7 +339,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               ),
             ),
           ),
-        ),
+            ),
+          ),
+        ],
       ),
     );
   }

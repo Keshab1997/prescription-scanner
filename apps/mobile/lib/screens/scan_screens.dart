@@ -12,6 +12,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:uuid/uuid.dart';
 import 'package:prescription_scanner/legal/legal_copy.dart';
 import 'package:prescription_scanner/services/analytics_service.dart';
+import 'package:prescription_scanner/services/media_permissions.dart';
 import 'package:prescription_scanner/services/network_status.dart';
 import 'package:prescription_scanner/services/consent_store.dart';
 import 'package:prescription_scanner/services/gemini_vision_service.dart';
@@ -184,7 +185,33 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
         ],
       ),
     );
-    return allowed == true;
+    if (allowed != true) return false;
+    return MediaPermissions.ensureCamera();
+  }
+
+  Future<bool> _confirmGalleryPermission() async {
+    final allowed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        icon: const Icon(Icons.photo_library_outlined, color: AppColors.teal),
+        title: const Text('Photos access'),
+        content: const Text(
+          'Gallery is used only to pick a prescription photo you already have. The app does not browse your whole library in the background.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Not now'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Allow photos'),
+          ),
+        ],
+      ),
+    );
+    if (allowed != true) return false;
+    return MediaPermissions.ensureGallery();
   }
 
   Future<void> selectImage(ImageSource source) async {
@@ -194,6 +221,9 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
     if (source == ImageSource.camera) {
       final cameraOk = await _confirmCameraPermission();
       if (!cameraOk || !mounted) return;
+    } else if (source == ImageSource.gallery) {
+      final galleryOk = await _confirmGalleryPermission();
+      if (!galleryOk || !mounted) return;
     }
 
     final service = ref.read(prescriptionUploadServiceProvider);
