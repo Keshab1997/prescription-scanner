@@ -171,7 +171,8 @@ flutter run -d chrome
 | Workflow | Trigger | What it does |
 |---|---|---|
 | `mobile_ci.yml` | push / PR to `main` | format check → `flutter analyze` → `flutter test` (fast — **no build**) |
-| `manual_android_build.yml` | manual | Manual **debug APK** build (on demand) |
+| `manual_debug_apk.yml` | manual | Build **debug APK** (fast, no signing) |
+| `manual_android_build.yml` | manual | Build **release APK/AAB** (signed, for production testing) |
 
 ---
 
