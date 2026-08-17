@@ -467,7 +467,7 @@ class ResultScreen extends ConsumerWidget {
                     'No medicine details were created. Try a clearer prescription image.',
               )
             else if (details.medicines.isEmpty)
-     mptyResult(
+              const _EmptyResult(
                 icon: Icons.visibility_off_outlined,
                 title: 'No medicines could be read',
                 message:
@@ -1489,10 +1489,6 @@ class _ResultError extends StatelessWidget {
           ],
         ),
       ),
-    ),
-  );
-}
-),
     ),
   );
 }
