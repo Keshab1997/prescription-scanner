@@ -10,6 +10,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:uuid/uuid.dart';
+import 'package:prescription_scanner/legal/legal_copy.dart';
 import 'package:prescription_scanner/services/analytics_service.dart';
 import 'package:prescription_scanner/services/consent_store.dart';
 import 'package:prescription_scanner/services/gemini_vision_service.dart';
@@ -136,8 +137,10 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
       builder: (context) => AlertDialog(
         icon: const Icon(Icons.shield_outlined, color: AppColors.teal),
         title: const Text('AI processing consent'),
-        content: const Text(
-          'Your prescription image will be sent for AI transcription to extract visible medicine details. The app does not upload it to its own cloud storage. The prepared local copy is deleted after processing, and the structured result stays on this device.',
+        content: SingleChildScrollView(
+          child: Text(
+            '${LegalCopy.medicalFull}\n\n${LegalCopy.privacySummary}',
+          ),
         ),
         actions: [
           TextButton(
@@ -153,10 +156,36 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
     );
   }
 
+  Future<bool> _confirmCameraPermission() async {
+    final allowed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        icon: const Icon(Icons.photo_camera_outlined, color: AppColors.teal),
+        title: const Text(LegalCopy.cameraRationaleTitle),
+        content: const Text(LegalCopy.cameraRationale),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Not now'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Allow camera'),
+          ),
+        ],
+      ),
+    );
+    return allowed == true;
+  }
+
   Future<void> selectImage(ImageSource source) async {
     final consentReady =
         aiConsentGranted || await _ensureAiConsentBeforeScan(showError: true);
     if (!consentReady || !mounted) return;
+    if (source == ImageSource.camera) {
+      final cameraOk = await _confirmCameraPermission();
+      if (!cameraOk || !mounted) return;
+    }
 
     final service = ref.read(prescriptionUploadServiceProvider);
     setState(() {
@@ -435,6 +464,14 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      Text(
+                        LegalCopy.medicalShort,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w800,
+                          height: 1.4,
+                        ),
+                      ),
+                      SizedBox(height: 10),
                       Text(
                         'For a clearer result',
                         style: TextStyle(fontWeight: FontWeight.w900),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:prescription_scanner/legal/legal_copy.dart';
 import 'package:prescription_scanner/services/auth_service.dart';
 import 'package:prescription_scanner/theme.dart';
 import 'package:prescription_scanner/widgets/ui_animations.dart';
@@ -255,6 +256,28 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           ),
                           const SizedBox(height: 4),
                           Entrance(
+                            delay: const Duration(milliseconds: 590),
+                            child: Wrap(
+                              alignment: WrapAlignment.center,
+                              spacing: 8,
+                              children: [
+                                TextButton(
+                                  onPressed: () => context.push('/privacy'),
+                                  child: const Text('Privacy'),
+                                ),
+                                TextButton(
+                                  onPressed: () => context.push('/terms'),
+                                  child: const Text('Terms'),
+                                ),
+                                TextButton(
+                                  onPressed: () => context.push('/disclaimer'),
+                                  child: const Text('Disclaimer'),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Entrance(
                             delay: const Duration(milliseconds: 600),
                             child: TextButton.icon(
                               onPressed: loading
@@ -292,7 +315,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                   SizedBox(width: 10),
                                   Expanded(
                                     child: Text(
-                                      'Prescription images are sent directly for AI-powered transcription. The structured result stays on this device, separated by your account.',
+                                      '${LegalCopy.medicalShort} ${LegalCopy.privacySummary}',
                                       style: TextStyle(
                                         color: AppColors.muted,
                                         fontSize: 12,

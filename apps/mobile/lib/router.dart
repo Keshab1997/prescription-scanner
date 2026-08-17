@@ -37,6 +37,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         '/upload',
         '/processing',
         '/result',
+        '/privacy',
+        '/terms',
+        '/disclaimer',
       };
       if (!signedIn && !isAuthRoute) {
         if (guestAllowedPaths.contains(path)) return null;

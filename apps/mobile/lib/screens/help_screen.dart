@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:prescription_scanner/legal/legal_copy.dart';
 import 'package:prescription_scanner/theme.dart';
 import 'package:prescription_scanner/widgets/about_card.dart';
 import 'package:prescription_scanner/widgets/ui_animations.dart';
@@ -62,28 +64,43 @@ class _HelpScreenState extends ConsumerState<HelpScreen> {
               delay: const Duration(milliseconds: 440),
               child: _InfoCard(
                 icon: Icons.shield_outlined,
-                children: const [
-                  Text(
-                    'Your prescription image is sent directly for AI-powered '
-                    'transcription only. It is not stored in any cloud database — the '
-                    'prepared local copy is deleted after processing, and only the '
-                    'structured result stays on your device in a private, account-scoped '
-                    'store.',
+                children: [
+                  const Text(
+                    LegalCopy.privacySummary,
                     style: TextStyle(
                       color: AppColors.muted,
                       fontSize: 13,
                       height: 1.5,
                     ),
                   ),
-                  SizedBox(height: 10),
-                  Text(
-                    'Anonymous guest scans use the same privacy model: results are '
-                    'stored locally and never uploaded to the cloud.',
+                  const SizedBox(height: 10),
+                  const Text(
+                    LegalCopy.medicalShort,
                     style: TextStyle(
-                      color: AppColors.muted,
+                      color: AppColors.ink,
                       fontSize: 13,
-                      height: 1.5,
+                      fontWeight: FontWeight.w700,
+                      height: 1.45,
                     ),
+                  ),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      TextButton(
+                        onPressed: () => context.push('/privacy'),
+                        child: const Text('Privacy Policy'),
+                      ),
+                      TextButton(
+                        onPressed: () => context.push('/terms'),
+                        child: const Text('Terms'),
+                      ),
+                      TextButton(
+                        onPressed: () => context.push('/disclaimer'),
+                        child: const Text('Disclaimer'),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -177,7 +194,7 @@ final _faqItems = <_FaqItemData>[
   _FaqItemData(
     question: 'How does the AI transcription work?',
     answer:
-        'The app sends the prescription image directly to our AI engine which returns a structured list of medicines with details like dosage, frequency and duration. The app then repairs and displays this result. Your image is never stored on any cloud server — it is processed and then the local copy is deleted.',
+        'The prepared image is sent to Google Gemini for transcription only. The app is not a medical device and does not diagnose or prescribe. Unclear text is left blank. The local image copy is deleted after processing; the structured list stays on this device.',
   ),
   _FaqItemData(
     question: 'Is my medical data stored in the cloud?',

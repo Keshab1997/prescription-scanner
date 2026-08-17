@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:prescription_scanner/legal/legal_copy.dart';
 import 'package:prescription_scanner/models/extracted_prescription.dart';
+import 'package:prescription_scanner/services/ads_service.dart';
 import 'package:prescription_scanner/services/auth_service.dart';
 import 'package:prescription_scanner/services/prescription_repository.dart';
 import 'package:prescription_scanner/theme.dart';
@@ -63,7 +65,7 @@ class HomeScreen extends ConsumerWidget {
                 child: _QuotaCard(quota: value),
               ),
             ),
-            if (!signedIn && (quota.value?.used ?? 0) >= 1)
+            if (!signedIn)
               Entrance(
                 delay: const Duration(milliseconds: 220),
                 child: Padding(
@@ -120,25 +122,18 @@ class HomeScreen extends ConsumerWidget {
                     ),
             ),
             const SizedBox(height: 6),
-            Entrance(
-              delay: const Duration(milliseconds: 500),
-              child: Container(
-                height: 54,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.line),
-                ),
-                child: const Text(
-                  'ADAPTIVE BANNER · CONSENT REQUIRED',
-                  style: TextStyle(
-                    color: Color(0xFF9AA7B3),
-                    fontSize: 9,
-                    letterSpacing: .8,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
+            const Entrance(
+              delay: Duration(milliseconds: 500),
+              child: AdaptiveAdBanner(),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              LegalCopy.medicalShort,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: AppColors.muted,
+                fontSize: 11,
+                height: 1.4,
               ),
             ),
           ],
@@ -789,7 +784,7 @@ class _GuestLoginBanner extends StatelessWidget {
                 ),
                 SizedBox(height: 2),
                 Text(
-                  'Log in to get 2 more free scans today.',
+                  LegalCopy.guestLimitBody,
                   style: TextStyle(color: AppColors.muted, fontSize: 12.5),
                 ),
               ],

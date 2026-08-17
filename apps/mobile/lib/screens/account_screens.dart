@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:prescription_scanner/legal/legal_copy.dart';
 import 'package:prescription_scanner/services/auth_service.dart';
 import 'package:prescription_scanner/services/prescription_repository.dart';
 import 'package:prescription_scanner/theme.dart';
@@ -87,13 +88,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   Future<void> requestDeletion(BuildContext context, WidgetRef ref) async {
-    final confirmed = await showDialog<bool>(
+    final first = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         icon: const Icon(Icons.warning_amber_rounded, color: AppColors.danger),
         title: const Text('Delete account and data?'),
         content: const Text(
-          'This permanently deletes your account, scan history and all associated data from the app and our servers. This cannot be undone.',
+          'This permanently deletes your Firebase account, on-device scan '
+          'history, consent, and cloud usage/feedback for this user. '
+          'An audit record of the request may remain. This cannot be undone.',
         ),
         actions: [
           TextButton(
@@ -103,28 +106,112 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: AppColors.danger),
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete permanently'),
+            child: const Text('Continue'),
           ),
         ],
       ),
     );
-    if (confirmed != true || !context.mounted) return;
+    if (first != true || !context.mounted) return;
 
-    final service = ref.read(authServiceProvider);
-    try {
-      await service.requestAccountDeletion();
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Your account and data have been deleted.'),
+    final password = TextEditingController();
+    final confirmWord = TextEditingController();
+    var error = '';
+    var loading = false;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setDialog) => AlertDialog(
+          title: const Text('Confirm deletion'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Enter your password and type DELETE to confirm.',
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: password,
+                obscureText: true,
+                decoration: const InputDecoration(
+                  labelText: 'Current password',
+                ),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: confirmWord,
+                textCapitalization: TextCapitalization.characters,
+                decoration: const InputDecoration(
+                  labelText: 'Type DELETE',
+                ),
+              ),
+              if (error.isNotEmpty) ...[
+                const SizedBox(height: 10),
+                Text(error, style: const TextStyle(color: AppColors.danger)),
+              ],
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: loading
+                  ? null
+                  : () => Navigator.pop(dialogContext, false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(backgroundColor: AppColors.danger),
+              onPressed: loading
+                  ? null
+                  : () async {
+                      if (confirmWord.text.trim() != 'DELETE') {
+                        setDialog(() => error = 'Type DELETE in capital letters.');
+                        return;
+                      }
+                      if (password.text.isEmpty) {
+                        setDialog(() => error = 'Password is required.');
+                        return;
+                      }
+                      setDialog(() {
+                        loading = true;
+                        error = '';
+                      });
+                      try {
+                        final service = ref.read(authServiceProvider);
+                        await service.reauthenticate(password.text);
+                        await service.requestAccountDeletion();
+                        if (dialogContext.mounted) {
+                          Navigator.pop(dialogContext, true);
+                        }
+                      } catch (e) {
+                        setDialog(() {
+                          loading = false;
+                          error = friendlyAuthError(e);
+                        });
+                      }
+                    },
+              child: loading
+                  ? const SizedBox.square(
+                      dimension: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Text('Delete permanently'),
+            ),
+          ],
         ),
-      );
-    } catch (e) {
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(friendlyAuthError(e))));
-    }
+      ),
+    );
+    password.dispose();
+    confirmWord.dispose();
+    if (confirmed != true || !context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Your account and data have been deleted.'),
+      ),
+    );
+    context.go('/login');
   }
 
   Future<void> _confirmSignOut(BuildContext context) async {
@@ -626,13 +713,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     delay: const Duration(milliseconds: 320),
                     child: _ProfileRow(
                       icon: Icons.shield_outlined,
-                      title: 'Privacy & consent',
-                      onTap: () => _showInfoDialog(
-                        context: context,
-                        title: 'Privacy & consent',
-                        body:
-                            'Your prescription image is sent directly for AI-powered transcription. The app does not store the image in its own cloud database; the prepared local image is deleted after processing, and the structured result remains on this device under your account.',
-                      ),
+                      title: 'Privacy Policy',
+                      subtitle: 'How images and account data are used',
+                      onTap: () => context.push('/privacy'),
+                    ),
+                  ),
+                  Entrance(
+                    delay: const Duration(milliseconds: 340),
+                    child: _ProfileRow(
+                      icon: Icons.description_outlined,
+                      title: 'Terms of Use',
+                      onTap: () => context.push('/terms'),
                     ),
                   ),
                   Entrance(
@@ -654,12 +745,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     child: _ProfileRow(
                       icon: Icons.info_outline_rounded,
                       title: 'Medical disclaimer',
-                      onTap: () => _showInfoDialog(
-                        context: context,
-                        title: 'Medical disclaimer',
-                        body:
-                            'Prescription Scanner provides AI-assisted transcription for informational purposes only. It is not a medical device and does not provide medical advice, diagnosis, or treatment. Always confirm details with your doctor or pharmacist before acting on any extracted information.',
-                      ),
+                      subtitle: LegalCopy.medicalShort,
+                      onTap: () => context.push('/disclaimer'),
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -1050,6 +1137,18 @@ class _ProfileRow extends StatelessWidget {
                 if (onTap != null)
                   const Icon(
                     Icons.chevron_right_rounded,
+                    color: AppColors.muted,
+                    size: 22,
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+ded,
                     color: AppColors.muted,
                     size: 22,
                   ),
