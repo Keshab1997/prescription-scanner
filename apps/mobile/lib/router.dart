@@ -73,19 +73,34 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           child: ResetPasswordScreen(),
         ),
       ),
+      // Shell tabs can never be popped: a system back press must not leave
+      // the app with no route (which exits it). onExit:false aborts any pop
+      // attempt as a safety net — the AppShell back handler navigates
+      // non-home tabs to /home and shows the exit dialog on /home.
       ShellRoute(
         builder: (_, state, child) =>
             AppShell(currentPath: state.uri.path, child: child),
-        // Safety net: a back press must never pop the shell route itself,
-        // which would leave the app with no route and exit it. Returning
-        // false cancels the pop; the AppShell back handler navigates
-        // non-home tabs back to /home (and shows the exit dialog on /home).
-        onExit: (_, _) => false,
         routes: [
-          GoRoute(path: '/home', builder: (_, _) => const HomeScreen()),
-          GoRoute(path: '/history', builder: (_, _) => const HistoryScreen()),
-          GoRoute(path: '/help', builder: (_, _) => const HelpScreen()),
-          GoRoute(path: '/profile', builder: (_, _) => const ProfileScreen()),
+          GoRoute(
+            path: '/home',
+            onExit: (_, _) => false,
+            builder: (_, _) => const HomeScreen(),
+          ),
+          GoRoute(
+            path: '/history',
+            onExit: (_, _) => false,
+            builder: (_, _) => const HistoryScreen(),
+          ),
+          GoRoute(
+            path: '/help',
+            onExit: (_, _) => false,
+            builder: (_, _) => const HelpScreen(),
+          ),
+          GoRoute(
+            path: '/profile',
+            onExit: (_, _) => false,
+            builder: (_, _) => const ProfileScreen(),
+          ),
         ],
       ),
       GoRoute(
