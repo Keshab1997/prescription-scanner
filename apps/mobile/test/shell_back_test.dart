@@ -114,17 +114,20 @@ void main() {
       await tester.binding.handlePopRoute();
       await tester.pump(const Duration(milliseconds: 900));
 
-      // Debug: what is actually on screen after the back press?
+      // Debug: include what is actually on screen in the failure message.
       final texts = tester
           .widgetList<Text>(find.byType(Text))
           .map((t) => t.data)
           .whereType<String>()
           .where((d) => d.isNotEmpty)
-          .take(12)
+          .take(14)
           .toList();
-      debugPrint('AFTER BACK — visible texts: $texts');
 
-      expect(find.text('Ready to scan?'), findsOneWidget);
+      expect(
+        find.text('Ready to scan?'),
+        findsOneWidget,
+        reason: 'After back press, visible texts: $texts',
+      );
       expect(tester.takeException(), isNull);
     },
   );
