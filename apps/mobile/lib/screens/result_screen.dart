@@ -232,7 +232,9 @@ class ResultScreen extends ConsumerWidget {
   }
 
   Future<void> _shareText(ExtractedPrescription details) {
-    return Share.share(prescriptionShareText(details));
+    return SharePlus.instance.share(
+      ShareParams(text: prescriptionShareText(details)),
+    );
   }
 
   Future<void> _editMedicine(
