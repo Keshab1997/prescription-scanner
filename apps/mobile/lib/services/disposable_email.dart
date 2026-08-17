@@ -71,7 +71,9 @@ const Set<String> kDisposableEmailDomains = {
 /// temporary mail domain; returns null when the address is allowed.
 String? disposableEmailError(String email) {
   final at = email.lastIndexOf('@');
-  if (at < 0 || at == email.length - 1) return null;
+  // Empty local part (e.g. '@mailinator.com') is not a valid address; let
+  // Firebase report it as invalid instead of treating it as disposable.
+  if (at <= 0 || at == email.length - 1) return null;
   final domain = email.substring(at + 1).trim().toLowerCase();
   if (domain.isEmpty) return null;
   if (kDisposableEmailDomains.contains(domain)) {
