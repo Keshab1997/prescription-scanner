@@ -258,6 +258,48 @@ service cloud.firestore {
       allow read, write: if isAdmin();
     }
 
+    // Guest (anonymous) daily scan usage, keyed by a stable device id
+    // ({deviceId}-{yyyy-MM-dd}) so clearing app data cannot reset the
+    // free-scan allowance. Anonymous clients may only increment their own
+    // day's counter (never set arbitrary values); deletes stay admin-only.
+    match /guest_usage/{docId} {
+      allow read: if isAdmin() || !isSignedIn() || isActiveUser();
+      allow create: if !isSignedIn()
+        && request.resource.data.keys().hasAll([
+          'device_id', 'usage_date', 'request_count', 'successful_count',
+          'failed_count', 'updated_at'
+        ])
+        && request.resource.data.keys().hasOnly([
+          'device_id', 'usage_date', 'request_count', 'successful_count',
+          'failed_count', 'updated_at'
+        ])
+        && request.resource.data.usage_date is string
+        && request.resource.data.usage_date.matches(
+          '^[0-9]{4}-[0-9]{2}-[0-9]{2}$'
+        )
+        && request.resource.data.device_id is string
+        && request.resource.data.device_id.size() >= 6
+        && request.resource.data.request_count == 1
+        && request.resource.data.successful_count == 1
+        && request.resource.data.failed_count == 0
+        && request.resource.data.updated_at == request.time;
+
+      allow update: if !isSignedIn()
+        && request.resource.data.device_id == resource.data.device_id
+        && request.resource.data.usage_date == resource.data.usage_date
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'request_count', 'successful_count', 'updated_at'
+        ])
+        && request.resource.data.request_count
+          == resource.data.request_count + 1
+        && request.resource.data.successful_count
+          == resource.data.successful_count + 1
+        && request.resource.data.failed_count == resource.data.failed_count
+        && request.resource.data.updated_at == request.time;
+
+      allow delete: if isAdmin();
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }

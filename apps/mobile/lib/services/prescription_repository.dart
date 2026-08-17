@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart' as fb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:prescription_scanner/models/extracted_prescription.dart';
 import 'package:prescription_scanner/services/auth_service.dart';
+import 'package:prescription_scanner/services/device_identity.dart';
 import 'package:prescription_scanner/services/guest_quota_store.dart';
 import 'package:prescription_scanner/services/result_store.dart';
 
@@ -96,7 +97,7 @@ class PrescriptionRepository {
       // Any other failure must not block anonymous scanning.
     }
 
-    final used = await GuestQuotaStore.usedToday();
+    final used = await _guestUsedToday();
     return ScanQuota(
       dailyLimit: kGuestFreeScansPerDay,
       used: used,
@@ -106,6 +107,55 @@ class PrescriptionRepository {
       maintenanceMode: maintenanceMode,
       isGuest: true,
     );
+  }
+
+  /// Effective guest scans used today: the Firestore counter keyed by the
+  /// stable device id (survives app data clears) if readable, otherwise the
+  /// local Hive counter.
+  Future<int> _guestUsedToday() async {
+    final local = await GuestQuotaStore.usedToday();
+    final deviceId = await DeviceIdentity.id;
+    if (deviceId == null) return local;
+    try {
+      final today = DateTime.now();
+      final day = '${today.year}-${_two(today.month)}-${_two(today.day)}';
+      final doc = await firestore
+          .collection('guest_usage')
+          .doc('$deviceId-$day')
+          .get();
+      final server = _asInt(doc.data()?['request_count']) ?? 0;
+      return server > local ? server : local;
+    } catch (_) {
+      return local;
+    }
+  }
+
+  /// Mirrors a successful guest scan into Firestore (guest_usage), keyed by
+  /// the stable device id so clearing app data cannot reset the allowance.
+  /// Best-effort: failures are swallowed (local Hive still tracks it).
+  Future<void> _recordGuestUsageServerSide() async {
+    final deviceId = await DeviceIdentity.id;
+    if (deviceId == null) return;
+    try {
+      final today = DateTime.now();
+      final day = '${today.year}-${_two(today.month)}-${_two(today.day)}';
+      final ref = firestore.collection('guest_usage').doc('$deviceId-$day');
+      await firestore.runTransaction((transaction) async {
+        final snapshot = await transaction.get(ref);
+        final requestCount =
+            (_asInt(snapshot.data()?['request_count']) ?? 0) + 1;
+        transaction.set(ref, {
+          'device_id': deviceId,
+          'usage_date': day,
+          'request_count': requestCount,
+          'successful_count': requestCount,
+          'failed_count': 0,
+          'updated_at': FieldValue.serverTimestamp(),
+        });
+      });
+    } catch (_) {
+      // Offline/rule failure: keep local-only accounting.
+    }
   }
 
   Future<ScanQuota> _loadSignedInQuota(String ownerUid) async {
@@ -131,7 +181,7 @@ class PrescriptionRepository {
     // Guest scans performed earlier today on this device count toward the
     // same daily budget, so a guest who used 1 free scan then signs in has
     // exactly (dailyLimit - 1) = 2 scans left.
-    final guestUsed = await GuestQuotaStore.usedToday();
+    final guestUsed = await _guestUsedToday();
     final used = (firestoreUsed + guestUsed).clamp(0, dailyLimit);
 
     return ScanQuota(
@@ -148,6 +198,7 @@ class PrescriptionRepository {
   Future<void> recordSuccessfulScan({String? ownerUid}) async {
     if (ownerUid == null || ownerUid == guestOwnerUid) {
       await GuestQuotaStore.recordSuccessfulScan();
+      await _recordGuestUsageServerSide();
       return;
     }
 
