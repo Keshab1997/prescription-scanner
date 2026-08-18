@@ -16,12 +16,12 @@ abstract final class MediaPermissions {
       try {
         final info = await DeviceInfoPlugin().androidInfo;
         if (info.version.sdkInt >= 33) {
-          return _request(Permission.photos);
+          return await _request(Permission.photos);
         }
-        return _request(Permission.storage);
+        return await _request(Permission.storage);
       } catch (error) {
         debugPrint('[permissions] gallery check skipped: $error');
-        return _request(Permission.photos);
+        return await _request(Permission.photos);
       }
     }
     return _request(Permission.photos);
