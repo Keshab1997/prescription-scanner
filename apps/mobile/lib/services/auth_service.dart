@@ -2,11 +2,16 @@ import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fb;
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:prescription_scanner/services/consent_store.dart';
 import 'package:prescription_scanner/services/analytics_service.dart';
 import 'package:prescription_scanner/services/disposable_email.dart';
 import 'package:prescription_scanner/services/result_store.dart';
+
+/// Must match [guestOwnerUid] in prescription_repository.dart.
+const _guestNamespace = 'guest';
 
 final authServiceProvider = Provider<AuthService>((ref) {
   return AuthService(fb.FirebaseAuth.instance, FirebaseFirestore.instance);
@@ -27,6 +32,16 @@ class AuthService {
   fb.User? get currentUser => auth.currentUser;
 
   Stream<fb.User?> get authChanges => auth.authStateChanges();
+
+  bool get usesPasswordProvider =>
+      currentUser?.providerData.any((p) => p.providerId == 'password') ??
+      false;
+
+  bool get usesGoogleProvider =>
+      currentUser?.providerData.any((p) => p.providerId == 'google.com') ??
+      false;
+
+  static final GoogleSignIn _googleSignIn = GoogleSignIn(scopes: const ['email']);
 
   Future<bool> signIn({required String email, required String password}) async {
     _rejectDisposableEmail(email);
@@ -213,7 +228,120 @@ class AuthService {
     await user.reauthenticateWithCredential(credential);
   }
 
-  Future<void> signOut() => auth.signOut();
+  /// Google Sign-In. Returns `true` when a session exists. Returns `false`
+  /// if the user cancelled the Google picker.
+  Future<bool> signInWithGoogle() async {
+    try {
+      final account = await _googleSignIn.signIn();
+      if (account == null) return false;
+      final tokens = await account.authentication;
+      if (tokens.idToken == null) {
+        throw fb.FirebaseAuthException(
+          code: 'google-missing-id-token',
+          message:
+              'Google did not return an ID token. Add this app SHA-1 in Firebase and re-download google-services.json.',
+        );
+      }
+      final credential = fb.GoogleAuthProvider.credential(
+        idToken: tokens.idToken,
+        accessToken: tokens.accessToken,
+      );
+      final result = await auth.signInWithCredential(credential);
+      final user = result.user;
+      if (user == null) return false;
+
+      final profile = await firestore.collection('profiles').doc(user.uid).get();
+      if (profile.data()?['status'] == 'blocked') {
+        await signOut();
+        throw fb.FirebaseAuthException(
+          code: 'user-blocked',
+          message: 'This account has been blocked by an administrator.',
+        );
+      }
+
+      await _ensureProfile(
+        uid: user.uid,
+        email: user.email ?? account.email,
+        displayName:
+            (user.displayName ?? account.displayName ?? account.email).trim(),
+      );
+      if (result.additionalUserInfo?.isNewUser == true) {
+        unawaited(AnalyticsService.logSignUp());
+      } else {
+        unawaited(AnalyticsService.logLogin());
+      }
+      return true;
+    } on fb.FirebaseAuthException {
+      rethrow;
+    } on PlatformException catch (error) {
+      throw fb.FirebaseAuthException(
+        code: error.code,
+        message: _googlePlatformMessage(error),
+      );
+    }
+  }
+
+  Future<void> reauthenticateWithGoogle() async {
+    final user = auth.currentUser;
+    if (user == null) {
+      throw fb.FirebaseAuthException(
+        code: 'reauth-required',
+        message: 'Please sign in again.',
+      );
+    }
+    try {
+      final account = await _googleSignIn.signIn();
+      if (account == null) {
+        throw fb.FirebaseAuthException(
+          code: 'google-cancelled',
+          message: 'Google confirmation was cancelled.',
+        );
+      }
+      final tokens = await account.authentication;
+      final credential = fb.GoogleAuthProvider.credential(
+        idToken: tokens.idToken,
+        accessToken: tokens.accessToken,
+      );
+      await user.reauthenticateWithCredential(credential);
+    } on fb.FirebaseAuthException {
+      rethrow;
+    } on PlatformException catch (error) {
+      throw fb.FirebaseAuthException(
+        code: error.code,
+        message: _googlePlatformMessage(error),
+      );
+    }
+  }
+
+  int guestHistoryCount() =>
+      ResultStore.instance.getAll(_guestNamespace).length;
+
+  Future<int> mergeGuestHistory() async {
+    final user = auth.currentUser;
+    if (user == null) return 0;
+    return ResultStore.instance.transferOwner(_guestNamespace, user.uid);
+  }
+
+  Future<void> signOut() async {
+    try {
+      await _googleSignIn.signOut();
+    } catch (_) {}
+    await auth.signOut();
+  }
+
+  String _googlePlatformMessage(PlatformException error) {
+    final code = error.code.toLowerCase();
+    if (code.contains('10') || code.contains('developer_error')) {
+      return 'Google Sign-In is not configured for this build. Add the debug and Play SHA-1 fingerprints in Firebase Authentication, then replace google-services.json.';
+    }
+    if (code.contains('12501') || code.contains('sign_in_canceled')) {
+      return 'Google Sign-In was cancelled.';
+    }
+    if (code.contains('7') || code.contains('network')) {
+      return 'Check your connection and try again.';
+    }
+    return error.message ?? 'Google Sign-In failed. Please try again.';
+  }
 
   /// Submits a deletion request and removes the local auth account. The
   /// Firestore profile/documents cleanup is handled by the admin or a

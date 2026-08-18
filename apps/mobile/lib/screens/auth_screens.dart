@@ -197,6 +197,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           ),
           if (error != null) _AuthError(error!),
           const SizedBox(height: 12),
+          GoogleSignInButton(
+            label: 'Sign up with Google',
+            requireAcceptedTerms: true,
+            acceptedTerms: accepted,
+            onBusy: (busy) => setState(() => loading = busy),
+            onError: (message) => setState(() => error = message),
+          ),
+          const AuthDivider(),
           FilledButton(
             onPressed: loading ? null : submit,
             child: loading

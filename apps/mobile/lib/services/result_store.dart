@@ -77,6 +77,21 @@ class ResultStore {
     return _box.delete(_key(ownerUid, id));
   }
 
+  /// Moves guest (or other) results to [toUid]. Existing ids on the
+  /// destination are kept; the source copy is still removed.
+  Future<int> transferOwner(String fromUid, String toUid) async {
+    if (fromUid == toUid) return 0;
+    var moved = 0;
+    for (final item in getAll(fromUid)) {
+      if (get(toUid, item.id) == null) {
+        await save(toUid, item);
+        moved++;
+      }
+      await delete(fromUid, item.id);
+    }
+    return moved;
+  }
+
   Future<void> clearUser(String ownerUid) async {
     final keys = _box.keys
         .whereType<String>()

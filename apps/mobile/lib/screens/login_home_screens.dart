@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:prescription_scanner/legal/legal_copy.dart';
 import 'package:prescription_scanner/services/auth_service.dart';
 import 'package:prescription_scanner/theme.dart';
+import 'package:prescription_scanner/widgets/google_sign_in_button.dart';
 import 'package:prescription_scanner/widgets/media_permission_gate.dart';
 import 'package:prescription_scanner/widgets/ui_animations.dart';
 
@@ -41,6 +42,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     });
     try {
       await service.signIn(email: email.text, password: password.text);
+      if (mounted) {
+        await offerGuestHistoryMerge(context, service);
+      }
       if (mounted) context.go('/home');
     } catch (exception) {
       if (mounted) setState(() => error = friendlyAuthError(exception));
@@ -208,6 +212,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                 ),
                               ),
                             ),
+                          Entrance(
+                            delay: const Duration(milliseconds: 480),
+                            child: GoogleSignInButton(
+                              onBusy: (busy) => setState(() => loading = busy),
+                              onError: (message) =>
+                                  setState(() => error = message),
+                            ),
+                          ),
+                          const AuthDivider(),
                           Entrance(
                             delay: const Duration(milliseconds: 500),
                             child: ScaleTap(

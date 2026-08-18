@@ -49,6 +49,12 @@ void main() {
       expect(await ConsentStore.hasAiConsent('firebase-user-a'), isTrue);
       expect(await ConsentStore.hasAiConsent('firebase-user-b'), isFalse);
 
+      await store.save('guest', _result('guest-scan', DateTime(2026, 8, 17)));
+      final moved = await store.transferOwner('guest', 'firebase-user-b');
+      expect(moved, 1);
+      expect(store.getAll('guest'), isEmpty);
+      expect(store.get('firebase-user-b', 'guest-scan'), isNotNull);
+
       await store.clearUser('firebase-user-a');
       await ConsentStore.clearUser('firebase-user-a');
       expect(store.getAll('firebase-user-a'), isEmpty);

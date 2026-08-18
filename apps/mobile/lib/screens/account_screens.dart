@@ -117,6 +117,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final confirmWord = TextEditingController();
     var error = '';
     var loading = false;
+    final service = ref.read(authServiceProvider);
+    final googleOnly = service.usesGoogleProvider && !service.usesPasswordProvider;
     final confirmed = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
@@ -126,18 +128,21 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
-                'Enter your password and type DELETE to confirm.',
+              Text(
+                googleOnly
+                    ? 'Type DELETE, then confirm with Google.'
+                    : 'Enter your password and type DELETE to confirm.',
               ),
               const SizedBox(height: 12),
-              TextField(
-                controller: password,
-                obscureText: true,
-                decoration: const InputDecoration(
-                  labelText: 'Current password',
+              if (!googleOnly)
+                TextField(
+                  controller: password,
+                  obscureText: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Current password',
+                  ),
                 ),
-              ),
-              const SizedBox(height: 10),
+              if (!googleOnly) const SizedBox(height: 10),
               TextField(
                 controller: confirmWord,
                 textCapitalization: TextCapitalization.characters,
@@ -167,7 +172,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         setDialog(() => error = 'Type DELETE in capital letters.');
                         return;
                       }
-                      if (password.text.isEmpty) {
+                      if (!googleOnly && password.text.isEmpty) {
                         setDialog(() => error = 'Password is required.');
                         return;
                       }
@@ -176,8 +181,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         error = '';
                       });
                       try {
-                        final service = ref.read(authServiceProvider);
-                        await service.reauthenticate(password.text);
+                        if (googleOnly) {
+                          await service.reauthenticateWithGoogle();
+                        } else {
+                          await service.reauthenticate(password.text);
+                        }
                         await service.requestAccountDeletion();
                         if (dialogContext.mounted) {
                           Navigator.pop(dialogContext, true);
@@ -197,7 +205,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         color: Colors.white,
                       ),
                     )
-                  : const Text('Delete permanently'),
+                  : Text(googleOnly ? 'Confirm with Google' : 'Delete permanently'),
             ),
           ],
         ),
@@ -667,7 +675,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       onTap: () => _editProfile(context),
                     ),
                   ),
-                  if (!verified)
+                  if (!verified && hasPassword)
                     Entrance(
                       delay: const Duration(milliseconds: 200),
                       child: _ProfileRow(
@@ -677,14 +685,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         onTap: () => _resendVerification(context),
                       ),
                     ),
-                  Entrance(
-                    delay: Duration(milliseconds: verified ? 200 : 260),
-                    child: _ProfileRow(
-                      icon: Icons.lock_outline_rounded,
-                      title: 'Change password',
-                      onTap: () => _changePassword(context),
+                  if (hasPassword)
+                    Entrance(
+                      delay: Duration(milliseconds: verified ? 200 : 260),
+                      child: _ProfileRow(
+                        icon: Icons.lock_outline_rounded,
+                        title: 'Change password',
+                        onTap: () => _changePassword(context),
+                      ),
                     ),
-                  ),
                   const SizedBox(height: 24),
                   const _SectionTitle('Support'),
                   const SizedBox(height: 10),

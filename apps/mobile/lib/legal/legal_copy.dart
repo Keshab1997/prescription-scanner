@@ -28,7 +28,7 @@ What the app does
 You capture or pick a prescription photo. The app compresses it on the device and sends the prepared image to Google Gemini so visible medicine details can be transcribed into a structured list.
 
 Data we process
-• Account: email, display name, and Firebase Authentication identifiers when you sign in.
+• Account: email, display name, and Firebase Authentication identifiers when you sign in. If you choose Google Sign-In, Google shares your Google account name and email with Firebase so we can create or open that account.
 • Images: the prepared photo is sent to Google Gemini. We do not upload it to our Firebase Storage. The local prepared file is deleted after processing.
 • On-device results: transcribed lists stay in local storage (Hive), namespaced by your Firebase user id or a guest namespace.
 • Usage: daily scan counts (and, for guests, a device-scoped counter) in Firestore so limits can be enforced.
