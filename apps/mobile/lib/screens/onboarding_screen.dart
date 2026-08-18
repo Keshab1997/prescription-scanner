@@ -1,3 +1,4 @@
+import 'dart:async' show unawaited;
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -47,7 +48,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
           'prepare it automatically — no typing needed.',
     ),
     _OnboardingPageData(
-      asset: 'assets/onboarding/onboarding_ai.png',
+      asset: 'assets/onboarding/onboarding_ai.jpg',
       eyebrow: 'AI TRANSCRIBE',
       eyebrowColor: AppColors.indigo,
       title: 'AI reads it for you',
@@ -56,7 +57,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
           'name, dosage, frequency and duration in seconds.',
     ),
     _OnboardingPageData(
-      asset: 'assets/onboarding/onboarding_history.png',
+      asset: 'assets/onboarding/onboarding_history.jpg',
       eyebrow: 'HISTORY & SYNC',
       eyebrowColor: AppColors.amber,
       title: 'Your medicines, remembered',
@@ -91,7 +92,10 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   bool get _isLastPage => _index == _pages.length - 1;
 
   Future<void> _finish() async {
-    await AppPrefs.markOnboardingSeen();
+    // Persist fire-and-forget: Hive's file I/O must never block navigation
+    // (and would deadlock under flutter_test's fake-async zone). The box
+    // cache updates synchronously, so the router gate sees the flag at once.
+    unawaited(AppPrefs.markOnboardingSeen());
     if (!mounted) return;
     // The router redirect sends already-signed-in users to /home instead.
     context.go('/login');

@@ -67,24 +67,43 @@ class _MockAuthPlatform extends FirebaseAuthPlatform {
 }
 
 void main() {
+  late Directory tempDir;
+
   setUpAll(() async {
     FirebasePlatform.instance = _MockFirebasePlatform();
     await Firebase.initializeApp();
     FirebaseAuthPlatform.instance = _MockAuthPlatform();
   });
 
+  // Hive does real file I/O, which must not run inside a testWidgets fake
+  // async zone (file/timer-based futures would never complete there). So the
+  // prefs box is opened and closed here, in the real async zone.
+  setUp(() async {
+    tempDir = await Directory.systemTemp.createTemp('ks-onboarding-test');
+    Hive.init(tempDir.path);
+    await AppPrefs.init();
+  });
+
+  tearDown(() async {
+    await Hive.close();
+    try {
+      await tempDir.delete(recursive: true);
+    } on FileSystemException {
+      // Best-effort cleanup only.
+    }
+  });
+
   testWidgets(
     'first launch gates the login screen behind the illustrated onboarding',
     (tester) async {
-      final directory = await Directory.systemTemp.createTemp(
-        'ks-onboarding-test',
-      );
-      Hive.init(directory.path);
-      await AppPrefs.init();
-      addTearDown(() async {
-        await Hive.close();
-        await directory.delete(recursive: true);
-      });
+      // Process a tap and let the 420ms page transition finish. A zero-dwell
+      // pump between the tap and the timed pump is required so the gesture
+      // is recognized and the route/page animation ticker starts.
+      Future<void> tapAndAdvance(Finder finder) async {
+        await tester.tap(finder);
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 700));
+      }
 
       await tester.pumpWidget(
         const ProviderScope(child: PrescriptionScannerApp()),
@@ -98,20 +117,18 @@ void main() {
       expect(find.text('Welcome back'), findsNothing);
 
       // Advance to step 2 (AI transcription).
-      await tester.tap(find.text('Next'));
-      await tester.pump(const Duration(milliseconds: 700));
+      await tapAndAdvance(find.text('Next'));
       expect(find.text('AI reads it for you'), findsOneWidget);
 
       // Advance to step 3 and finish the walkthrough.
-      await tester.tap(find.text('Next'));
-      await tester.pump(const Duration(milliseconds: 700));
+      await tapAndAdvance(find.text('Next'));
       expect(find.text('Your medicines, remembered'), findsOneWidget);
       expect(find.text('Get started'), findsOneWidget);
 
-      await tester.tap(find.text('Get started'));
-      await tester.pump(const Duration(milliseconds: 700));
+      await tapAndAdvance(find.text('Get started'));
 
       // Completing onboarding remembers the choice and opens the login form.
+      // (The Hive box cache is updated synchronously on put.)
       expect(AppPrefs.hasSeenOnboarding, isTrue);
       expect(find.text('Welcome back'), findsOneWidget);
       expect(find.text('Sign in securely'), findsOneWidget);

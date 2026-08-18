@@ -43,8 +43,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 
       // Anonymous guests may scan and view their on-device results/history
       // without an account. Account-only areas (profile, settings) still
-      // redirect to the login screen.
+      // redirect to the login screen. The onboarding route must be guest
+      // allowed too, otherwise it would loop back to /login forever.
       const guestAllowedPaths = {
+        '/onboarding',
         '/home',
         '/history',
         '/help',
