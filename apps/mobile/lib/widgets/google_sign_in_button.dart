@@ -57,6 +57,7 @@ class _GoogleSignInButtonState extends ConsumerState<GoogleSignInButton> {
       onPressed: _busy ? null : _tap,
       style: OutlinedButton.styleFrom(
         minimumSize: const Size.fromHeight(52),
+        padding: const EdgeInsets.symmetric(horizontal: 12),
         side: const BorderSide(color: AppColors.line),
         backgroundColor: Colors.white,
       ),
@@ -67,6 +68,7 @@ class _GoogleSignInButtonState extends ConsumerState<GoogleSignInButton> {
             )
           : Row(
               mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Container(
                   width: 22,
@@ -85,12 +87,16 @@ class _GoogleSignInButtonState extends ConsumerState<GoogleSignInButton> {
                     ),
                   ),
                 ),
-                const SizedBox(width: 10),
-                Text(
-                  widget.label,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.ink,
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Text(
+                    widget.label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.ink,
+                    ),
                   ),
                 ),
               ],
