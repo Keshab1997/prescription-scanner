@@ -96,10 +96,16 @@ void main() {
   testWidgets(
     'first launch gates the login screen behind the illustrated onboarding',
     (tester) async {
-      // Process a tap and let the 420ms page transition finish. A zero-dwell
-      // pump between the tap and the timed pump is required so the gesture
-      // is recognized and the route/page animation ticker starts.
-      Future<void> tapAndAdvance(Finder finder) async {
+      // Default 800x600 lets the last CTA sit under/off the Next hit target.
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      Future<void> tapCta(Key key) async {
+        final finder = find.byKey(key);
+        expect(finder, findsOneWidget);
+        await tester.ensureVisible(finder);
         await tester.tap(finder);
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 700));
@@ -116,16 +122,14 @@ void main() {
       expect(find.text('Scan any prescription'), findsOneWidget);
       expect(find.text('Welcome back'), findsNothing);
 
-      // Advance to step 2 (AI transcription).
-      await tapAndAdvance(find.text('Next'));
+      await tapCta(const ValueKey('onboarding-next'));
       expect(find.text('AI reads it for you'), findsOneWidget);
 
-      // Advance to step 3 and finish the walkthrough.
-      await tapAndAdvance(find.text('Next'));
+      await tapCta(const ValueKey('onboarding-next'));
       expect(find.text('Your medicines, remembered'), findsOneWidget);
       expect(find.text('Get started'), findsOneWidget);
 
-      await tapAndAdvance(find.text('Get started'));
+      await tapCta(const ValueKey('onboarding-get-started'));
 
       // Completing onboarding remembers the choice and opens the login form.
       // (The Hive box cache is updated synchronously on put.)

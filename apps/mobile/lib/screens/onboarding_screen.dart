@@ -214,19 +214,36 @@ class _OnboardingScreenState extends State<OnboardingScreen>
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 4, 24, 20),
-              child: Row(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      for (var i = 0; i < _pages.length; i++)
-                        _Dot(active: i == _index),
-                    ],
-                  ),
-                  const Spacer(),
-                  _NextButton(isLast: _isLastPage, onTap: _next),
-                ],
-              ),
+              child: _isLastPage
+                  ? Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Center(
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              for (var i = 0; i < _pages.length; i++)
+                                _Dot(active: i == _index),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        _NextButton(isLast: true, onTap: _next),
+                      ],
+                    )
+                  : Row(
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: [
+                            for (var i = 0; i < _pages.length; i++)
+                              _Dot(active: i == _index),
+                          ],
+                        ),
+                        const Spacer(),
+                        _NextButton(isLast: false, onTap: _next),
+                      ],
+                    ),
             ),
           ],
         ),
@@ -352,41 +369,34 @@ class _NextButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return FilledButton(
+      key: ValueKey(isLast ? 'onboarding-get-started' : 'onboarding-next'),
       onPressed: onTap,
       style: FilledButton.styleFrom(
         backgroundColor: AppColors.teal,
         foregroundColor: Colors.white,
-        minimumSize: const Size(72, 48),
+        minimumSize: Size(isLast ? double.infinity : 72, 48),
         padding: const EdgeInsets.symmetric(horizontal: 22),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
         textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
       ),
-      child: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 220),
-        transitionBuilder: (child, animation) => FadeTransition(
-          opacity: animation,
-          child: ScaleTransition(scale: animation, child: child),
-        ),
-        child: isLast
-            ? const Row(
-                key: ValueKey('start'),
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.check_rounded, size: 20),
-                  SizedBox(width: 8),
-                  Text('Get started'),
-                ],
-              )
-            : const Row(
-                key: ValueKey('next'),
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text('Next'),
-                  SizedBox(width: 6),
-                  Icon(Icons.arrow_forward_rounded, size: 20),
-                ],
-              ),
-      ),
+      child: isLast
+          ? const Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.check_rounded, size: 20),
+                SizedBox(width: 8),
+                Text('Get started'),
+              ],
+            )
+          : const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('Next'),
+                SizedBox(width: 6),
+                Icon(Icons.arrow_forward_rounded, size: 20),
+              ],
+            ),
     );
   }
 }
