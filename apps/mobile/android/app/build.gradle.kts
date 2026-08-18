@@ -58,9 +58,13 @@ android {
         }
     }
 
-    // Missing/partial NDK makes `flutter build appbundle --release` fail with
-    // "failed to strip debug symbols from native libraries". Keep symbols so
-    // the AAB still completes; Play may warn but will accept the bundle.
+    // `flutter build appbundle --release` failed with:
+    //   "Release app bundle failed to strip debug symbols from native libraries."
+    // Root cause: debugSymbolLevel was "NONE", so AGP generated no .sym/.dbg
+    // files and Flutter's post-build symbol check (libflutter.so.sym / .dbg
+    // not present) failed. Restoring "SYMBOL_TABLE" (AGP default) generates the
+    // symbol tables Flutter expects so the check passes. keepDebugSymbols keeps
+    // them inside the bundled .so so Play Console can symbolicate native crashes.
     packaging {
         jniLibs {
             keepDebugSymbols += setOf("**/*.so")
@@ -71,7 +75,7 @@ android {
     buildTypes {
         release {
             ndk {
-                debugSymbolLevel = "NONE"
+                debugSymbolLevel = "SYMBOL_TABLE"
             }
             // Play/AAB uses upload keystore when android/key.properties exists.
             // Local `flutter run --release` still works with debug signing.
