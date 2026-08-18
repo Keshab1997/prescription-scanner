@@ -1,5 +1,9 @@
 # Copy to key.properties (gitignored) and fill in.
 # Do not commit key.properties, .jks, or passwords.
+#
+# storeFile is just the filename. Gradle looks in:
+#   android/app/upload-keystore.jks  (GitHub Actions / flutter-builder)
+#   android/upload-keystore.jks      (local Play release)
 
 storePassword=CHANGE_ME
 keyPassword=CHANGE_ME
