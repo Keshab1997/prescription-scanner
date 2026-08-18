@@ -158,6 +158,19 @@ class Medicine {
   final int position;
   final bool userEdited;
 
+  /// Visible line after a user edit — structured fields, not the old AI sentence.
+  String get editedLine {
+    final bits = <String>[
+      if (strength != null && strength!.isNotEmpty) strength!,
+      if (dosage != null && dosage!.isNotEmpty) dosage!,
+      if (frequency != null && frequency!.isNotEmpty) frequency!,
+      if (duration != null && duration!.isNotEmpty) duration!,
+      if (route != null && route!.isNotEmpty) route!,
+    ];
+    if (bits.isEmpty) return name;
+    return bits.join(' · ');
+  }
+
   Medicine copyWith({
     String? name,
     String? normalizedName,

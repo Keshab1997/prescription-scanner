@@ -41,6 +41,7 @@ enum ResultLanguage {
   /// Returns the model-provided summary sentence for [medicine] in this
   /// language, falling back to English then to the raw name.
   String pickSummary(Medicine medicine) {
+    if (medicine.userEdited) return medicine.editedLine;
     final byLang = switch (this) {
       ResultLanguage.en => medicine.summaryEn,
       ResultLanguage.bn => medicine.summaryBn,
@@ -298,7 +299,7 @@ class ResultScreen extends ConsumerWidget {
       return text.isEmpty ? null : text;
     }
 
-    final updated = Medicine(
+    final drafted = Medicine(
       name: name.text.trim().isEmpty ? current.name : name.text.trim(),
       normalizedName: current.normalizedName,
       strength: clean(strength),
@@ -307,15 +308,32 @@ class ResultScreen extends ConsumerWidget {
       duration: clean(duration),
       route: clean(route),
       instructions: clean(instructions),
-      summaryEn: current.summaryEn,
-      summaryBn: current.summaryBn,
-      summaryHi: current.summaryHi,
       purposeEn: current.purposeEn,
       purposeBn: current.purposeBn,
       purposeHi: current.purposeHi,
       confidence: current.confidence,
       needsReview: false,
       position: current.position,
+      userEdited: true,
+    );
+    final updated = Medicine(
+      name: drafted.name,
+      normalizedName: drafted.normalizedName,
+      strength: drafted.strength,
+      dosage: drafted.dosage,
+      frequency: drafted.frequency,
+      duration: drafted.duration,
+      route: drafted.route,
+      instructions: drafted.instructions,
+      summaryEn: drafted.editedLine,
+      summaryBn: drafted.editedLine,
+      summaryHi: drafted.editedLine,
+      purposeEn: drafted.purposeEn,
+      purposeBn: drafted.purposeBn,
+      purposeHi: drafted.purposeHi,
+      confidence: drafted.confidence,
+      needsReview: false,
+      position: drafted.position,
       userEdited: true,
     );
     final medicines = [...details.medicines];
@@ -633,8 +651,17 @@ class _PatientSummary extends StatelessWidget {
               ),
               Expanded(
                 child: Text(
-                  '${medicine.name}: ${language.pickSummary(medicine)}',
-                  style: const TextStyle(height: 1.4, fontSize: 14),
+                  medicine.userEdited
+                      ? '${medicine.name}: ${medicine.editedLine}'
+                      : '${medicine.name}: ${language.pickSummary(medicine)}',
+                  style: TextStyle(
+                    height: 1.4,
+                    fontSize: 14,
+                    fontWeight: medicine.userEdited
+                        ? FontWeight.w800
+                        : FontWeight.w400,
+                    color: medicine.userEdited ? AppColors.teal : AppColors.ink,
+                  ),
                 ),
               ),
             ],
@@ -857,6 +884,7 @@ class _MedicineCard extends StatelessWidget {
 
     return Card(
       clipBehavior: Clip.antiAlias,
+      color: medicine.userEdited ? const Color(0xFFF3FBFA) : null,
       child: InkWell(
         onTap: () => _showMedicineDetail(
           context,
@@ -1187,8 +1215,11 @@ class _MedicineDetailSheet extends StatelessWidget {
               const SizedBox(height: 8),
               OutlinedButton.icon(
                 onPressed: () {
+                  final edit = onEdit;
                   Navigator.pop(context);
-                  onEdit!();
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    edit?.call();
+                  });
                 },
                 icon: const Icon(Icons.edit_outlined, size: 18),
                 label: const Text('Edit this item'),
