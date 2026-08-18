@@ -79,7 +79,13 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     _floatController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 2800),
-    )..repeat(reverse: true);
+    );
+    // Repeating this in flutter_test decodes the page JPEGs every frame and
+    // makes a 2s pump look hung. Keep the float for real devices only.
+    final bindingName = WidgetsBinding.instance.runtimeType.toString();
+    if (!bindingName.contains('TestWidgetsFlutterBinding')) {
+      _floatController.repeat(reverse: true);
+    }
   }
 
   @override

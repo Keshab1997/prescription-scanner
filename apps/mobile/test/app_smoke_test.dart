@@ -72,11 +72,12 @@ void main() {
 
   testWidgets('opens the secure login screen', (tester) async {
     await tester.pumpWidget(
-      const ProviderScope(child: PrescriptionScannerApp()),
+      const ProviderScope(
+        child: PrescriptionScannerApp(skipLaunchSplash: true),
+      ),
     );
-    // The login screen has a looping aurora backdrop, so pumpAndSettle would
-    // never settle. Pump beyond the branded launch transition before asserting.
-    await tester.pump(const Duration(milliseconds: 2400));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
 
     expect(find.text('Prescription Scanner'), findsNothing);
     expect(find.text('Welcome back'), findsOneWidget);

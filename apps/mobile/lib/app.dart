@@ -6,7 +6,13 @@ import 'package:prescription_scanner/screens/splash_screen.dart';
 import 'package:prescription_scanner/theme.dart';
 
 class PrescriptionScannerApp extends ConsumerStatefulWidget {
-  const PrescriptionScannerApp({super.key});
+  const PrescriptionScannerApp({
+    super.key,
+    this.skipLaunchSplash = false,
+  });
+
+  /// Widget tests skip the 2.2s branded overlay so pumps stay finite.
+  final bool skipLaunchSplash;
 
   @override
   ConsumerState<PrescriptionScannerApp> createState() =>
@@ -15,7 +21,7 @@ class PrescriptionScannerApp extends ConsumerStatefulWidget {
 
 class _PrescriptionScannerAppState
     extends ConsumerState<PrescriptionScannerApp> {
-  bool _showLaunchSplash = true;
+  late bool _showLaunchSplash = !widget.skipLaunchSplash;
 
   @override
   void initState() {

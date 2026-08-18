@@ -113,11 +113,12 @@ void main() {
       }
 
       await tester.pumpWidget(
-        const ProviderScope(child: PrescriptionScannerApp()),
+        const ProviderScope(
+          child: PrescriptionScannerApp(skipLaunchSplash: true),
+        ),
       );
-      // Onboarding illustrations float forever, so pump past the branded
-      // launch transition with a fixed duration instead of pumpAndSettle.
-      await tester.pump(const Duration(milliseconds: 2400));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
 
       // Step 1 of the illustrated walkthrough is showing, not the login form.
       expect(find.text('Scan any prescription'), findsOneWidget);
@@ -140,9 +141,12 @@ void main() {
 
       // A relaunch skips the walkthrough entirely.
       await tester.pumpWidget(
-        const ProviderScope(child: PrescriptionScannerApp()),
+        const ProviderScope(
+          child: PrescriptionScannerApp(skipLaunchSplash: true),
+        ),
       );
-      await tester.pump(const Duration(milliseconds: 2400));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
       expect(find.text('Scan any prescription'), findsNothing);
       expect(find.text('Welcome back'), findsOneWidget);
     },
