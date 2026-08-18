@@ -1478,10 +1478,3 @@ class _ResultError extends StatelessWidget {
     ),
   );
 }
-,
-          ],
-        ),
-      ),
-    ),
-  );
-}
