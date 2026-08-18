@@ -17,8 +17,7 @@ and the choices you have.
 
 ## 1. Data controller
 
-The data controller responsible for your information is **[Keshab Studios /
-Full Legal Name]**, reachable at **[privacy@your-domain.example]**.
+The data controller responsible for your information is **Keshab Studios / Keshab Sarkar**, reachable at **keshabsarkar2018@gmail.com**.
 
 ## 2. Information we collect
 
@@ -106,13 +105,13 @@ AdMob privacy & consent: https://policies.google.com/technologies/ads
 
 - **On-device data** (your prescriptions in local storage) remains on your
   device until you delete it in the app or uninstall the app.
-- **Cloud-synced data** (if enabled) is retained for **[e.g., 24 months]** or
+- **Cloud-synced data** (if enabled) is retained for **24 months** or
   until you request deletion.
 - **Analytics/Crashlytics** data is retained per Google's standard retention
   (typically ~60 days for Crashlytics; Analytics per your Google config).
 - You may request deletion of your cloud account and associated data by
-  emailing **[privacy@your-domain.example]**; we will action verifiable
-  requests within **[30]** days.
+  emailing **keshabsarkar2018@gmail.com**; we will action verifiable
+  requests within **30** days.
 
 ## 9. Children's privacy
 
@@ -131,7 +130,7 @@ method of transmission or storage is 100% secure.
 
 Depending on your jurisdiction, you may have rights to access, correct,
 export, or delete your personal data, and to object to or restrict certain
-processing. To exercise these rights, contact **[privacy@your-domain.example]**.
+processing. To exercise these rights, contact **keshabsarkar2018@gmail.com**.
 
 ## 12. Changes to this policy
 
@@ -142,5 +141,5 @@ notified in-app or via the store listing.
 ## 13. Contact
 
 Questions about this policy or your data:
-**Keshab Studios** — **[privacy@your-domain.example]**
+**Keshab Studios** — **keshabsarkar2018@gmail.com**
 Project: https://github.com/Keshab1997/prescription-scanner
