@@ -118,7 +118,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     var error = '';
     var loading = false;
     final service = ref.read(authServiceProvider);
-    final googleOnly = service.usesGoogleProvider && !service.usesPasswordProvider;
+    final googleOnly =
+        service.usesGoogleProvider && !service.usesPasswordProvider;
     final confirmed = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
@@ -146,9 +147,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               TextField(
                 controller: confirmWord,
                 textCapitalization: TextCapitalization.characters,
-                decoration: const InputDecoration(
-                  labelText: 'Type DELETE',
-                ),
+                decoration: const InputDecoration(labelText: 'Type DELETE'),
               ),
               if (error.isNotEmpty) ...[
                 const SizedBox(height: 10),
@@ -169,7 +168,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   ? null
                   : () async {
                       if (confirmWord.text.trim() != 'DELETE') {
-                        setDialog(() => error = 'Type DELETE in capital letters.');
+                        setDialog(
+                          () => error = 'Type DELETE in capital letters.',
+                        );
                         return;
                       }
                       if (!googleOnly && password.text.isEmpty) {
@@ -205,7 +206,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         color: Colors.white,
                       ),
                     )
-                  : Text(googleOnly ? 'Confirm with Google' : 'Delete permanently'),
+                  : Text(
+                      googleOnly ? 'Confirm with Google' : 'Delete permanently',
+                    ),
             ),
           ],
         ),
@@ -215,9 +218,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     confirmWord.dispose();
     if (confirmed != true || !context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Your account and data have been deleted.'),
-      ),
+      const SnackBar(content: Text('Your account and data have been deleted.')),
     );
     context.go('/login');
   }

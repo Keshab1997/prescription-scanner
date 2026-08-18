@@ -282,7 +282,8 @@ class _ParallaxIllustration extends StatelessWidget {
       builder: (context, child) {
         // Parallax: illustrations drift slightly against the swipe direction.
         var page = index.toDouble();
-        if (pageController.hasClients && pageController.position.haveDimensions) {
+        if (pageController.hasClients &&
+            pageController.position.haveDimensions) {
           page = pageController.page ?? page;
         }
         final parallax = (page - index) * -36;
@@ -297,10 +298,7 @@ class _ParallaxIllustration extends StatelessWidget {
           child: Center(
             child: Transform.translate(
               offset: Offset(parallax, dy),
-              child: Transform.rotate(
-                angle: tilt,
-                child: child,
-              ),
+              child: Transform.rotate(angle: tilt, child: child),
             ),
           ),
         );

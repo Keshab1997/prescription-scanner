@@ -32,8 +32,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       // guests and signed-out users, before anything else. Signed-in users
       // never see it. Fail-safe: if the prefs box is somehow unavailable the
       // gate is skipped so the app stays usable.
-      final onboardingPending =
-          AppPrefs.isReady && !AppPrefs.hasSeenOnboarding;
+      final onboardingPending = AppPrefs.isReady && !AppPrefs.hasSeenOnboarding;
       if (onboardingPending && !signedIn && path != '/onboarding') {
         return '/onboarding';
       }
@@ -71,10 +70,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     },
     routes: [
       GoRoute(path: '/login', builder: (_, _) => const LoginScreen()),
-      GoRoute(
-        path: '/onboarding',
-        builder: (_, _) => const OnboardingScreen(),
-      ),
+      GoRoute(path: '/onboarding', builder: (_, _) => const OnboardingScreen()),
       GoRoute(
         path: '/privacy',
         builder: (_, _) => const AppBackScope(

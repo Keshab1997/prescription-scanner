@@ -4,11 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:in_app_update/in_app_update.dart';
 
 /// What the Play Store in-app update flow should do.
-enum PlayUpdateAction {
-  none,
-  immediate,
-  flexible,
-}
+enum PlayUpdateAction { none, immediate, flexible }
 
 /// Pure decision used by tests. Immediate is preferred so the user cannot
 /// keep using a stale build once Play has a newer production version.

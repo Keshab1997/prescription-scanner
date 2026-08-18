@@ -41,9 +41,7 @@ void main() {
     final router = buildRouter('/login');
     addTearDown(router.dispose);
     await tester.pumpWidget(
-      ProviderScope(
-        child: MaterialApp.router(routerConfig: router),
-      ),
+      ProviderScope(child: MaterialApp.router(routerConfig: router)),
     );
     await tester.pump();
 

@@ -26,9 +26,7 @@ abstract final class AdsService {
 
   static Future<void> _requestConsentThenInit() async {
     final completer = Completer<void>();
-    final params = ConsentRequestParameters(
-      tagForUnderAgeOfConsent: false,
-    );
+    final params = ConsentRequestParameters(tagForUnderAgeOfConsent: false);
     ConsentInformation.instance.requestConsentInfoUpdate(
       params,
       () async {

@@ -241,8 +241,13 @@ class ResultScreen extends ConsumerWidget {
   String _ownerUid() =>
       fb.FirebaseAuth.instance.currentUser?.uid ?? guestOwnerUid;
 
-  Future<void> _copyText(BuildContext context, ExtractedPrescription details) async {
-    await Clipboard.setData(ClipboardData(text: prescriptionShareText(details)));
+  Future<void> _copyText(
+    BuildContext context,
+    ExtractedPrescription details,
+  ) async {
+    await Clipboard.setData(
+      ClipboardData(text: prescriptionShareText(details)),
+    );
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Medicine list copied as text.')),
@@ -269,7 +274,9 @@ class ResultScreen extends ConsumerWidget {
     final frequency = TextEditingController(text: current.frequency ?? '');
     final duration = TextEditingController(text: current.duration ?? '');
     final route = TextEditingController(text: current.route ?? '');
-    final instructions = TextEditingController(text: current.instructions ?? '');
+    final instructions = TextEditingController(
+      text: current.instructions ?? '',
+    );
     final saved = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
@@ -353,7 +360,9 @@ class ResultScreen extends ConsumerWidget {
     instructions.dispose();
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Updated: ${updated.name} — ${updated.editedLine}')),
+        SnackBar(
+          content: Text('Updated: ${updated.name} — ${updated.editedLine}'),
+        ),
       );
     }
   }
@@ -383,14 +392,8 @@ class ResultScreen extends ConsumerWidget {
               if (value == 'share') _shareText(details);
             },
             itemBuilder: (_) => const [
-              PopupMenuItem(
-                value: 'copy',
-                child: Text('Copy as text'),
-              ),
-              PopupMenuItem(
-                value: 'share',
-                child: Text('Share as text'),
-              ),
+              PopupMenuItem(value: 'copy', child: Text('Copy as text')),
+              PopupMenuItem(value: 'share', child: Text('Share as text')),
               PopupMenuItem(
                 value: 'delete',
                 child: Row(
@@ -497,12 +500,8 @@ class ResultScreen extends ConsumerWidget {
                     child: _MedicineCard(
                       medicine: entry.value,
                       language: ref.watch(resultLanguageProvider),
-                      onEdit: () => _editMedicine(
-                        context,
-                        ref,
-                        details,
-                        entry.key,
-                      ),
+                      onEdit: () =>
+                          _editMedicine(context, ref, details, entry.key),
                     ),
                   ),
                 ),
@@ -1064,11 +1063,8 @@ Future<bool?> _showMedicineDetail(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
-    builder: (context) => _MedicineDetailSheet(
-      medicine: m,
-      language: lang,
-      canEdit: canEdit,
-    ),
+    builder: (context) =>
+        _MedicineDetailSheet(medicine: m, language: lang, canEdit: canEdit),
   );
 }
 

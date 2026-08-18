@@ -8,7 +8,8 @@ abstract final class LegalCopy {
   static const medicalShort =
       'AI transcribes only — this is not a diagnosis, prescription, or medical advice.';
 
-  static const medicalFull = '''
+  static const medicalFull =
+      '''
 $appName uses AI to transcribe visible text from a prescription image.
 
 It is not a medical device. It does not diagnose, treat, prescribe, recommend, or replace a doctor or pharmacist.
@@ -18,7 +19,8 @@ Unclear handwriting is left blank or marked for review. Never take, stop, or cha
   static const privacySummary =
       'Prescription Scanner prepares the photo on your device, then our AI transcription service reads visible medicine details. We do not store that image in our own cloud. The local prepared copy is deleted after processing. Structured results stay on this device, scoped to your account or guest session. Usage counts and optional feedback go to Firebase.';
 
-  static const privacyPolicy = '''
+  static const privacyPolicy =
+      '''
 Last updated: 18 August 2026
 
 Who we are
@@ -61,7 +63,8 @@ Google and Firebase may process data outside India. Use the app only if you acce
 Changes
 We will update this in-app text when the data flow changes. A public URL can be added in Play Console when you publish one.''';
 
-  static const terms = '''
+  static const terms =
+      '''
 Last updated: 18 August 2026
 
 By using $appName you agree to these terms.

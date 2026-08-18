@@ -40,7 +40,8 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
 
   bool get busy => preparing || scanning || checkingConsent;
   bool get _showProgressOverlay => preparing || scanning;
-  String get _progressTitle => preparing ? 'Preparing image…' : 'Scanning with AI…';
+  String get _progressTitle =>
+      preparing ? 'Preparing image…' : 'Scanning with AI…';
   String get _progressMessage => preparing
       ? 'Creating a clear, optimized local copy before AI transcription.'
       : 'Prescription Scanner AI is reading the prescription and building your medicine list.';
@@ -94,7 +95,8 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
           await refreshedUser!.getIdToken(true);
         }
       }
-      final ownerUid = fb.FirebaseAuth.instance.currentUser?.uid ?? guestOwnerUid;
+      final ownerUid =
+          fb.FirebaseAuth.instance.currentUser?.uid ?? guestOwnerUid;
       unawaited(ref.read(prescriptionRepositoryProvider).loadQuota(ownerUid));
       ApiKeyManager.instance.initialize();
       unawaited(ApiKeyManager.instance.ensureReady());
@@ -436,9 +438,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Icon(Icons.auto_awesome_outlined),
-                  label: Text(
-                    scanning ? 'Scanning with AI…' : 'Retry scan',
-                  ),
+                  label: Text(scanning ? 'Scanning with AI…' : 'Retry scan'),
                 ),
               ],
               const SizedBox(height: 18),
@@ -801,11 +801,7 @@ class _Tip extends StatelessWidget {
 }
 
 class _ScanFailureCard extends StatelessWidget {
-  const _ScanFailureCard({
-    required this.message,
-    this.onRetry,
-    this.onRescan,
-  });
+  const _ScanFailureCard({required this.message, this.onRetry, this.onRescan});
 
   final String message;
   final VoidCallback? onRetry;

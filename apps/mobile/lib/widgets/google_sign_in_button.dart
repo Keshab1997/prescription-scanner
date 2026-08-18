@@ -30,9 +30,7 @@ class _GoogleSignInButtonState extends ConsumerState<GoogleSignInButton> {
 
   Future<void> _tap() async {
     if (widget.requireAcceptedTerms && !widget.acceptedTerms) {
-      widget.onError?.call(
-        'Accept the Privacy Policy and Terms to continue.',
-      );
+      widget.onError?.call('Accept the Privacy Policy and Terms to continue.');
       return;
     }
     final service = ref.read(authServiceProvider);

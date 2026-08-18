@@ -95,8 +95,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                         Text(
                           'Welcome back',
                           textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.headlineSmall
-                              ?.copyWith(fontSize: 24),
+                          style: Theme.of(
+                            context,
+                          ).textTheme.headlineSmall?.copyWith(fontSize: 24),
                         ),
                         const SizedBox(height: 4),
                         const Text(
@@ -125,7 +126,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                           ),
                           child: AutofillGroup(
                             child: Padding(
-                              padding: const EdgeInsets.fromLTRB(18, 18, 18, 10),
+                              padding: const EdgeInsets.fromLTRB(
+                                18,
+                                18,
+                                18,
+                                10,
+                              ),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: [
@@ -164,9 +170,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                                       ),
                                       contentPadding: _fieldPad,
                                       suffixIcon: IconButton(
-                                        onPressed: () => setState(
-                                          () => obscure = !obscure,
-                                        ),
+                                        onPressed: () =>
+                                            setState(() => obscure = !obscure),
                                         icon: Icon(
                                           obscure
                                               ? Icons.visibility_outlined
@@ -253,7 +258,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                                       ),
                                       const Text(
                                         '·',
-                                        style: TextStyle(color: AppColors.muted),
+                                        style: TextStyle(
+                                          color: AppColors.muted,
+                                        ),
                                       ),
                                       TextButton(
                                         style: TextButton.styleFrom(

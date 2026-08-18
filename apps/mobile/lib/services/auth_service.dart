@@ -34,14 +34,15 @@ class AuthService {
   Stream<fb.User?> get authChanges => auth.authStateChanges();
 
   bool get usesPasswordProvider =>
-      currentUser?.providerData.any((p) => p.providerId == 'password') ??
-      false;
+      currentUser?.providerData.any((p) => p.providerId == 'password') ?? false;
 
   bool get usesGoogleProvider =>
       currentUser?.providerData.any((p) => p.providerId == 'google.com') ??
       false;
 
-  static final GoogleSignIn _googleSignIn = GoogleSignIn(scopes: const ['email']);
+  static final GoogleSignIn _googleSignIn = GoogleSignIn(
+    scopes: const ['email'],
+  );
 
   Future<bool> signIn({required String email, required String password}) async {
     _rejectDisposableEmail(email);
@@ -250,7 +251,10 @@ class AuthService {
       final user = result.user;
       if (user == null) return false;
 
-      final profile = await firestore.collection('profiles').doc(user.uid).get();
+      final profile = await firestore
+          .collection('profiles')
+          .doc(user.uid)
+          .get();
       if (profile.data()?['status'] == 'blocked') {
         await signOut();
         throw fb.FirebaseAuthException(
@@ -262,8 +266,8 @@ class AuthService {
       await _ensureProfile(
         uid: user.uid,
         email: user.email ?? account.email,
-        displayName:
-            (user.displayName ?? account.displayName ?? account.email).trim(),
+        displayName: (user.displayName ?? account.displayName ?? account.email)
+            .trim(),
       );
       if (result.additionalUserInfo?.isNewUser == true) {
         unawaited(AnalyticsService.logSignUp());
