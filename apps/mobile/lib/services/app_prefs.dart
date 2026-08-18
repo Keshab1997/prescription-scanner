@@ -1,3 +1,5 @@
+import 'dart:async' show unawaited;
+
 import 'package:hive_flutter/hive_flutter.dart';
 
 /// Device-level UI preferences (not medical data).
@@ -53,5 +55,12 @@ abstract final class AppPrefs {
   static Future<void> markOnboardingSeen() async {
     if (!isReady) return;
     await _store.put(_onboardingSeenKey, true);
+  }
+
+  /// Updates the in-memory flag immediately so router redirects see it
+  /// before Hive finishes file I/O (needed under flutter_test).
+  static void markOnboardingSeenNow() {
+    if (!isReady) return;
+    unawaited(_store.put(_onboardingSeenKey, true));
   }
 }

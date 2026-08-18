@@ -101,7 +101,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     // Persist fire-and-forget: Hive's file I/O must never block navigation
     // (and would deadlock under flutter_test's fake-async zone). The box
     // cache updates synchronously, so the router gate sees the flag at once.
-    unawaited(AppPrefs.markOnboardingSeen());
+    AppPrefs.markOnboardingSeenNow();
     if (!mounted) return;
     // The router redirect sends already-signed-in users to /home instead.
     context.go('/login');
