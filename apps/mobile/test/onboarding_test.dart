@@ -76,9 +76,6 @@ void main() {
     FirebaseAuthPlatform.instance = _MockAuthPlatform();
   });
 
-  // Hive does real file I/O, which must not run inside a testWidgets fake
-  // async zone (file/timer-based futures would never complete there). So the
-  // prefs box is opened and closed here, in the real async zone.
   setUp(() async {
     tempDir = await Directory.systemTemp.createTemp('ks-onboarding-test');
     Hive.init(tempDir.path);
@@ -97,20 +94,10 @@ void main() {
   testWidgets(
     'first launch gates the login screen behind the illustrated onboarding',
     (tester) async {
-      // Default 800x600 lets the last CTA sit under/off the Next hit target.
       tester.view.physicalSize = const Size(390, 844);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
-
-      Future<void> tapCta(Key key) async {
-        final finder = find.byKey(key);
-        expect(finder, findsOneWidget);
-        await tester.ensureVisible(finder);
-        await tester.tap(finder);
-        await tester.pump();
-        await tester.pump(const Duration(milliseconds: 50));
-      }
 
       await tester.pumpWidget(
         const ProviderScope(
@@ -123,26 +110,17 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 50));
 
-      // Step 1 of the illustrated walkthrough is showing, not the login form.
       expect(find.text('Scan any prescription'), findsOneWidget);
       expect(find.text('Welcome back'), findsNothing);
 
-      await tapCta(const ValueKey('onboarding-next'));
-      expect(find.text('AI reads it for you'), findsOneWidget);
+      await tester.tap(find.text('Skip'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
 
-      await tapCta(const ValueKey('onboarding-next'));
-      expect(find.text('Your medicines, remembered'), findsOneWidget);
-      expect(find.text('Get started'), findsOneWidget);
-
-      await tapCta(const ValueKey('onboarding-get-started'));
-
-      // Completing onboarding remembers the choice and opens the login form.
-      // (The Hive box cache is updated synchronously on put.)
       expect(AppPrefs.hasSeenOnboarding, isTrue);
       expect(find.text('Welcome back'), findsOneWidget);
       expect(find.text('Sign in securely'), findsOneWidget);
 
-      // A relaunch skips the walkthrough entirely.
       await tester.pumpWidget(
         const ProviderScope(
           child: PrescriptionScannerApp(

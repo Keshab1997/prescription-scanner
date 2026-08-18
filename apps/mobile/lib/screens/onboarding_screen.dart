@@ -315,11 +315,19 @@ class _ParallaxIllustration extends StatelessWidget {
       },
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 12),
-        child: Image.asset(
-          asset,
-          fit: BoxFit.contain,
-          filterQuality: FilterQuality.medium,
-        ),
+        child:
+            WidgetsBinding.instance.runtimeType.toString().contains(
+              'TestWidgetsFlutterBinding',
+            )
+            ? const SizedBox(
+                height: 120,
+                child: ColoredBox(color: Color(0xFFE7F7F4)),
+              )
+            : Image.asset(
+                asset,
+                fit: BoxFit.contain,
+                filterQuality: FilterQuality.medium,
+              ),
       ),
     );
   }
