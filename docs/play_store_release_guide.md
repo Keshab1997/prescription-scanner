@@ -284,6 +284,7 @@ Play Console → আপনার অ্যাপ → **Test and release**
 | ইন-অ্যাপ আপডেট আসে না | ইউজার প্লে বিল্ডে নেই, বা নতুন ভার্সন এখনো Production-এ Available নয় |
 | মেডিকেল পলিসি ওয়ার্নিং | স্টোর/অ্যাপে “not medical advice” রাখুন; ডাক্তারি দাবি করবেন না |
 | রিভিউ রিজেক্ট — broken ads ID | স্যাম্পল App ID দিয়ে প্রোড ক্লেইম করলে সমস্যা হতে পারে; প্রথম রিলিজে টেস্ট ID রেখে Ads ফর্ম সততার সাথে পূরণ করুন |
+| *failed to strip debug symbols from native libraries* | NDK/`llvm-strip` পাওয়া যায়নি। প্রজেক্টে স্ট্রিপ স্কিপ করা আছে — `git pull` করে আবার `flutter build appbundle --release`। স্থায়ী ফিক্স: Android Studio → SDK Manager → SDK Tools → **NDK (Side by side)** + **CMake** ইনস্টল, তারপর `flutter doctor -v` |
 
 ---
 

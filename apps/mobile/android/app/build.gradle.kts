@@ -48,8 +48,21 @@ android {
         }
     }
 
+    // Missing/partial NDK makes `flutter build appbundle --release` fail with
+    // "failed to strip debug symbols from native libraries". Keep symbols so
+    // the AAB still completes; Play may warn but will accept the bundle.
+    packaging {
+        jniLibs {
+            keepDebugSymbols += setOf("**/*.so")
+            useLegacyPackaging = true
+        }
+    }
+
     buildTypes {
         release {
+            ndk {
+                debugSymbolLevel = "NONE"
+            }
             // Play/AAB uses upload keystore when android/key.properties exists.
             // Local `flutter run --release` still works with debug signing.
             signingConfig =
