@@ -92,6 +92,8 @@ void main() {
     }
   });
 
+  // Full-app onboarding pump is flaky in CI;
+  // verify Skip → login on a device before Play upload.
   testWidgets(
     'first launch gates the login screen behind the illustrated onboarding',
     (tester) async {
@@ -115,7 +117,6 @@ void main() {
       expect(find.text('Welcome back'), findsOneWidget);
       expect(find.text('Sign in securely'), findsOneWidget);
     },
-    skip:
-        'Full-app onboarding pump is flaky in CI; verify Skip → login on a device before Play upload.',
+    skip: true,
   );
 }
