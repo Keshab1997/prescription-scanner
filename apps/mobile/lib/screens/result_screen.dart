@@ -340,7 +340,8 @@ class ResultScreen extends ConsumerWidget {
     medicines[index] = updated;
     final next = details.copyWith(medicines: medicines);
     await ResultStore.instance.save(_ownerUid(), next);
-    ref.invalidate(resultRevisionProvider);
+    // Invalidate keeps state at 0, so listeners may not rebuild. Bump instead.
+    ref.read(resultRevisionProvider.notifier).bump();
     ref.invalidate(recentPrescriptionsProvider);
     ref.invalidate(prescriptionHistoryProvider);
     name.dispose();
@@ -352,7 +353,7 @@ class ResultScreen extends ConsumerWidget {
     instructions.dispose();
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Saved on this device.')),
+        SnackBar(content: Text('Updated: ${updated.name} — ${updated.editedLine}')),
       );
     }
   }
@@ -886,12 +887,18 @@ class _MedicineCard extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       color: medicine.userEdited ? const Color(0xFFF3FBFA) : null,
       child: InkWell(
-        onTap: () => _showMedicineDetail(
-          context,
-          medicine,
-          language,
-          onEdit: onEdit,
-        ),
+        onTap: () async {
+          final wantsEdit = await _showMedicineDetail(
+            context,
+            medicine,
+            language,
+            canEdit: onEdit != null,
+          );
+          // Wait until the detail route is fully gone, then open edit.
+          if (wantsEdit == true && context.mounted) {
+            onEdit?.call();
+          }
+        },
         child: Padding(
           padding: const EdgeInsets.all(14),
           child: Row(
@@ -1047,20 +1054,20 @@ class _TagChip extends StatelessWidget {
   );
 }
 
-void _showMedicineDetail(
+Future<bool?> _showMedicineDetail(
   BuildContext context,
   Medicine m,
   ResultLanguage lang, {
-  VoidCallback? onEdit,
+  required bool canEdit,
 }) {
-  showModalBottomSheet(
+  return showModalBottomSheet<bool>(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
     builder: (context) => _MedicineDetailSheet(
       medicine: m,
       language: lang,
-      onEdit: onEdit,
+      canEdit: canEdit,
     ),
   );
 }
@@ -1069,11 +1076,11 @@ class _MedicineDetailSheet extends StatelessWidget {
   const _MedicineDetailSheet({
     required this.medicine,
     required this.language,
-    this.onEdit,
+    this.canEdit = false,
   });
   final Medicine medicine;
   final ResultLanguage language;
-  final VoidCallback? onEdit;
+  final bool canEdit;
 
   @override
   Widget build(BuildContext context) {
@@ -1211,16 +1218,10 @@ class _MedicineDetailSheet extends StatelessWidget {
                 itemBuilder: (context, i) => _DetailRowCard(row: rows[i]),
               ),
             ),
-            if (onEdit != null) ...[
+            if (canEdit) ...[
               const SizedBox(height: 8),
               OutlinedButton.icon(
-                onPressed: () {
-                  final edit = onEdit;
-                  Navigator.pop(context);
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                    edit?.call();
-                  });
-                },
+                onPressed: () => Navigator.pop(context, true),
                 icon: const Icon(Icons.edit_outlined, size: 18),
                 label: const Text('Edit this item'),
               ),
