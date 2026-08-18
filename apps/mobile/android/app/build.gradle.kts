@@ -1,3 +1,4 @@
+import java.io.File
 import java.io.FileInputStream
 import java.util.Properties
 
@@ -14,6 +15,15 @@ val keystorePropertiesFile = rootProject.file("key.properties")
 if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 }
+
+// flutter-builder CI decodes ANDROID_KEYSTORE_BASE64 to android/app/upload-keystore.jks
+// and writes storeFile=upload-keystore.jks. Local docs keep the same filename in android/.
+val releaseKeystoreFile: File? =
+    keystoreProperties.getProperty("storeFile")?.let { storeFileName ->
+        listOf(file(storeFileName), rootProject.file(storeFileName))
+            .firstOrNull { it.isFile }
+            ?: file(storeFileName)
+    }
 
 android {
     namespace = "com.keshabstudios.prescriptionscanner"
@@ -42,7 +52,7 @@ android {
             create("release") {
                 keyAlias = keystoreProperties.getProperty("keyAlias")
                 keyPassword = keystoreProperties.getProperty("keyPassword")
-                storeFile = rootProject.file(keystoreProperties.getProperty("storeFile"))
+                storeFile = releaseKeystoreFile
                 storePassword = keystoreProperties.getProperty("storePassword")
             }
         }
