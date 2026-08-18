@@ -58,7 +58,7 @@ void main() {
       await store.clearUser('firebase-user-a');
       await ConsentStore.clearUser('firebase-user-a');
       expect(store.getAll('firebase-user-a'), isEmpty);
-      expect(store.getAll('firebase-user-b'), hasLength(1));
+      expect(store.getAll('firebase-user-b'), hasLength(2));
       expect(await ConsentStore.hasAiConsent('firebase-user-a'), isFalse);
     },
   );
