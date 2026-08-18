@@ -194,7 +194,7 @@ final _faqItems = <_FaqItemData>[
   _FaqItemData(
     question: 'How does the AI transcription work?',
     answer:
-        'The prepared image is sent to Google Gemini for transcription only. The app is not a medical device and does not diagnose or prescribe. Unclear text is left blank. The local image copy is deleted after processing; the structured list stays on this device.',
+        'Prescription Scanner prepares the photo on your phone, then our AI reads visible medicine details into a structured list. The app is not a medical device and does not diagnose or prescribe. Unclear text is left blank. The local image copy is deleted after processing; the structured list stays on this device.',
   ),
   _FaqItemData(
     question: 'Is my medical data stored in the cloud?',

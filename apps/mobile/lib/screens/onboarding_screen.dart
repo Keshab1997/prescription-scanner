@@ -53,7 +53,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       eyebrowColor: AppColors.indigo,
       title: 'AI reads it for you',
       body:
-          'Gemini AI turns the photo into a clean, structured medicine list — '
+          'Prescription Scanner AI turns the photo into a clean, structured medicine list — '
           'name, dosage, frequency and duration in seconds.',
     ),
     _OnboardingPageData(

@@ -43,7 +43,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
   String get _progressTitle => preparing ? 'Preparing image…' : 'Scanning with AI…';
   String get _progressMessage => preparing
       ? 'Creating a clear, optimized local copy before AI transcription.'
-      : 'Sending the prepared image to Google Gemini for transcription.';
+      : 'Prescription Scanner AI is reading the prescription and building your medicine list.';
 
   @override
   void initState() {

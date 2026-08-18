@@ -3,10 +3,12 @@ import 'package:prescription_scanner/config.dart';
 import 'package:prescription_scanner/legal/legal_copy.dart';
 
 void main() {
-  test('privacy copy names Gemini and does not claim the image never leaves', () {
+  test('privacy copy discloses off-device AI and does not claim the image never leaves', () {
     expect(LegalCopy.privacyPolicy.toLowerCase(), contains('google sign-in'));
-    expect(LegalCopy.privacyPolicy.toLowerCase(), contains('gemini'));
-    expect(LegalCopy.privacySummary.toLowerCase(), contains('gemini'));
+    expect(LegalCopy.privacyPolicy.toLowerCase(), contains('third-party'));
+    expect(LegalCopy.privacyPolicy.toLowerCase(), contains('google'));
+    expect(LegalCopy.privacyPolicy.toLowerCase(), isNot(contains('gemini')));
+    expect(LegalCopy.privacySummary.toLowerCase(), isNot(contains('gemini')));
     expect(LegalCopy.privacyPolicy.toLowerCase(), isNot(contains('never leaves')));
     expect(LegalCopy.privacyPolicy.toLowerCase(), isNot(contains('nothing is uploaded')));
   });

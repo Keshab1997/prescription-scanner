@@ -32,7 +32,7 @@ class AboutCard extends StatelessWidget {
           Divider(height: 20),
           _AboutRow(label: 'Version', value: appVersion),
           Divider(height: 20),
-          _AboutRow(label: 'AI', value: 'Direct AI vision'),
+          _AboutRow(label: 'AI', value: 'Prescription Scanner AI'),
           Divider(height: 20),
           _AboutRow(label: 'Developer', value: developer),
         ],

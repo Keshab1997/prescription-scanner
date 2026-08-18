@@ -16,7 +16,7 @@ It is not a medical device. It does not diagnose, treat, prescribe, recommend, o
 Unclear handwriting is left blank or marked for review. Never take, stop, or change medicine based only on this app. Confirm every detail with a qualified healthcare professional.''';
 
   static const privacySummary =
-      'The prepared prescription image is sent to Google Gemini for transcription. We do not store that image in our own cloud. The local prepared copy is deleted after processing. Structured results stay on this device, scoped to your account or guest session. Usage counts and optional feedback go to Firebase.';
+      'Prescription Scanner prepares the photo on your device, then our AI transcription service reads visible medicine details. We do not store that image in our own cloud. The local prepared copy is deleted after processing. Structured results stay on this device, scoped to your account or guest session. Usage counts and optional feedback go to Firebase.';
 
   static const privacyPolicy = '''
 Last updated: 18 August 2026
@@ -25,11 +25,11 @@ Who we are
 $publisher (“we”) publishes $appName for Android. Contact: $supportEmail
 
 What the app does
-You capture or pick a prescription photo. The app compresses it on the device and sends the prepared image to Google Gemini so visible medicine details can be transcribed into a structured list.
+You capture or pick a prescription photo. Prescription Scanner compresses it on the device and uses our AI transcription pipeline so visible medicine details become a structured list.
 
 Data we process
 • Account: email, display name, and Firebase Authentication identifiers when you sign in. If you choose Google Sign-In, Google shares your Google account name and email with Firebase so we can create or open that account.
-• Images: the prepared photo is sent to Google Gemini. We do not upload it to our Firebase Storage. The local prepared file is deleted after processing.
+• Images: the prepared photo is processed by our AI transcription pipeline, which uses a third-party cloud vision provider (Google). We do not upload it to our Firebase Storage. The local prepared file is deleted after processing.
 • On-device results: transcribed lists stay in local storage (Hive), namespaced by your Firebase user id or a guest namespace.
 • Usage: daily scan counts (and, for guests, a device-scoped counter) in Firestore so limits can be enforced.
 • Optional feedback you submit about a transcription error.
@@ -44,7 +44,7 @@ What we do not do
 Permissions
 • Camera — only to photograph a prescription after you tap Take photo and accept the on-screen explanation.
 • Photos / gallery — only when you choose Gallery.
-• Internet — to reach Firebase, Google Gemini, and ads.
+• Internet — to reach Firebase, our AI transcription service, and ads.
 
 Retention
 Local results remain until you delete an item, delete your account, or clear app data. Firebase profile and usage records are removed when you complete in-app account deletion (best-effort). An audit row may remain so we can confirm the request.
