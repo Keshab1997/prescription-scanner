@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart' as fb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:prescription_scanner/screens.dart';
+import 'package:prescription_scanner/services/app_prefs.dart';
 import 'package:prescription_scanner/services/auth_session_notifier.dart';
 import 'package:prescription_scanner/widgets/app_back_scope.dart';
 import 'package:prescription_scanner/widgets/app_shell.dart';
@@ -26,6 +27,19 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 
       final user = fb.FirebaseAuth.instance.currentUser;
       final signedIn = user != null && user.emailVerified;
+
+      // First-launch onboarding: show the illustrated steps exactly once to
+      // guests and signed-out users, before anything else. Signed-in users
+      // never see it. Fail-safe: if the prefs box is somehow unavailable the
+      // gate is skipped so the app stays usable.
+      final onboardingPending =
+          AppPrefs.isReady && !AppPrefs.hasSeenOnboarding;
+      if (onboardingPending && !signedIn && path != '/onboarding') {
+        return '/onboarding';
+      }
+      if (path == '/onboarding' && (!onboardingPending || signedIn)) {
+        return signedIn ? '/home' : '/login';
+      }
 
       // Anonymous guests may scan and view their on-device results/history
       // without an account. Account-only areas (profile, settings) still
@@ -55,6 +69,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     },
     routes: [
       GoRoute(path: '/login', builder: (_, _) => const LoginScreen()),
+      GoRoute(
+        path: '/onboarding',
+        builder: (_, _) => const OnboardingScreen(),
+      ),
       GoRoute(
         path: '/privacy',
         builder: (_, _) => const AppBackScope(

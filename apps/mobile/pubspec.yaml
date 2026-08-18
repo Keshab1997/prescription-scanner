@@ -51,3 +51,4 @@ flutter:
   generate: true
   assets:
     - assets/brand/app_icon.png
+    - assets/onboarding/

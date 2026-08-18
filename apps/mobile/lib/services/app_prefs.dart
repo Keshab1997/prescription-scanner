@@ -6,6 +6,7 @@ abstract final class AppPrefs {
   static const _languageKey = 'result_language';
   static const _chosenKey = 'language_chosen';
   static const _mediaAskedKey = 'media_permissions_asked';
+  static const _onboardingSeenKey = 'onboarding_seen_v1';
   static Box? _box;
 
   static Future<void> init() async {
@@ -43,5 +44,14 @@ abstract final class AppPrefs {
   static Future<void> markMediaPermissionsAsked() async {
     if (!isReady) return;
     await _store.put(_mediaAskedKey, true);
+  }
+
+  /// Whether the illustrated first-launch onboarding has been completed.
+  static bool get hasSeenOnboarding =>
+      _box?.get(_onboardingSeenKey, defaultValue: false) == true;
+
+  static Future<void> markOnboardingSeen() async {
+    if (!isReady) return;
+    await _store.put(_onboardingSeenKey, true);
   }
 }

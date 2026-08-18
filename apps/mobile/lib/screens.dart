@@ -5,5 +5,6 @@ export 'screens/legal_screens.dart';
 export 'screens/history_screen.dart';
 export 'screens/home_screen.dart';
 export 'screens/login_home_screens.dart';
+export 'screens/onboarding_screen.dart';
 export 'screens/result_screen.dart';
 export 'screens/scan_screens.dart';
