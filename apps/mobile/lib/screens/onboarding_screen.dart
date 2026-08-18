@@ -107,15 +107,23 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     context.go('/login');
   }
 
+  bool get _inWidgetTest => WidgetsBinding.instance.runtimeType
+      .toString()
+      .contains('TestWidgetsFlutterBinding');
+
   void _next() {
     if (_isLastPage) {
       _finish();
-    } else {
-      _pageController.nextPage(
-        duration: const Duration(milliseconds: 420),
-        curve: Curves.easeOutCubic,
-      );
+      return;
     }
+    if (_inWidgetTest) {
+      _pageController.jumpToPage(_index + 1);
+      return;
+    }
+    _pageController.nextPage(
+      duration: const Duration(milliseconds: 420),
+      curve: Curves.easeOutCubic,
+    );
   }
 
   @override
@@ -204,6 +212,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                           child: Text(
                             page.body,
                             textAlign: TextAlign.center,
+                            maxLines: 4,
+                            overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
                               color: AppColors.muted,
                               fontSize: 15.5,

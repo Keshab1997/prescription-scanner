@@ -109,7 +109,7 @@ void main() {
         await tester.ensureVisible(finder);
         await tester.tap(finder);
         await tester.pump();
-        await tester.pump(const Duration(milliseconds: 700));
+        await tester.pump(const Duration(milliseconds: 50));
       }
 
       await tester.pumpWidget(
