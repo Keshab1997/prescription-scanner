@@ -114,7 +114,10 @@ void main() {
 
       await tester.pumpWidget(
         const ProviderScope(
-          child: PrescriptionScannerApp(skipLaunchSplash: true),
+          child: PrescriptionScannerApp(
+            skipLaunchSplash: true,
+            skipPlayUpdate: true,
+          ),
         ),
       );
       await tester.pump();
@@ -142,7 +145,10 @@ void main() {
       // A relaunch skips the walkthrough entirely.
       await tester.pumpWidget(
         const ProviderScope(
-          child: PrescriptionScannerApp(skipLaunchSplash: true),
+          child: PrescriptionScannerApp(
+            skipLaunchSplash: true,
+            skipPlayUpdate: true,
+          ),
         ),
       );
       await tester.pump();

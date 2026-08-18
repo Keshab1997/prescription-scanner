@@ -73,7 +73,10 @@ void main() {
   testWidgets('opens the secure login screen', (tester) async {
     await tester.pumpWidget(
       const ProviderScope(
-        child: PrescriptionScannerApp(skipLaunchSplash: true),
+        child: PrescriptionScannerApp(
+          skipLaunchSplash: true,
+          skipPlayUpdate: true,
+        ),
       ),
     );
     await tester.pump();
