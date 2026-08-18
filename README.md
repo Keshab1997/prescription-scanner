@@ -197,7 +197,7 @@ flutter run -d chrome
 
 | Doc | Contents |
 |---|---|
-| [`docs/vision_setup.md`](docs/vision_setup.md) | Direct-Gemini vision setup (keys, models, Firestore) |
+| [`docs/play_store_release_guide.md`](docs/play_store_release_guide.md) | Google Play প্রথম ও পরের রিলিজ (সাইনিং, AAB, স্টোর লিস্টিং, AdMob) |
 | [`docs/phase_2_foundation.md`](docs/phase_2_foundation.md) | Flutter foundation notes |
 | [`docs/phase_4_auth_setup.md`](docs/phase_4_auth_setup.md) | Firebase authentication setup |
 | [`docs/phase_5_upload_pipeline.md`](docs/phase_5_upload_pipeline.md) | Image upload & preparation pipeline |
