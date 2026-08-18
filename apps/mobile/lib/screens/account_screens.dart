@@ -617,6 +617,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final quotaAsync = ref.watch(quotaProvider);
     final historyAsync = ref.watch(prescriptionHistoryProvider);
     final verified = service.currentUser?.emailVerified ?? false;
+    final hasPassword = service.usesPasswordProvider;
 
     final totalScans = historyAsync.when(
       data: (items) => items.length.toString(),

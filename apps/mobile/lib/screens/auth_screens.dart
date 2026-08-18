@@ -5,6 +5,7 @@ import 'package:prescription_scanner/legal/legal_copy.dart';
 import 'package:prescription_scanner/services/auth_service.dart';
 import 'package:prescription_scanner/services/auth_session_notifier.dart';
 import 'package:prescription_scanner/theme.dart';
+import 'package:prescription_scanner/widgets/google_sign_in_button.dart';
 import 'package:prescription_scanner/widgets/ui_animations.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
