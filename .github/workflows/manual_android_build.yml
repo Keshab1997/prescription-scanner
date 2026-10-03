@@ -12,7 +12,7 @@ concurrency:
 
 jobs:
   build-release:
-    uses: Keshab1997/flutter-builder/.github/workflows/flutter-build.yml@v1.12.1
+    uses: Keshab1997/flutter-builder/.github/workflows/flutter-build.yml@v1.13.0
     with:
       working-directory: apps/mobile
       flutter-channel: stable
