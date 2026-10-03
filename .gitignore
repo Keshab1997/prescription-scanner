@@ -30,3 +30,5 @@ supabase/.temp/
 
 # ZCode agent internal data
 .zcode/
+# flutter-builder: see_screen.py downloads screenshots here
+.agent-screens/
