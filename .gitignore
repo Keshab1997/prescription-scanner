@@ -32,3 +32,4 @@ supabase/.temp/
 .zcode/
 # flutter-builder: see_screen.py downloads screenshots here
 .agent-screens/
+.agent-pack-backups/
